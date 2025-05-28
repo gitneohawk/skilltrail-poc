@@ -68,6 +68,27 @@
 
   <div id="chatBox"></div>
 
+<label for="modeSelect">今日の気分で選んでください：</label>
+<select id="modeSelect">
+  <option value="1">① とにかく話を聞いてほしい</option>
+  <option value="2">② 情報は控えめに、助言だけ欲しい</option>
+  <option value="3">③ 全力で情報提供して、的確なアドバイスが欲しい</option>
+</select>
+
+const mode = document.getElementById("modeSelect").value;
+
+const res = await fetch("/api/chatgpt", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    message: `mode:${mode}, ${message}`
+  })
+});
+
+
+
   <input type="text" id="userInput" placeholder="相談内容を入力..." />
   <button onclick="sendMessage()">送信</button>
 
