@@ -103,7 +103,13 @@
 <script>
   const password = prompt("SkillTrail PoCにアクセスするにはパスワードを入力してください:");
   if (password !== "pocpass123") {
-    document.body.innerHTML = "<h1>401 Unauthorized</h1><p>あなたにはこの世界線を歩む資格がありません。</p>";
+    document.documentElement.innerHTML = `
+      <head><title>401 Unauthorized</title></head>
+      <body style="font-family: sans-serif; text-align: center; padding: 3rem;">
+        <h1>401 Unauthorized</h1>
+        <p>この世界への扉は、まだ開かれません。</p>
+      </body>
+    `;
     throw new Error("Unauthorized access attempt");
   }
 </script>
