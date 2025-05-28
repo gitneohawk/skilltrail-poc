@@ -2,7 +2,33 @@
   "routes": [
     {
       "route": "/api/*",
-      "allowedRoles": ["anonymous"]
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/interview",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/login",
+      "rewrite": "/login.html"
+    },
+    {
+      "route": "/",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/chat",
+      "rewrite": "/chat.html"
     }
-  ]
-}
+  ],
+  "auth": {
+    "identityProviders": {
+      "github": {
+        "enabled": true
+      }
+    }
+  },
+  "navigationFallback": {
+    "rewrite": "/index.html"
+  }
+}ï

@@ -22,6 +22,21 @@ module.exports = async function (context, req) {
       return;
     }
 
+let systemPrompt = "";
+
+switch (mode) {
+  case "1":
+    systemPrompt = "あなたは聞き上手で共感力の高いカウンセラーです。...";
+    break;
+  case "2":
+    systemPrompt = "あなたは相手のプライバシーを最優先し、最低限の情報からキャリアのヒントを導き出すプロフェッショナルです。...";
+    break;
+  case "3":
+    systemPrompt = "あなたは有能で頼れるキャリアアドバイザーです。相手の職歴、スキル、志向を深く聞き出し、的確な転職戦略を提示します。...";
+    break;
+}
+
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
