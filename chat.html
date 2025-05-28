@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kibun AI Chat</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', sans-serif;
+      background-color: #fff7f0;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #ff6f61;
+    }
+
+    #chatBox {
+      border: 1px solid #eee;
+      padding: 10px;
+      height: 400px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      background-color: #fff;
+    }
+
+    .user {
+      text-align: right;
+      color: #333;
+      margin: 5px;
+    }
+
+    .assistant {
+      text-align: left;
+      color: #444;
+      margin: 5px;
+    }
+
+    .error {
+      color: red;
+      font-style: italic;
+    }
+
+    input[type="text"] {
+      width: 80%;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #ff6f61;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #ff3f2f;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Kibun AI チャット</h1>
+
+  <div id="chatBox"></div>
+
+  <input type="text" id="userInput" placeholder="相談内容を入力..." />
+  <button onclick="sendMessage()">送信</button>
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("userInput");
+      const message = input.value.trim();
+      if (!message) return;
+
+      const chatBox = document.getElementById("chatBox");
+      chatBox.innerHTML += `<div class="user">👤 ${message}</div>`;
+      input.value = "";
+
+      try {
+        const res = await fetch("/api/chatgpt", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ message })
+        });
+
+        const reply = await res.text();
+        chatBox.innerHTML += `<div class="assistant">🤖 ${reply}</div>`;
+      } catch (err) {
+        chatBox.innerHTML += `<div class="error">⚠️ エラー発生：${err.message}</div>`;
+      }
+    }
+  </script>
+
+</body>
+</html>
