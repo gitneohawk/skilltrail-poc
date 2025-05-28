@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kibun.ai</title>
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --main-bg: linear-gradient(to right, #f3e9e3, #fff9f4);
+      --primary-color: #ff8855;
+      --accent-color: #8855ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Raleway', sans-serif;
+      background: var(--main-bg);
+      color: #333;
+      padding: 0;
+    }
+
+    header {
+      background: transparent;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      color: var(--primary-color);
+    }
+
+    p {
+      font-size: 1.2rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    main {
+      padding: 2rem;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .feature {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      max-width: 300px;
+      text-align: center;
+      flex: 1 1 280px;
+    }
+
+    .feature h2 {
+      color: var(--accent-color);
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.9rem;
+      padding: 1rem;
+      color: #666;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      p {
+        font-size: 1rem;
+        padding: 0 1rem;
+      }
+
+      .feature {
+        padding: 1.5rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.6rem;
+      }
+
+      .feature h2 {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Kibun.ai</h1>
+    <p>あなたのキャリア、あなたの気分。AIと一緒に再発見しよう。</p>
+  </header>
+  <main> 
+<!-- 一部抜粋、mainの中の feature にリンク追加 -->
+<div class="feature">
+  <h2><a href="interview.html" style="color: inherit; text-decoration: none;">対話型インタビュー</a></h2>
+  <p>自然な会話で職歴やスキルを掘り起こし。夜中の自己棚卸しにも最適。</p>
+</div>
+      <div class="feature">
+      <h2>AIキャリア診断</h2>
+      <p>業界動向 × あなたの強みを分析して、意外な適職をレコメンド。</p>
+    </div>
+    <div class="feature">
+      <h2>履歴書ジェネレーター</h2>
+      <p>魅せる職務経歴書を自動生成。採用担当の心を一撃。</p>
+    </div>
+  </main>
+  <footer>
+    &copy; 2025 Kibun.ai - All rights reserved.
+  </footer>
+</body>
+</html>
