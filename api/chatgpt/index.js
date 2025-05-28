@@ -76,10 +76,11 @@ context.log(`👤 User ID: ${userId}, Details: ${userDetails}`);
 
     const data = await response.json();
 
-    context.res = {
-      status: 200,
-      body: data.choices?.[0]?.message?.content || "No response",
-    };
+context.res = {
+  status: 200,
+  body: (data.choices?.[0]?.message?.content || "No response") + `\n\n(Your ID: ${userId})`,
+};
+
   } catch (err) {
     context.log("Error:", err.message);
     context.res = {
