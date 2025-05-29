@@ -13,6 +13,41 @@ const getClientPrincipal = (req) => {
   }
 };
 
+const fs = require("fs");
+const path = require("path");
+
+function saveInterviewLog(userId, userMessage, aiResponse) {
+  const logDir = path.join(__dirname, "logs");
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
+  }
+
+  const logPath = path.join(logDir, `interview-${userId}.json`);
+
+  let log = [];
+  if (fs.existsSync(logPath)) {
+    try {
+      log = JSON.parse(fs.readFileSync(logPath, "utf8"));
+    } catch (e) {
+      console.error("🧨 JSON parse error:", e);
+    }
+  }
+
+  const entry = {
+    timestamp: new Date().toISOString(),
+    user: userMessage,
+    ai: aiResponse
+  };
+
+  log.push(entry);
+
+  try {
+    fs.writeFileSync(logPath, JSON.stringify(log, null, 2));
+  } catch (err) {
+    console.error("💣 Failed to write interview log:", err);
+  }
+}
+
 const fetch = require("node-fetch");
 
 module.exports = async function (context, req) {
@@ -120,6 +155,10 @@ case "5":
       status: 200,
       body: (data.choices?.[0]?.message?.content || "No response") + `\n\n(Your ID: ${userId})`,
     };
+
+    if (mode === "5") {
+  saveInterviewLog(userId, actualMessage, data.choices?.[0]?.message?.content || "No response");
+}
 
   } catch (err) {
     context.log("Error:", err.message);
