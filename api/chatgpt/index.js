@@ -1,5 +1,7 @@
 const fs = require("fs");
 const path = require("path");
+const fetch = require("node-fetch");
+
 
 const getClientPrincipal = (req) => {
   const encoded = req.headers["x-ms-client-principal"];
@@ -13,11 +15,8 @@ const getClientPrincipal = (req) => {
   }
 };
 
-const fs = require("fs");
-const path = require("path");
-
 function saveInterviewLog(userId, userMessage, aiResponse) {
-  const logDir = path.join(__dirname, "logs");
+  const logDir = path.join("/tmp", "logs");
   if (!fs.existsSync(logDir)) {
     fs.mkdirSync(logDir);
   }
@@ -47,8 +46,6 @@ function saveInterviewLog(userId, userMessage, aiResponse) {
     console.error("💣 Failed to write interview log:", err);
   }
 }
-
-const fetch = require("node-fetch");
 
 module.exports = async function (context, req) {
   const clientPrincipal = getClientPrincipal(req);
@@ -133,6 +130,8 @@ case "5":
     });
 
     const data = await response.json();
+
+    context.log("🧪 OpenAI response:", JSON.stringify(data, null, 2));
 
     // 👇 ログ保存処理（filePathの指定を追加）
     const record = {
