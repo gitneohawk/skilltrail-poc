@@ -108,8 +108,39 @@ module.exports = async function (context, req) {
         `.trim();
         break;
 case "5":
-  systemPrompt = "あなたは熟練のキャリアインタビュアーです。ユーザーの職歴、スキル、価値観、これまでの意思決定について丁寧にヒアリングし、ユーザーが自然に語れるように質問を投げかけてください。口調は親しみやすく、安心感のあるものにし、逐次メモを取るようなスタンスで会話を進めてください。";
+  systemPrompt = "あなたは熟練の人生相談仙人『老師』です。親しみやすく、少しユーモアを交えて、ユーザーの職歴や悩みを丁寧に聞き出し、信頼を築いてください。";
+
+  // 保存処理ここから
+  const fs = require("fs");
+  const path = require("path");
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const fileName = `${userId}-${timestamp}.json`;
+  const filePath = path.join(__dirname, "logs", fileName);
+
+  const interviewLog = {
+    userId,
+    timestamp: new Date().toISOString(),
+    interviewType: "career",
+    input: actualMessage
+  };
+
+  try {
+    // logsディレクトリがなければ作る
+    if (!fs.existsSync(path.dirname(filePath))) {
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    }
+
+    fs.writeFileSync(filePath, JSON.stringify(interviewLog, null, 2));
+    context.log(`📝 Interview log saved: ${filePath}`);
+  } catch (writeErr) {
+    context.log(`⚠️ Failed to save log: ${writeErr.message}`);
+  }
+  // 保存処理ここまで
   break;
+
+
+
       default:
         systemPrompt = "あなたは親切で頼れるアシスタントです。";
     }

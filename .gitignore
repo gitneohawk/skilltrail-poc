@@ -23,6 +23,7 @@ desktop.ini
 
 # Azure Functionsの一時ビルド
 api/.azure/
+api/chatgpt/logs/
 
 # ビルド出力（必要なら変更）
 dist/
