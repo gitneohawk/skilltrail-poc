@@ -16,11 +16,11 @@ const getClientPrincipal = (req) => {
 const fetch = require("node-fetch");
 
 module.exports = async function (context, req) {
-const clientPrincipal = getClientPrincipal(req);
-const userId = clientPrincipal?.userId || "anonymous";
-const userDetails = clientPrincipal?.userDetails || "unknown";
-// ログに出力（あとで Azure Logs で確認できる）
-context.log(`👤 User ID: ${userId}, Details: ${userDetails}`);
+  const clientPrincipal = getClientPrincipal(req);
+  const userId = clientPrincipal?.userId || "anonymous";
+  const userDetails = clientPrincipal?.userDetails || "unknown";
+
+  context.log(`👤 User ID: ${userId}, Details: ${userDetails}`);
 
   try {
     const userMessage = req.body?.message;
@@ -95,24 +95,28 @@ context.log(`👤 User ID: ${userId}, Details: ${userDetails}`);
     });
 
     const data = await response.json();
-    
-// 👇 ここにログ保存処理
-const record = {
-  userId: userId,
-  userDetails: userDetails,
-  timestamp: new Date().toISOString(),
-  question: actualMessage,
-  response: data.choices?.[0]?.message?.content || "No response"
-};
 
-...
-fs.appendFileSync(filePath, JSON.stringify(record) + "\n");
+    // 👇 ログ保存処理（filePathの指定を追加）
+    const record = {
+      userId: userId,
+      userDetails: userDetails,
+      timestamp: new Date().toISOString(),
+      question: actualMessage,
+      response: data.choices?.[0]?.message?.content || "No response"
+    };
 
+    const logDir = path.join(__dirname, "logs");
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir);
+    }
+    const filePath = path.join(logDir, "chat-log.jsonl");
 
-context.res = {
-  status: 200,
-  body: (data.choices?.[0]?.message?.content || "No response") + `\n\n(Your ID: ${userId})`,
-};
+    fs.appendFileSync(filePath, JSON.stringify(record) + "\n");
+
+    context.res = {
+      status: 200,
+      body: (data.choices?.[0]?.message?.content || "No response") + `\n\n(Your ID: ${userId})`,
+    };
 
   } catch (err) {
     context.log("Error:", err.message);
