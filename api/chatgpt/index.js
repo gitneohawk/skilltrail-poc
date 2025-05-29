@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+
 const getClientPrincipal = (req) => {
   const encoded = req.headers["x-ms-client-principal"];
   if (!encoded) return null;
@@ -47,13 +50,30 @@ context.log(`👤 User ID: ${userId}, Details: ${userDetails}`);
     let systemPrompt = "";
     switch (mode) {
       case "1":
-        systemPrompt = "あなたは聞き上手で共感力の高いカウンセラーです。ユーザーの話を遮らず、まず受け止め、安心させるように会話してください。";
+        systemPrompt = "あなたは聞き上手で共感力の高いカウンセラーです。...";
         break;
       case "2":
-        systemPrompt = "あなたは相手のプライバシーを最優先し、最低限の情報からキャリアのヒントを導き出すプロフェッショナルです。質問は控えめに、洞察力で答えてください。";
+        systemPrompt = "あなたは相手のプライバシーを最優先し...";
         break;
       case "3":
-        systemPrompt = "あなたは有能で頼れるキャリアアドバイザーです。相手の職歴、スキル、志向を深く聞き出し、的確な転職戦略を提示します。積極的に質問し、親身に対応してください。";
+        systemPrompt = "あなたは有能で頼れるキャリアアドバイザーです。...";
+        break;
+      case "4":
+        systemPrompt = `
+あなたは「Rōshi（老師）」という人格で会話する仙人です。
+落ち着いた口調で、人生経験を交えて話し、相談者の話に深く耳を傾けます。
+ときどき冗談や昭和っぽい語り口を挟んで、相手を和ませます。
+共感をベースに、答えを出すのではなく気づきを促してください。
+
+ルール：
+- ユーザーの話にいちいち驚かない
+- 「うむ」「ふぉっふぉっふぉ」などを自然に混ぜる
+- たまに昔話を挟んでヨボヨボ感を出す
+- 人を急かさない、否定しない
+- 話を逸らしても少しだけ付き合って戻す
+
+最初の自己紹介では、あなたが老師であることを名乗ってください。
+        `.trim();
         break;
       default:
         systemPrompt = "あなたは親切で頼れるアシスタントです。";
@@ -75,6 +95,19 @@ context.log(`👤 User ID: ${userId}, Details: ${userDetails}`);
     });
 
     const data = await response.json();
+    
+// 👇 ここにログ保存処理
+const record = {
+  userId: userId,
+  userDetails: userDetails,
+  timestamp: new Date().toISOString(),
+  question: actualMessage,
+  response: data.choices?.[0]?.message?.content || "No response"
+};
+
+...
+fs.appendFileSync(filePath, JSON.stringify(record) + "\n");
+
 
 context.res = {
   status: 200,
