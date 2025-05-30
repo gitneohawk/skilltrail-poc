@@ -1,109 +1,7 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Kibun AI Chat</title>
-  <style>
-    body {
-      font-family: 'Helvetica Neue', sans-serif;
-      background-color: #fffdf9;
-      margin: 0;
-      padding: 20px;
-    }
-
-    h1 {
-      color: #ff6f61;
-    }
-
-    #chatBox {
-      border: 1px solid #eee;
-      padding: 15px;
-      height: 400px;
-      overflow-y: auto;
-      background-color: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      margin-bottom: 10px;
-    }
-
-    .user, .assistant {
-      margin: 10px 0;
-      line-height: 1.6;
-    }
-
-    .user {
-      text-align: right;
-      color: #333;
-    }
-
-    .assistant {
-      text-align: left;
-      color: #444;
-    }
-
-    .error {
-      color: red;
-      font-style: italic;
-    }
-
-    textarea {
-      width: 100%;
-      height: 60px;
-      padding: 10px;
-      font-size: 16px;
-      resize: vertical;
-      box-sizing: border-box;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      margin-bottom: 10px;
-    }
-
-    button {
-      padding: 10px 20px;
-      background-color: #ff6f61;
-      border: none;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-      border-radius: 6px;
-    }
-
-    button:hover {
-      background-color: #ff3f2f;
-    }
-
-    select {
-      padding: 8px;
-      font-size: 14px;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-  </style>
-</head>
-<body>
-
-  <h1>Kibun AI チャット</h1>
-
-  <div id="chatBox"></div>
-
-  <label for="modeSelect">今日の気分で選んでください：</label><br>
-  <select id="modeSelect">
-    <option value="1">① とにかく話を聞いてほしい</option>
-    <option value="2">② 情報は控えめに、助言だけ欲しい</option>
-    <option value="3">③ 全力で情報提供して、的確なアドバイスが欲しい</option>
-    <option value="4">④ 老師、助けて！</option>
-    <option value="5">⑤ 真面目に転職考えたいので、職歴のインタビューしてほしい！</option>
-  </select>
-
-  <textarea id="userInput" placeholder="相談内容を入力..."></textarea>
-  <button onclick="sendMessage()">送信</button>
-
-  <<script>
-  const inputField = document.getElementById("user-input");
-  const sendButton = document.getElementById("send-button");
-  const chatBox = document.getElementById("chat-box");
+<script>
+  const inputField = document.getElementById("userInput");
+  const sendButton = document.querySelector("button");
+  const chatBox = document.getElementById("chatBox");
   let isComposing = false;
 
   inputField.addEventListener("compositionstart", () => {
@@ -129,36 +27,34 @@
     const message = inputField.value.trim();
     if (!message) return;
 
-    // 画面に表示
+    const selectedMode = document.getElementById("modeSelect").value;
+    const payload = `mode:${selectedMode}, ${message}`;
+
     const userMessage = document.createElement("div");
-    userMessage.className = "message user-message";
+    userMessage.className = "user";
     userMessage.textContent = message;
     chatBox.appendChild(userMessage);
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    // ボックス初期化
     inputField.value = "";
 
-    // POST
     fetch("/api/chatgpt", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ message })
+      body: JSON.stringify({ message: payload })
     })
       .then(res => res.text())
       .then(reply => {
         const botMessage = document.createElement("div");
-        botMessage.className = "message bot-message";
+        botMessage.className = "assistant";
         botMessage.textContent = reply;
         chatBox.appendChild(botMessage);
         chatBox.scrollTop = chatBox.scrollHeight;
       })
       .catch(error => {
-        console.error("🔥 AI爆発:", error);
+        console.error("🔥 Error from AI:", error);
       });
   }
-
-</body>
-</html>
+</script>
