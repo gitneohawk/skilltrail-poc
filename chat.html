@@ -100,33 +100,66 @@
   <textarea id="userInput" placeholder="相談内容を入力..."></textarea>
   <button onclick="sendMessage()">送信</button>
 
-  <script>
-    const chatBox = document.getElementById("chatBox");
-    const input = document.getElementById("userInput");
+  <<script>
+  const inputField = document.getElementById("user-input");
+  const sendButton = document.getElementById("send-button");
+  const chatBox = document.getElementById("chat-box");
+  let isComposing = false;
 
-    async function sendMessage() {
-      const message = input.value.trim();
-      const mode = document.getElementById("modeSelect").value;
-      if (!message) return;
+  inputField.addEventListener("compositionstart", () => {
+    isComposing = true;
+  });
 
-      chatBox.innerHTML += `<div class="user">👤 ${message}</div>`;
-      input.value = "";
-      chatBox.scrollTop = chatBox.scrollHeight;
+  inputField.addEventListener("compositionend", () => {
+    isComposing = false;
+  });
 
-      try {
-        const res = await fetch("/api/chatgpt", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: `mode:${mode}, ${message}` })
-        });
-
-        const reply = await res.text();
-        chatBox.innerHTML += `<div class="assistant">🤖 ${reply}</div>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
-      } catch (err) {
-        chatBox.innerHTML += `<div class="error">⚠️ エラー発生：${err.message}</div>`;
-      }
+  inputField.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !isComposing) {
+      event.preventDefault();
+      sendMessage();
     }
+  });
+
+  sendButton.addEventListener("click", () => {
+    sendMessage();
+  });
+
+  function sendMessage() {
+    const message = inputField.value.trim();
+    if (!message) return;
+
+    // 画面に表示
+    const userMessage = document.createElement("div");
+    userMessage.className = "message user-message";
+    userMessage.textContent = message;
+    chatBox.appendChild(userMessage);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // ボックス初期化
+    inputField.value = "";
+
+    // POST
+    fetch("/api/chatgpt", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message })
+    })
+      .then(res => res.text())
+      .then(reply => {
+        const botMessage = document.createElement("div");
+        botMessage.className = "message bot-message";
+        botMessage.textContent = reply;
+        chatBox.appendChild(botMessage);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      })
+      .catch(error => {
+        console.error("🔥 AI爆発:", error);
+      });
+  }
+</script>
 
     // Enterキーで送信
     input.addEventListener("keydown", (e) => {
