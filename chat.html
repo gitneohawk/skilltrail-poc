@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Kibun AI Chat</title>
   <style>
     body {
       font-family: 'Helvetica Neue', sans-serif;
-      background-color: #fff7f0;
+      background-color: #fffdf9;
       margin: 0;
       padding: 20px;
     }
@@ -18,23 +18,28 @@
 
     #chatBox {
       border: 1px solid #eee;
-      padding: 10px;
+      padding: 15px;
       height: 400px;
       overflow-y: auto;
-      margin-bottom: 10px;
       background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      margin-bottom: 10px;
+    }
+
+    .user, .assistant {
+      margin: 10px 0;
+      line-height: 1.6;
     }
 
     .user {
       text-align: right;
       color: #333;
-      margin: 5px;
     }
 
     .assistant {
       text-align: left;
       color: #444;
-      margin: 5px;
     }
 
     .error {
@@ -42,10 +47,16 @@
       font-style: italic;
     }
 
-    input[type="text"] {
-      width: 80%;
+    textarea {
+      width: 100%;
+      height: 60px;
       padding: 10px;
       font-size: 16px;
+      resize: vertical;
+      box-sizing: border-box;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-bottom: 10px;
     }
 
     button {
@@ -55,10 +66,19 @@
       color: white;
       font-size: 16px;
       cursor: pointer;
+      border-radius: 6px;
     }
 
     button:hover {
       background-color: #ff3f2f;
+    }
+
+    select {
+      padding: 8px;
+      font-size: 14px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
   </style>
 </head>
@@ -68,45 +88,53 @@
 
   <div id="chatBox"></div>
 
-  <label for="modeSelect">今日の気分で選んでください：</label>
+  <label for="modeSelect">今日の気分で選んでください：</label><br>
   <select id="modeSelect">
     <option value="1">① とにかく話を聞いてほしい</option>
     <option value="2">② 情報は控えめに、助言だけ欲しい</option>
     <option value="3">③ 全力で情報提供して、的確なアドバイスが欲しい</option>
     <option value="4">④ 老師、助けて！</option>
     <option value="5">⑤ 真面目に転職考えたいので、職歴のインタビューしてほしい！</option>
-  <input type="text" id="userInput" placeholder="相談内容を入力..." />
+  </select>
+
+  <textarea id="userInput" placeholder="相談内容を入力..."></textarea>
   <button onclick="sendMessage()">送信</button>
 
   <script>
+    const chatBox = document.getElementById("chatBox");
+    const input = document.getElementById("userInput");
+
     async function sendMessage() {
-      const input = document.getElementById("userInput");
       const message = input.value.trim();
       const mode = document.getElementById("modeSelect").value;
-
       if (!message) return;
 
-      const chatBox = document.getElementById("chatBox");
       chatBox.innerHTML += `<div class="user">👤 ${message}</div>`;
       input.value = "";
+      chatBox.scrollTop = chatBox.scrollHeight;
 
       try {
         const res = await fetch("/api/chatgpt", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message: `mode:${mode}, ${message}`
-          })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: `mode:${mode}, ${message}` })
         });
 
         const reply = await res.text();
         chatBox.innerHTML += `<div class="assistant">🤖 ${reply}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
       } catch (err) {
         chatBox.innerHTML += `<div class="error">⚠️ エラー発生：${err.message}</div>`;
       }
     }
+
+    // Enterキーで送信
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
   </script>
 
 </body>
