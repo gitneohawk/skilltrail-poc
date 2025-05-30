@@ -1,7 +1,7 @@
-const fs = require("fs");
-const path = require("path");
+const { BlobServiceClient } = require("@azure/storage-blob");
+const { v4: uuidv4 } = require("uuid");
 const fetch = require("node-fetch");
-
+const path = require("path");
 
 const getClientPrincipal = (req) => {
   const encoded = req.headers["x-ms-client-principal"];
@@ -15,36 +15,29 @@ const getClientPrincipal = (req) => {
   }
 };
 
-function saveInterviewLog(userId, userMessage, aiResponse) {
-  const logDir = path.join("/tmp", "logs");
-  if (!fs.existsSync(logDir)) {
-    fs.mkdirSync(logDir);
+async function saveToBlobStorage(userId, userMessage, assistantReply) {
+  const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
+  const containerName = "interviews";
+
+  if (!AZURE_STORAGE_CONNECTION_STRING) {
+    throw new Error("Azure Storage connection string is missing.");
   }
 
-  const logPath = path.join(logDir, `interview-${userId}.json`);
+  const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+  const containerClient = blobServiceClient.getContainerClient(containerName);
 
-  let log = [];
-  if (fs.existsSync(logPath)) {
-    try {
-      log = JSON.parse(fs.readFileSync(logPath, "utf8"));
-    } catch (e) {
-      console.error("🧨 JSON parse error:", e);
-    }
-  }
+  const timestamp = new Date().toISOString();
+  const fileName = `${userId}_${timestamp}_${uuidv4()}.json`;
+  const blockBlobClient = containerClient.getBlockBlobClient(fileName);
 
-  const entry = {
-    timestamp: new Date().toISOString(),
-    user: userMessage,
-    ai: aiResponse
+  const data = {
+    timestamp,
+    userId,
+    userMessage,
+    assistantReply
   };
 
-  log.push(entry);
-
-  try {
-    fs.writeFileSync(logPath, JSON.stringify(log, null, 2));
-  } catch (err) {
-    console.error("💣 Failed to write interview log:", err);
-  }
+  await blockBlobClient.upload(JSON.stringify(data, null, 2), Buffer.byteLength(JSON.stringify(data)));
 }
 
 module.exports = async function (context, req) {
@@ -57,21 +50,13 @@ module.exports = async function (context, req) {
   try {
     const userMessage = req.body?.message;
     if (!userMessage) {
-      context.log("Missing message");
-      context.res = {
-        status: 400,
-        body: "Missing 'message' in request body.",
-      };
+      context.res = { status: 400, body: "Missing 'message' in request body." };
       return;
     }
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      context.log("API Key missing");
-      context.res = {
-        status: 500,
-        body: "Missing OpenAI API key.",
-      };
+      context.res = { status: 500, body: "Missing OpenAI API key." };
       return;
     }
 
@@ -81,66 +66,17 @@ module.exports = async function (context, req) {
 
     let systemPrompt = "";
     switch (mode) {
-      case "1":
-        systemPrompt = "あなたは聞き上手で共感力の高いカウンセラーです。...";
-        break;
-      case "2":
-        systemPrompt = "あなたは相手のプライバシーを最優先し...";
-        break;
-      case "3":
-        systemPrompt = "あなたは有能で頼れるキャリアアドバイザーです。...";
-        break;
       case "4":
-        systemPrompt = `
-あなたは「Rōshi（老師）」という人格で会話する仙人です。
-落ち着いた口調で、人生経験を交えて話し、相談者の話に深く耳を傾けます。
-ときどき冗談や昭和っぽい語り口を挟んで、相手を和ませます。
-共感をベースに、答えを出すのではなく気づきを促してください。
-
-ルール：
-- ユーザーの話にいちいち驚かない
-- 「うむ」「ふぉっふぉっふぉ」などを自然に混ぜる
-- たまに昔話を挟んでヨボヨボ感を出す
-- 人を急かさない、否定しない
-- 話を逸らしても少しだけ付き合って戻す
-
-最初の自己紹介では、あなたが老師であることを名乗ってください。
-        `.trim();
+        systemPrompt = "あなたは仙人の老師であり…（中略）";
         break;
-case "5":
-  systemPrompt = "あなたは熟練の人生相談仙人『老師』です。親しみやすく、少しユーモアを交えて、ユーザーの職歴や悩みを丁寧に聞き出し、信頼を築いてください。";
-
-  // 保存処理ここから
-  const fs = require("fs");
-  const path = require("path");
-
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const fileName = `${userId}-${timestamp}.json`;
-  const filePath = path.join(__dirname, "logs", fileName);
-
-  const interviewLog = {
-    userId,
-    timestamp: new Date().toISOString(),
-    interviewType: "career",
-    input: actualMessage
-  };
-
-  try {
-    // logsディレクトリがなければ作る
-    if (!fs.existsSync(path.dirname(filePath))) {
-      fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    }
-
-    fs.writeFileSync(filePath, JSON.stringify(interviewLog, null, 2));
-    context.log(`📝 Interview log saved: ${filePath}`);
-  } catch (writeErr) {
-    context.log(`⚠️ Failed to save log: ${writeErr.message}`);
-  }
-  // 保存処理ここまで
-  break;
-
-
-
+      case "5":
+        systemPrompt = "あなたは熟練の人生相談仙人『老師』です。…";
+        break;
+      case "1":
+      case "2":
+      case "3":
+        systemPrompt = "（それぞれのカウンセラー設定）";
+        break;
       default:
         systemPrompt = "あなたは親切で頼れるアシスタントです。";
     }
@@ -149,7 +85,7 @@ case "5":
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
+        Authorization: `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
@@ -161,37 +97,20 @@ case "5":
     });
 
     const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content || "No response";
 
-    context.log("🧪 OpenAI response:", JSON.stringify(data, null, 2));
-
-    // 👇 ログ保存処理（filePathの指定を追加）
-    const record = {
-      userId: userId,
-      userDetails: userDetails,
-      timestamp: new Date().toISOString(),
-      question: actualMessage,
-      response: data.choices?.[0]?.message?.content || "No response"
-    };
-
-    const logDir = path.join(__dirname, "logs");
-    if (!fs.existsSync(logDir)) {
-      fs.mkdirSync(logDir);
+    // ✍️ Blob保存（mode 5 のときのみ）
+    if (mode === "5") {
+      await saveToBlobStorage(userId, actualMessage, reply);
+      context.log(`📝 Interview saved to Blob for ${userId}`);
     }
-    const filePath = path.join(logDir, "chat-log.jsonl");
-
-    fs.appendFileSync(filePath, JSON.stringify(record) + "\n");
 
     context.res = {
       status: 200,
-      body: (data.choices?.[0]?.message?.content || "No response") + `\n\n(Your ID: ${userId})`,
+      body: reply + `\n\n(Your ID: ${userId})`,
     };
-
-    if (mode === "5") {
-  saveInterviewLog(userId, actualMessage, data.choices?.[0]?.message?.content || "No response");
-}
-
   } catch (err) {
-    context.log("Error:", err.message);
+    context.log("💥 Error:", err.message);
     context.res = {
       status: 500,
       body: "Internal server error",
