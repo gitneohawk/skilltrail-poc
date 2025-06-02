@@ -1,4 +1,18 @@
 {
+  "auth": {
+    "identityProviders": {
+      "github": {
+        "enabled": true
+      },
+      "google": {
+        "registration": {
+          "clientId": "532547962834-9f15h02cbad4ob336o295mn0qkptr3s8.apps.googleusercontent.com",
+          "clientSecretSettingName": "GOOGLE_CLIENT_SECRET"
+        },
+        "enabled": true
+      }
+    }
+  }
   "routes": [
     {
       "route": "/api/*",
@@ -21,13 +35,20 @@
       "rewrite": "/chat.html"
     }
   ],
-  "auth": {
-    "identityProviders": {
-      "github": {
-        "enabled": true
-      }
+"auth": {
+  "identityProviders": {
+    "github": {
+      "enabled": true
+    },
+    "google": {
+      "registration": {
+        "clientId": "532547962834-9f15h02cbad4ob336o295mn0qkptr3s8.apps.googleusercontent.com",
+        "clientSecretSettingName": "GOOGLE_CLIENT_SECRET"
+      },
+      "enabled": true
     }
-  },
+  }
+}
   "navigationFallback": {
     "rewrite": "/index.html"
   }
