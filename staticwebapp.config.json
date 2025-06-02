@@ -37,7 +37,8 @@
     },
     {
       "route": "/.auth/login/done",
-      "rewrite": "/chat.html"
+      "redirect": "/index.html",
+      "statusCode": 302
     }
   ],
   "navigationFallback": {
