@@ -33,11 +33,11 @@
     {
       "route": "/chat",
       "rewrite": "/chat.html"
-    }
+    },
     {
-  "route": "/.auth/login/done",
-  "rewrite": "/index.html"
-}
+      "route": "/.auth/login/done",
+      "rewrite": "/index.html"
+    }
   ],
   "navigationFallback": {
     "rewrite": "/index.html"
