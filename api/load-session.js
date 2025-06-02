@@ -1,11 +1,32 @@
 const { BlobServiceClient } = require("@azure/storage-blob");
 
 module.exports = async function (context, req) {
-  const userId = req.headers["x-ms-client-principal-id"];
+  const clientPrincipalHeader = req.headers["x-ms-client-principal"];
+  if (!clientPrincipalHeader) {
+    context.res = {
+      status: 401,
+      body: "Unauthorized: Missing client principal."
+    };
+    return;
+  }
+
+  let clientPrincipal;
+  try {
+    const decoded = Buffer.from(clientPrincipalHeader, "base64").toString("utf8");
+    clientPrincipal = JSON.parse(decoded);
+  } catch (e) {
+    context.res = {
+      status: 400,
+      body: "Invalid client principal."
+    };
+    return;
+  }
+
+  const userId = clientPrincipal.userId;
   if (!userId) {
     context.res = {
       status: 401,
-      body: "Unauthorized"
+      body: "Unauthorized: Missing user ID."
     };
     return;
   }
