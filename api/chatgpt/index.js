@@ -1,7 +1,6 @@
 const { BlobServiceClient } = require("@azure/storage-blob");
 const { v4: uuidv4 } = require("uuid");
 const fetch = require("node-fetch");
-const path = require("path");
 
 const getClientPrincipal = (req) => {
   const encoded = req.headers["x-ms-client-principal"];
@@ -15,7 +14,23 @@ const getClientPrincipal = (req) => {
   }
 };
 
-async function saveToBlobStorage(userId, userMessage, assistantReply) {
+function createSessionLog(userId, mode, interviewType, userMessage, assistantReply) {
+  const timestamp = new Date().toISOString();
+  return {
+    sessionId: uuidv4(),
+    userId,
+    mode,
+    interviewType,
+    createdAt: timestamp,
+    entries: [
+      { id: 1, role: "user", message: userMessage, timestamp },
+      { id: 2, role: "assistant", message: assistantReply, timestamp }
+    ],
+    metadata: {}
+  };
+}
+
+async function saveToBlobStorage(userId, mode, interviewType, userMessage, assistantReply) {
   const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
   const containerName = "interviews";
 
@@ -30,30 +45,22 @@ async function saveToBlobStorage(userId, userMessage, assistantReply) {
   const fileName = `${userId}_${timestamp}_${uuidv4()}.json`;
   const blockBlobClient = containerClient.getBlockBlobClient(fileName);
 
-const clientPrincipal = getClientPrincipal(req);
-if (!clientPrincipal) {
-  context.res = {
-    status: 401,
-    body: "ログインしていません。"
-  };
-  return;
-}
-
-  const data = {
-    timestamp,
-    userId,
-    userMessage,
-    assistantReply
-  };
-
-  await blockBlobClient.upload(JSON.stringify(data, null, 2), Buffer.byteLength(JSON.stringify(data)));
+  const sessionLog = createSessionLog(userId, mode, interviewType, userMessage, assistantReply);
+  await blockBlobClient.upload(JSON.stringify(sessionLog, null, 2), Buffer.byteLength(JSON.stringify(sessionLog)));
 }
 
 module.exports = async function (context, req) {
   const clientPrincipal = getClientPrincipal(req);
-  const userId = clientPrincipal?.userId || "anonymous";
-  const userDetails = clientPrincipal?.userDetails || "unknown";
+  if (!clientPrincipal) {
+    context.res = {
+      status: 401,
+      body: "ログインしていません。"
+    };
+    return;
+  }
 
+  const userId = clientPrincipal.userId || "anonymous";
+  const userDetails = clientPrincipal.userDetails || "unknown";
   context.log(`👤 User ID: ${userId}, Details: ${userDetails}`);
 
   try {
@@ -74,17 +81,23 @@ module.exports = async function (context, req) {
     const actualMessage = match?.[2] || userMessage;
 
     let systemPrompt = "";
+    let interviewType = "";
     switch (mode) {
+      case "1":
+        systemPrompt = "あなたは聞き上手で共感力の高いカウンセラーです。...";
+        break;
+      case "2":
+        systemPrompt = "あなたは相手のプライバシーを最優先し...";
+        break;
+      case "3":
+        systemPrompt = "あなたは有能で頼れるキャリアアドバイザーです。...";
+        break;
       case "4":
         systemPrompt = "あなたは仙人の老師であり…（中略）";
         break;
       case "5":
         systemPrompt = "あなたは熟練の人生相談仙人『老師』です。…";
-        break;
-      case "1":
-      case "2":
-      case "3":
-        systemPrompt = "（それぞれのカウンセラー設定）";
+        interviewType = "career";
         break;
       default:
         systemPrompt = "あなたは親切で頼れるアシスタントです。";
@@ -108,9 +121,8 @@ module.exports = async function (context, req) {
     const data = await response.json();
     const reply = data.choices?.[0]?.message?.content || "No response";
 
-    // ✍️ Blob保存（mode 5 のときのみ）
     if (mode === "5") {
-      await saveToBlobStorage(userId, actualMessage, reply);
+      await saveToBlobStorage(userId, mode, interviewType, actualMessage, reply);
       context.log(`📝 Interview saved to Blob for ${userId}`);
     }
 
