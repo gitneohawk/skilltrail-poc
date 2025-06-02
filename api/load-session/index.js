@@ -23,6 +23,7 @@ module.exports = async function (context, req) {
   }
 
   const userId = clientPrincipal.userId;
+  context.log("👤 userId:", userId);
   if (!userId) {
     context.res = {
       status: 401,
@@ -35,9 +36,11 @@ module.exports = async function (context, req) {
   const containerClient = blobServiceClient.getContainerClient("interviews");
 
   const messages = [];
+　context.log("📦 Searching blobs in container for userId prefix...");
 
   for await (const blob of containerClient.listBlobsFlat()) {
     if (blob.name.startsWith(userId)) {
+          context.log("✅ Matching blob found:", blob.name);
       const blockBlobClient = containerClient.getBlockBlobClient(blob.name);
       const downloadBlockBlobResponse = await blockBlobClient.download(0);
       const downloaded = await streamToString(downloadBlockBlobResponse.readableStreamBody);
