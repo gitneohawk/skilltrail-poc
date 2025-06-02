@@ -161,9 +161,15 @@
       .catch(error => {
         console.error("🔥 Error from AI:", error);
       });
-  }
-    async function checkLoginStatus() {
+  async function checkLoginStatus() {
+  try {
     const res = await fetch("/.auth/me");
+    const contentType = res.headers.get("content-type") || "";
+
+    if (!res.ok || !contentType.includes("application/json")) {
+      throw new Error("Not authenticated or invalid response.");
+    }
+
     const data = await res.json();
     const userDiv = document.createElement("div");
     userDiv.style.marginBottom = "10px";
@@ -175,7 +181,13 @@
     }
 
     document.body.insertBefore(userDiv, document.getElementById("chatBox"));
+  } catch (err) {
+    const errorDiv = document.createElement("div");
+    errorDiv.style.marginBottom = "10px";
+    errorDiv.innerHTML = `👻 ログイン情報の取得に失敗しました。<a href="/.auth/login/google">Googleでログイン</a>`;
+    document.body.insertBefore(errorDiv, document.getElementById("chatBox"));
   }
+}
 
   checkLoginStatus();
 </script>
