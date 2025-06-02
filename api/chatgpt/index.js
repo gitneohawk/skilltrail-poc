@@ -14,6 +14,48 @@ const getClientPrincipal = (req) => {
   }
 };
 
+async function fetchLatestSessionForUser(userId) {
+  const containerName = "interviews";
+  const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING);
+  const containerClient = blobServiceClient.getContainerClient(containerName);
+
+  let latestBlob = null;
+  let latestTimestamp = 0;
+
+  for await (const blob of containerClient.listBlobsFlat()) {
+    if (blob.name.startsWith(userId)) {
+      const match = blob.name.match(/_(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})_/);
+      const blobTimestamp = match ? new Date(match[1].replace(/-/g, ":")) : null;
+      if (blobTimestamp && blobTimestamp.getTime() > latestTimestamp) {
+        latestTimestamp = blobTimestamp.getTime();
+        latestBlob = blob.name;
+      }
+    }
+  }
+
+  if (latestBlob) {
+    const blobClient = containerClient.getBlobClient(latestBlob);
+    const downloadBlockBlobResponse = await blobClient.download();
+    const downloaded = await streamToBuffer(downloadBlockBlobResponse.readableStreamBody);
+    return JSON.parse(downloaded.toString());
+  } else {
+    return null;
+  }
+}
+
+function streamToBuffer(readableStream) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    readableStream.on("data", (data) => {
+      chunks.push(data instanceof Buffer ? data : Buffer.from(data));
+    });
+    readableStream.on("end", () => {
+      resolve(Buffer.concat(chunks));
+    });
+    readableStream.on("error", reject);
+  });
+}
+
 function createSessionLog(userId, mode, interviewType, userMessage, assistantReply) {
   const timestamp = new Date().toISOString();
   return {
