@@ -5,9 +5,12 @@
         "enabled": true
       },
       "google": {
+        "enabled": false
+      },
+      "microsoft": {
         "registration": {
-          "clientId": "532547962834-9f15h02cbad4ob336o295mn0qkptr3s8.apps.googleusercontent.com",
-          "clientSecretSettingName": "GOOGLE_CLIENT_SECRET"
+          "clientId": "07d5a5e3-48a2-4083-81d5-9a3bf15616e1",
+          "clientSecretSettingName": "MICROSOFT_CLIENT_SECRET"
         },
         "enabled": true
       }
