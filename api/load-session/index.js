@@ -44,7 +44,9 @@ module.exports = async function (context, req) {
       const blockBlobClient = containerClient.getBlockBlobClient(blob.name);
       const downloadBlockBlobResponse = await blockBlobClient.download(0);
       const downloaded = await streamToString(downloadBlockBlobResponse.readableStreamBody);
+      context.log("📥 blob content:", downloaded); // ← streamToString()後に出力
       const parsed = JSON.parse(downloaded);
+      context.log("🧾 parsed:", parsed);           // ← JSON.parse()直後
       messages.push(parsed);
     }
   }
