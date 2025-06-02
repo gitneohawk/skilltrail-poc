@@ -16,6 +16,10 @@
       color: #ff6f61;
     }
 
+    #authStatus {
+      margin-bottom: 15px;
+    }
+
     #chatBox {
       border: 1px solid #eee;
       padding: 15px;
@@ -40,11 +44,6 @@
     .assistant {
       text-align: left;
       color: #444;
-    }
-
-    .error {
-      color: red;
-      font-style: italic;
     }
 
     textarea {
@@ -86,6 +85,8 @@
 
   <h1>Kibun AI チャット</h1>
 
+  <div id="authStatus">🔍 ログイン状態を確認中...</div>
+
   <div id="chatBox"></div>
 
   <label for="modeSelect">今日の気分で選んでください：</label><br>
@@ -98,25 +99,19 @@
   </select>
 
   <textarea id="userInput" placeholder="相談内容を入力..."></textarea>
-  <button onclick="sendMessage()">送信</button>
+  <button id="sendButton">送信</button>
 
   <a href="/.auth/logout?post_logout_redirect_uri=/">ログアウト</a>
 
- 
 <script>
   const inputField = document.getElementById("userInput");
-  const sendButton = document.querySelector("button");
+  const sendButton = document.getElementById("sendButton");
   const chatBox = document.getElementById("chatBox");
   let isComposing = false;
+  let currentUser = null;
 
-  inputField.addEventListener("compositionstart", () => {
-    isComposing = true;
-  });
-
-  inputField.addEventListener("compositionend", () => {
-    isComposing = false;
-  });
-
+  inputField.addEventListener("compositionstart", () => isComposing = true);
+  inputField.addEventListener("compositionend", () => isComposing = false);
   inputField.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !isComposing) {
       event.preventDefault();
@@ -124,11 +119,14 @@
     }
   });
 
-  sendButton.addEventListener("click", () => {
-    sendMessage();
-  });
+  sendButton.addEventListener("click", sendMessage);
 
-  function sendMessage() {
+  async function sendMessage() {
+    if (!currentUser) {
+      alert("ログインが必要です。先にログインしてください。");
+      return;
+    }
+
     const message = inputField.value.trim();
     if (!message) return;
 
@@ -140,54 +138,47 @@
     userMessage.textContent = message;
     chatBox.appendChild(userMessage);
     chatBox.scrollTop = chatBox.scrollHeight;
-
     inputField.value = "";
 
-    fetch("/api/chatgpt", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ message: payload })
-    })
-      .then(res => res.text())
-      .then(reply => {
-        const botMessage = document.createElement("div");
-        botMessage.className = "assistant";
-        botMessage.textContent = reply;
-        chatBox.appendChild(botMessage);
-        chatBox.scrollTop = chatBox.scrollHeight;
-      })
-      .catch(error => {
-        console.error("🔥 Error from AI:", error);
+    try {
+      const res = await fetch("/api/chatgpt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: payload })
       });
+
+      const reply = await res.text();
+      const botMessage = document.createElement("div");
+      botMessage.className = "assistant";
+      botMessage.textContent = reply;
+      chatBox.appendChild(botMessage);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+    } catch (err) {
+      console.error("🔥 Error from AI:", err);
+    }
   }
 
   async function checkLoginStatus() {
     try {
       const res = await fetch("/.auth/me");
       const contentType = res.headers.get("content-type") || "";
+      const statusDiv = document.getElementById("authStatus");
 
       if (!res.ok || !contentType.includes("application/json")) {
-        throw new Error("Not authenticated or invalid response.");
+        throw new Error("Not authenticated.");
       }
 
       const data = await res.json();
-      const userDiv = document.createElement("div");
-      userDiv.style.marginBottom = "10px";
 
       if (data.clientPrincipal) {
-        userDiv.innerHTML = `👤 ログイン中: ${data.clientPrincipal.userDetails} (<em>${data.clientPrincipal.identityProvider}</em>)`;
+        currentUser = data.clientPrincipal;
+        statusDiv.innerHTML = `👤 ログイン中: ${currentUser.userDetails} (<em>${currentUser.identityProvider}</em>)`;
       } else {
-        userDiv.innerHTML = `👻 ログインしていません。<a href="/.auth/login/google?post_login_redirect_uri=https://proud-field-07a3baf10.6.azurestaticapps.net/chat.html">Googleでログイン</a>`;
+        statusDiv.innerHTML = `👻 ログインしていません。<a href="/.auth/login/google?post_login_redirect_uri=/chat.html">Googleでログイン</a>`;
       }
-
-      document.body.insertBefore(userDiv, document.getElementById("chatBox"));
     } catch (err) {
-      const errorDiv = document.createElement("div");
-      errorDiv.style.marginBottom = "10px";
-      errorDiv.innerHTML = `👻 ログイン情報の取得に失敗しました。<a href="/.auth/login/google">Googleでログイン</a>`;
-      document.body.insertBefore(errorDiv, document.getElementById("chatBox"));
+      document.getElementById("authStatus").innerHTML = `👻 認証確認に失敗しました。<a href="/.auth/login/google?post_login_redirect_uri=/chat.html">再ログイン</a>`;
     }
   }
 

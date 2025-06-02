@@ -34,11 +34,6 @@
       "route": "/chat",
       "rewrite": "/chat.html",
       "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/.auth/login/done",
-      "redirect": "/chat.html",
-      "statusCode": 302
     }
   ],
   "navigationFallback": {
