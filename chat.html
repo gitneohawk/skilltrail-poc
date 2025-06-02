@@ -179,7 +179,7 @@
       if (data.clientPrincipal) {
         userDiv.innerHTML = `👤 ログイン中: ${data.clientPrincipal.userDetails} (<em>${data.clientPrincipal.identityProvider}</em>)`;
       } else {
-        userDiv.innerHTML = `👻 ログインしていません。<a href="/.auth/login/google">Googleでログイン</a>`;
+        userDiv.innerHTML = `👻 ログインしていません。<a href="/.auth/login/google?post_login_redirect_uri=https://proud-field-07a3baf10.6.azurestaticapps.net/chat.html">Googleでログイン</a>`;
       }
 
       document.body.insertBefore(userDiv, document.getElementById("chatBox"));

@@ -37,7 +37,7 @@
     },
     {
       "route": "/.auth/login/done",
-      "redirect": "/index.html",
+      "redirect": "/chat.html",
       "statusCode": 302
     }
   ],
