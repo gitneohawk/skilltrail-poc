@@ -30,6 +30,63 @@ function createSessionLog(userId, mode, interviewType, userMessage, assistantRep
   };
 }
 
+async function appendToSessionLog(userId, mode, interviewType, userMessage, assistantReply) {
+  const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
+  const containerName = "interviews";
+
+  if (!AZURE_STORAGE_CONNECTION_STRING) {
+    throw new Error("Azure Storage connection string is missing.");
+  }
+
+  const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+  const containerClient = blobServiceClient.getContainerClient(containerName);
+
+  // 最新のセッションファイルを探す
+  let latestBlob = null;
+  let latestTime = 0;
+  for await (const blob of containerClient.listBlobsFlat()) {
+    if (blob.name.startsWith(userId)) {
+      const time = new Date(blob.properties.lastModified).getTime();
+      if (time > latestTime) {
+        latestTime = time;
+        latestBlob = blob.name;
+      }
+    }
+  }
+
+  if (!latestBlob) {
+    // セッションがないなら新規作成
+    await saveToBlobStorage(userId, mode, interviewType, userMessage, assistantReply);
+    return;
+  }
+
+  const blockBlobClient = containerClient.getBlockBlobClient(latestBlob);
+  const downloadResponse = await blockBlobClient.download();
+  const downloaded = await streamToString(downloadResponse.readableStreamBody);
+  const session = JSON.parse(downloaded);
+
+  const timestamp = new Date().toISOString();
+  const lastId = session.entries.length ? session.entries[session.entries.length - 1].id : 0;
+
+  session.entries.push({ id: lastId + 1, role: "user", message: userMessage, timestamp });
+  session.entries.push({ id: lastId + 2, role: "assistant", message: assistantReply, timestamp });
+
+  await blockBlobClient.upload(
+    JSON.stringify(session, null, 2),
+    Buffer.byteLength(JSON.stringify(session)),
+    { overwrite: true }
+  );
+}
+
+function streamToString(stream) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on("data", chunk => chunks.push(Buffer.from(chunk)));
+    stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    stream.on("error", reject);
+  });
+}
+
 async function saveToBlobStorage(userId, mode, interviewType, userMessage, assistantReply) {
   const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
   const containerName = "interviews";
@@ -134,7 +191,7 @@ case "5":
     const reply = data.choices?.[0]?.message?.content || "No response";
 
     if (mode === "5") {
-      await saveToBlobStorage(userId, mode, interviewType, actualMessage, reply);
+      await appendToSessionLog(userId, mode, interviewType, actualMessage, reply);
       context.log(`📝 Interview saved to Blob for ${userId}`);
     }
 
