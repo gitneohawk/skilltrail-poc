@@ -100,6 +100,8 @@
   <textarea id="userInput" placeholder="相談内容を入力..."></textarea>
   <button onclick="sendMessage()">送信</button>
 
+  <a href="/.auth/logout?post_logout_redirect_uri=/">ログアウト</a>
+
  
 <script>
   const inputField = document.getElementById("userInput");
@@ -160,6 +162,22 @@
         console.error("🔥 Error from AI:", error);
       });
   }
+    async function checkLoginStatus() {
+    const res = await fetch("/.auth/me");
+    const data = await res.json();
+    const userDiv = document.createElement("div");
+    userDiv.style.marginBottom = "10px";
+
+    if (data.clientPrincipal) {
+      userDiv.innerHTML = `👤 ログイン中: ${data.clientPrincipal.userDetails} (<em>${data.clientPrincipal.identityProvider}</em>)`;
+    } else {
+      userDiv.innerHTML = `👻 ログインしていません。<a href="/.auth/login/google">Googleでログイン</a>`;
+    }
+
+    document.body.insertBefore(userDiv, document.getElementById("chatBox"));
+  }
+
+  checkLoginStatus();
 </script>
 
 </body>

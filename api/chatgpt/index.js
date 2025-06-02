@@ -30,6 +30,15 @@ async function saveToBlobStorage(userId, userMessage, assistantReply) {
   const fileName = `${userId}_${timestamp}_${uuidv4()}.json`;
   const blockBlobClient = containerClient.getBlockBlobClient(fileName);
 
+const clientPrincipal = getClientPrincipal(req);
+if (!clientPrincipal) {
+  context.res = {
+    status: 401,
+    body: "ログインしていません。"
+  };
+  return;
+}
+
   const data = {
     timestamp,
     userId,
