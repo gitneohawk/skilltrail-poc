@@ -1,30 +1,45 @@
-const { fetchLatestSessionForUser } = require("./chatgpt/index");
+const { BlobServiceClient } = require("@azure/storage-blob");
 
 module.exports = async function (context, req) {
-  const clientPrincipalEncoded = req.headers["x-ms-client-principal"];
-  if (!clientPrincipalEncoded) {
+  const userId = req.headers["x-ms-client-principal-id"];
+  if (!userId) {
     context.res = {
       status: 401,
-      body: "Not authenticated"
+      body: "Unauthorized"
     };
     return;
   }
 
-  const decoded = Buffer.from(clientPrincipalEncoded, "base64").toString("utf8");
-  const principal = JSON.parse(decoded);
-  const userId = principal.userId;
+  const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING);
+  const containerClient = blobServiceClient.getContainerClient("interviews");
 
-  try {
-    const session = await fetchLatestSessionForUser(userId);
-    context.res = {
-      status: 200,
-      body: session || {}
-    };
-  } catch (err) {
-    context.log("Session fetch failed:", err);
-    context.res = {
-      status: 500,
-      body: "Failed to load session"
-    };
+  const messages = [];
+
+  for await (const blob of containerClient.listBlobsFlat()) {
+    if (blob.name.startsWith(userId)) {
+      const blockBlobClient = containerClient.getBlockBlobClient(blob.name);
+      const downloadBlockBlobResponse = await blockBlobClient.download(0);
+      const downloaded = await streamToString(downloadBlockBlobResponse.readableStreamBody);
+      const parsed = JSON.parse(downloaded);
+      messages.push(parsed);
+    }
   }
+
+  context.res = {
+    status: 200,
+    body: { messages }
+  };
 };
+
+async function streamToString(readableStream) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    readableStream.on("data", (data) => {
+      chunks.push(data.toString());
+    });
+    readableStream.on("end", () => {
+      resolve(chunks.join(""));
+    });
+    readableStream.on("error", reject);
+  });
+}
