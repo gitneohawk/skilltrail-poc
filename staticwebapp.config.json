@@ -32,14 +32,16 @@
     },
     {
       "route": "/chat",
-      "rewrite": "/chat.html"
+      "rewrite": "/chat.html",
+      "allowedRoles": ["authenticated"]
     },
     {
       "route": "/.auth/login/done",
-      "rewrite": "/index.html"
+      "rewrite": "/chat.html"
     }
   ],
   "navigationFallback": {
-    "rewrite": "/index.html"
+    "rewrite": "/index.html",
+    "exclude": ["/api/*", "/.auth/*"]
   }
 }
