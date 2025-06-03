@@ -14,18 +14,25 @@ module.exports = async function (context, req) {
     return;
   }
 
-  const prompt = `以下の会話ログから、ユーザーの職歴を複数の勤務先に分けてJSONで出力してください。
-出力形式は以下の構造でお願いします。
+const prompt = `以下の会話ログから、ユーザーが関わった複数の勤務先（会社）ごとに職歴を分けてください。
+それぞれの「会社名」「役職」「在籍期間」「職務内容（説明）」を抽出し、JSON形式で出力してください。
+会話ログ内に複数社の記載がある場合、それぞれを個別の職歴として扱ってください。
 
+出力例:
 {
   "workHistory": [
     {
-      "company": "...",
-      "role": "...",
-      "duration": "...",
-      "description": "..."
+      "company": "A社",
+      "role": "営業",
+      "duration": "2015-2018",
+      "description": "法人営業として新規顧客を開拓しました。"
     },
-    ...
+    {
+      "company": "B株式会社",
+      "role": "エンジニア",
+      "duration": "2018-2022",
+      "description": "サーバーサイド開発を担当しました。"
+    }
   ]
 }
 
