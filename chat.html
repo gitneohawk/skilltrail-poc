@@ -110,8 +110,7 @@
             credentials: "include"
           })
             .then(res => res.json())
-            .then(data => {
-  // 👇 セッションデータに entries がある場合、それを展開して表示
+  .then(data => {
   data.messages.forEach(msg => {
     if (msg.entries && Array.isArray(msg.entries)) {
       msg.entries.forEach(entry => {
@@ -119,6 +118,10 @@
       });
     }
   });
+  // 🔽 これを追加！
+  populateEditorFromMessages(
+    data.messages.flatMap(msg => msg.entries || [])
+  );
 })
           
             .catch(err => {
@@ -180,6 +183,76 @@
     });
 
     }
+
+    function extractStructuredData(messages) {
+  const structured = {
+    workHistory: []
+  };
+
+  let currentJob = null;
+
+  messages.forEach(entry => {
+    const msg = entry.message;
+    if (msg.includes("入社")) {
+      currentJob = {
+        company: msg.match(/(\S+)に入社/) ? msg.match(/(\S+)に入社/)[1] : "不明",
+        role: "",
+        duration: "",
+        description: msg
+      };
+      structured.workHistory.push(currentJob);
+    } else if (currentJob && msg.includes("システム開発")) {
+      currentJob.description += " " + msg;
+    }
+  });
+
+  return structured;
+}
   </script>
+  <hr>
+<h2>📝 編集可能な職歴情報</h2>
+<div id="workHistoryEditor"></div>
+<button onclick="saveWorkHistory()">💾 保存</button>
+
+<script>
+  let currentStructuredData = {
+    workHistory: []
+  };
+
+  function renderWorkHistoryEditor(data) {
+    const container = document.getElementById("workHistoryEditor");
+    container.innerHTML = "";
+
+    data.workHistory.forEach((job, index) => {
+      const section = document.createElement("div");
+      section.innerHTML = `
+        <h4>職歴 ${index + 1}</h4>
+        <label>会社名: <input type="text" value="${job.company || ''}" id="company-${index}" /></label><br>
+        <label>役職: <input type="text" value="${job.role || ''}" id="role-${index}" /></label><br>
+        <label>在籍期間: <input type="text" value="${job.duration || ''}" id="duration-${index}" /></label><br>
+        <label>詳細: <textarea id="desc-${index}">${job.description || ''}</textarea></label><br><br>
+      `;
+      container.appendChild(section);
+    });
+  }
+
+  function saveWorkHistory() {
+    currentStructuredData.workHistory = currentStructuredData.workHistory.map((job, index) => ({
+      company: document.getElementById(`company-${index}`).value,
+      role: document.getElementById(`role-${index}`).value,
+      duration: document.getElementById(`duration-${index}`).value,
+      description: document.getElementById(`desc-${index}`).value
+    }));
+
+    console.log("💾 保存された職歴:", currentStructuredData);
+    alert("保存しました！（ダミー）");
+  }
+
+  // 将来的にAIから得たmessagesを使って構造化データ作成
+  function populateEditorFromMessages(messages) {
+    currentStructuredData = extractStructuredData(messages);
+    renderWorkHistoryEditor(currentStructuredData);
+  }
+</script>
 </body>
 </html>
