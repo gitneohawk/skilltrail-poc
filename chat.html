@@ -1,328 +1,125 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <div class="text-blue-500">test</div>
-  <title>Kibun AI Chat</title>
-  <div class="text-blue-500 bg-blue-50 border border-blue-200 p-4 rounded-xl shadow-sm font-medium text-lg mb-4">
-  🚀 これはデモ表示です（ここにロゴかキャッチコピーが入るかも？）
-</div>
-  <style>
-    /* CSSは省略せず全部使ってOK。省略したければ言って。 */
-    body {
-      font-family: 'Helvetica Neue', sans-serif;
-      background-color: #fffdf9;
-      margin: 0;
-      padding: 20px;
-    }
-    h1 { color: #ff6f61; }
-#chatBox {
-  border: 1px solid #eee;
-  padding: 20px;
-  height: 500px;
-  overflow-y: auto;
-  background-color: #fafafa;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  margin-bottom: 20px;
-}
- .user {
-  text-align: right;
-  background-color: #f0f0f0;
-  padding: 10px 15px;
-  border-radius: 12px;
-  margin: 10px;
-  display: inline-block;
-  max-width: 80%;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>SkillTrail チャット</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50 font-sans min-h-screen flex flex-col">
 
-.assistant {
-  text-align: left;
-  background-color: #ffffff;
-  padding: 10px 15px;
-  border-radius: 12px;
-  margin: 10px;
-  display: inline-block;
-  max-width: 80%;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-    .user { text-align: right; color: #333; }
-    .assistant { text-align: left; color: #444; }
-    textarea {
-      width: 100%;
-      height: 60px;
-      padding: 10px;
-      font-size: 16px;
-      resize: vertical;
-      box-sizing: border-box;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      margin-bottom: 10px;
-    }
-    button {
-      padding: 10px 20px;
-      background-color: #ff6f61;
-      border: none;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-      border-radius: 6px;
-    }
-    button:hover {
-      background-color: #ff3f2f;
-    }
-    select {
-      padding: 8px;
-      font-size: 14px;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-  </style>
-</head>
-<body>
+    <!-- ヘッダー -->
+    <header class="flex justify-between items-center p-4 bg-white shadow-md">
+      <h1 class="text-xl font-bold text-orange-500">SkillTrail チャット</h1>
+      <div id="authStatus" class="text-sm text-gray-600">🔍 ログイン確認中...</div>
+    </header>
 
-  <h1>Kibun AI チャット</h1>
-  <div id="authStatus">🔍 ログイン確認中...</div>
-  <div id="chatBox"></div>
+    <!-- メイン -->
+    <main class="flex-grow container mx-auto p-4">
+      <div id="chatBox" class="bg-white rounded-xl shadow-inner p-4 mb-4 h-96 overflow-y-auto"></div>
 
-  <label for="modeSelect">今日の気分で選んでください：</label><br>
-  <select id="modeSelect">
-    <option value="1">① とにかく話を聞いてほしい</option>
-    <option value="2">② 情報は控えめに、助言だけ欲しい</option>
-    <option value="3">③ 全力で情報提供して、的確なアドバイスが欲しい</option>
-    <option value="4">④ 老師、助けて！</option>
-    <option value="5">⑤ 真面目に転職考えたいので、職歴のインタビューしてほしい！</option>
-  </select>
+      <div class="mb-2">
+        <label for="modeSelect" class="block text-sm font-medium text-gray-700 mb-1">今日の気分で選んでください：</label>
+        <select id="modeSelect" class="w-full border border-gray-300 rounded-md p-2 mb-2">
+          <option value="1">① とにかく話を聞いてほしい</option>
+          <option value="2">② 情報は控えめに、助言だけ欲しい</option>
+          <option value="3">③ 全力で情報提供して、的確なアドバイスが欲しい</option>
+          <option value="4">④ 老師、助けて！</option>
+          <option value="5">⑤ 真面目に転職考えたいので、職歴のインタビューしてほしい！</option>
+        </select>
+        <textarea id="userInput" class="w-full border rounded-md p-2 mb-2" rows="3" placeholder="相談内容を入力..."></textarea>
+        <div class="flex gap-2">
+          <button id="sendButton" class="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600">送信</button>
+          <button id="extractBtn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400">構造化データを見る</button>
+        </div>
+      </div>
 
-  <textarea id="userInput" placeholder="相談内容を入力..."></textarea>
-  <button id="sendButton">送信</button>
-  <button id="extractBtn">構造化データを見る</button>
-  <pre id="structuredOutput"></pre>
+      <pre id="structuredOutput" class="text-sm bg-gray-100 p-2 rounded-md mt-4"></pre>
+    </main>
 
-  <script>
-    const inputField = document.getElementById("userInput");
-    const sendButton = document.getElementById("sendButton");
-    const chatBox = document.getElementById("chatBox");
-    const statusDiv = document.getElementById("authStatus");
-    let isComposing = false;
+    <!-- フッター -->
+    <footer class="text-center text-xs text-gray-400 py-4 border-t">
+      &copy; 2025 SkillTrail
+    </footer>
 
-    inputField.addEventListener("compositionstart", () => isComposing = true);
-    inputField.addEventListener("compositionend", () => isComposing = false);
-    inputField.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !isComposing && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage();
-      }
-    });
+    <!-- 認証状態とチャットJS -->
+    <script>
+      const inputField = document.getElementById("userInput");
+      const sendButton = document.getElementById("sendButton");
+      const chatBox = document.getElementById("chatBox");
+      const statusDiv = document.getElementById("authStatus");
+      let isComposing = false;
 
-    sendButton.addEventListener("click", () => sendMessage());
-
-    async function checkLoginStatus() {
-      try {
-        const res = await fetch("/.auth/me");
-        const data = await res.json();
-        if (data.clientPrincipal) {
-          const name = data.clientPrincipal.userDetails;
-          statusDiv.innerHTML = `✅ ようこそ ${name} さん！<a href="/.auth/logout?post_logout_redirect_uri=/">ログアウト</a>`;
-
-          // 👇 ログインしている場合のみセッションをロード
-          fetch("/api/load-session", {
-            credentials: "include"
-          })
-            .then(res => res.json())
-  .then(data => {
-  data.messages.forEach(msg => {
-    if (msg.entries && Array.isArray(msg.entries)) {
-      msg.entries.forEach(entry => {
-        appendMessage(entry.message, entry.role);
-      });
-    }
-  });
-  // 🔽 これを追加！
-  populateEditorFromMessages(
-    data.messages.flatMap(msg => msg.entries || [])
-  );
-})
-          
-            .catch(err => {
-              console.warn("💤 前回セッションの読み込みに失敗:", err);
-            });
-
-        } else {
-          statusDiv.innerHTML = `👻 ログインしていません。<a href="/.auth/login/aad?post_login_redirect_uri=/chat.html">Microsoftでログイン</a>`;
+      inputField.addEventListener("compositionstart", () => isComposing = true);
+      inputField.addEventListener("compositionend", () => isComposing = false);
+      inputField.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !isComposing && !event.shiftKey) {
+          event.preventDefault();
+          sendMessage();
         }
-      } catch (e) {
-        statusDiv.innerHTML = `👻 認証確認に失敗しました。<a href="/.auth/login/aad?post_login_redirect_uri=/chat.html">再ログイン</a>`;
+      });
+      sendButton.addEventListener("click", () => sendMessage());
+
+      async function checkLoginStatus() {
+        try {
+          const res = await fetch("/.auth/me", { credentials: "include" });
+          const data = await res.json();
+          if (data.clientPrincipal) {
+            const name = data.clientPrincipal.userDetails;
+            statusDiv.innerHTML = `✅ ようこそ ${name} さん！ <a href="/.auth/logout?post_logout_redirect_uri=/">ログアウト</a>`;
+
+            const session = await fetch("/api/load-session", { credentials: "include" });
+            const json = await session.json();
+            json.messages.forEach(msg => {
+              if (msg.entries && Array.isArray(msg.entries)) {
+                msg.entries.forEach(entry => {
+                  appendMessage(entry.message, entry.role);
+                });
+              }
+            });
+            populateEditorFromMessages(json.messages.flatMap(m => m.entries || []));
+          } else {
+            window.location.href = "/login.html";
+          }
+        } catch (e) {
+          window.location.href = "/login.html";
+        }
       }
-    }
 
-    checkLoginStatus();
+      function appendMessage(content, sender) {
+        const div = document.createElement("div");
+        div.className = sender === "user" ? "text-right mb-2" : "text-left mb-2";
+        div.innerHTML = `<span class="inline-block px-3 py-2 rounded-lg ${sender === "user" ? "bg-gray-200 text-gray-900" : "bg-white border"} max-w-xl">${content}</span>`;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
 
-    function appendMessage(content, sender) {
-      const div = document.createElement("div");
-      div.className = sender === "user" ? "user" : "assistant";
-      div.textContent = content;
-      chatBox.appendChild(div);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+      async function sendMessage() {
+        const message = inputField.value.trim();
+        if (!message) return;
+        const mode = document.getElementById("modeSelect").value;
+        if (mode === "5") {
+          const res = await fetch("/.auth/me");
+          const auth = await res.json();
+          if (!auth.clientPrincipal) {
+            alert("職歴インタビューにはログインが必要です。Microsoftアカウントでログインしてください！");
+            return;
+          }
+        }
+        appendMessage(message, "user");
+        inputField.value = "";
 
-  async function sendMessage() {
-  const message = inputField.value.trim();
-  if (!message) return;
+        const response = await fetch("/api/chatgpt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ message: `mode:${mode}, ${message}` })
+        });
+        const reply = await response.text();
+        appendMessage(reply, "assistant");
+      }
 
-  const mode = document.getElementById("modeSelect").value;
-  const formattedMessage = `mode:${mode}, ${message}`;
-
-  // 👇 mode 5はログイン必須
-  if (mode === "5") {
-    const res = await fetch("/.auth/me");
-    const auth = await res.json();
-    if (!auth.clientPrincipal) {
-      alert("職歴インタビューにはログインが必要です。Microsoftアカウントでログインしてください！");
-      return;
-    }
-  }
-
-  appendMessage(message, "user");
-  inputField.value = "";
-
-  fetch("/api/chatgpt", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    credentials: "include",
-    body: JSON.stringify({ message: formattedMessage })
-  })
-    .then(res => res.text())
-    .then(reply => {
-      appendMessage(reply, "assistant");
-    })
-    .catch(error => {
-      console.error("🔥 AI爆発:", error);
-    });
-
-    }
-
-function extractStructuredData(messages) {
-  const structured = { workHistory: [] };
-  let currentJob = null;
-
-  messages.forEach(entry => {
-    const msg = entry.message;
-
-    // 新しい職歴の開始を検出
-    const entryMatch = msg.match(/(.+?)(?:に)?(入社|就職|配属|転職|入った|働いています)/);
-    if (entryMatch) {
-      if (currentJob) structured.workHistory.push(currentJob);
-
-      currentJob = {
-        company: entryMatch[1].trim(),
-        role: "",
-        duration: "",
-        description: msg
-      };
-      return;
-    }
-
-    // 役職の推定
-    const roleMatch = msg.match(/(マネージャー|SE|営業|リーダー|ディレクター|デザイナー|エンジニア|PM|QA|コンサルタント)/);
-    if (roleMatch && currentJob) {
-      currentJob.role = roleMatch[1];
-    }
-
-    // 在籍期間っぽいもの
-    const durationMatch = msg.match(/(\d+年(?:間)?|数年|半年|1年ほど|長年)/);
-    if (durationMatch && currentJob) {
-      currentJob.duration = durationMatch[1];
-    }
-
-    // 補足情報は description に追加
-    if (currentJob) {
-      currentJob.description += " " + msg;
-    }
-  });
-
-  if (currentJob) structured.workHistory.push(currentJob);
-
-  return structured;
-}
-  </script>
-  <hr>
-<h2>📝 編集可能な職歴情報</h2>
-<div id="workHistoryEditor"></div>
-<button onclick="saveWorkHistory()">💾 保存</button>
-
-<script>
-  let currentStructuredData = {
-    workHistory: []
-  };
-
-  function renderWorkHistoryEditor(data) {
-    const container = document.getElementById("workHistoryEditor");
-    container.innerHTML = "";
-
-    data.workHistory.forEach((job, index) => {
-      const section = document.createElement("div");
-      section.innerHTML = `
-        <h4>職歴 ${index + 1}</h4>
-        <label>会社名: <input type="text" value="${job.company || ''}" id="company-${index}" /></label><br>
-        <label>役職: <input type="text" value="${job.role || ''}" id="role-${index}" /></label><br>
-        <label>在籍期間: <input type="text" value="${job.duration || ''}" id="duration-${index}" /></label><br>
-        <label>詳細: <textarea id="desc-${index}">${job.description || ''}</textarea></label><br><br>
-      `;
-      container.appendChild(section);
-    });
-  }
-
-  function saveWorkHistory() {
-    currentStructuredData.workHistory = currentStructuredData.workHistory.map((job, index) => ({
-      company: document.getElementById(`company-${index}`).value,
-      role: document.getElementById(`role-${index}`).value,
-      duration: document.getElementById(`duration-${index}`).value,
-      description: document.getElementById(`desc-${index}`).value
-    }));
-
-    console.log("💾 保存された職歴:", currentStructuredData);
-    alert("保存しました！（ダミー）");
-  }
-
-  // 将来的にAIから得たmessagesを使って構造化データ作成
-  function populateEditorFromMessages(messages) {
-    currentStructuredData = extractStructuredData(messages);
-    renderWorkHistoryEditor(currentStructuredData);
-  }
-  document.getElementById("extractBtn").addEventListener("click", async () => {
-  const messages = Array.from(document.querySelectorAll("#chatBox .user, #chatBox .assistant")).map((el, idx) => {
-    return {
-      id: idx + 1,
-      role: el.classList.contains("user") ? "user" : "assistant",
-      message: el.textContent.trim(),
-      timestamp: new Date().toISOString()
-    };
-  });
-
-  const res = await fetch("/api/extract-structure", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages })
-  });
-
-  const data = await res.json();
-document.getElementById("structuredOutput").textContent = JSON.stringify(data, null, 2);
-
-// 構造化データがあればエディタに反映
-if (data.workHistory && data.workHistory.length > 0) {
-  currentStructuredData = data;
-  renderWorkHistoryEditor(currentStructuredData);
-
-  // スクロールしてエディタへ
-  const editorSection = document.getElementById("workHistoryEditor");
-  editorSection.scrollIntoView({ behavior: "smooth" });
-}});
-</script>
-</body>
+      checkLoginStatus();
+    </script>
+  </body>
 </html>
