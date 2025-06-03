@@ -42,24 +42,30 @@ ${messages.map(m => `${m.role}: ${m.message}`).join("\n")}
       ]
     });
 
-    const responseText = chatCompletion.choices[0].message.content;
-    context.log("📦 OpenAI raw response:", responseText);
+const responseText = chatCompletion.choices[0].message.content;
+context.log("📦 OpenAI raw response:", responseText);
 
-    let parsed;
-    try {
-      parsed = JSON.parse(responseText);
-    } catch (e) {
-      context.log("❌ JSON parse error:", e.message);
-      context.res = {
-        status: 500,
-        body: {
-          error: "JSON parse error",
-          message: e.message,
-          raw: responseText
-        }
-      };
-      return;
+let parsed;
+try {
+  const cleanedText = responseText
+    .replace(/^```json\s*/i, '')
+    .replace(/^```/, '')
+    .replace(/```$/, '')
+    .trim();
+    
+  parsed = JSON.parse(cleanedText);
+} catch (e) {
+  context.log("❌ JSON parse error:", e.message);
+  context.res = {
+    status: 500,
+    body: {
+      error: "JSON parse error",
+      message: e.message,
+      raw: responseText
     }
+  };
+  return;
+}
 
     context.res = {
       headers: { "Content-Type": "application/json" },
