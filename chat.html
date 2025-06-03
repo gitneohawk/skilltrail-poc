@@ -155,7 +155,9 @@ async function checkLoginStatus() {
 
     checkLoginStatus();
 
-fetch("/api/load-session")
+fetch("/api/load-session", {
+  credentials: "include" // ← これが超重要
+})
   .then(res => res.json())
   .then(data => {
     if (data && data.messages && data.messages.length) {
