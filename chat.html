@@ -78,6 +78,8 @@
 
   <textarea id="userInput" placeholder="相談内容を入力..."></textarea>
   <button id="sendButton">送信</button>
+  <button id="extractBtn">構造化データを見る</button>
+  <pre id="structuredOutput"></pre>
 
   <script>
     const inputField = document.getElementById("userInput");
@@ -184,27 +186,46 @@
 
     }
 
-    function extractStructuredData(messages) {
-  const structured = {
-    workHistory: []
-  };
-
+function extractStructuredData(messages) {
+  const structured = { workHistory: [] };
   let currentJob = null;
 
   messages.forEach(entry => {
     const msg = entry.message;
-    if (msg.includes("入社")) {
+
+    // 新しい職歴の開始を検出
+    const entryMatch = msg.match(/(.+?)(?:に)?(入社|就職|配属|転職|入った)/);
+    if (entryMatch) {
+      if (currentJob) structured.workHistory.push(currentJob);
+
       currentJob = {
-        company: msg.match(/(\S+)に入社/) ? msg.match(/(\S+)に入社/)[1] : "不明",
+        company: entryMatch[1].trim(),
         role: "",
         duration: "",
         description: msg
       };
-      structured.workHistory.push(currentJob);
-    } else if (currentJob && msg.includes("システム開発")) {
+      return;
+    }
+
+    // 役職の推定
+    const roleMatch = msg.match(/(マネージャー|SE|営業|リーダー|ディレクター|デザイナー|エンジニア|PM|QA|コンサルタント)/);
+    if (roleMatch && currentJob) {
+      currentJob.role = roleMatch[1];
+    }
+
+    // 在籍期間っぽいもの
+    const durationMatch = msg.match(/(\d+年(?:間)?|数年|半年|1年ほど|長年)/);
+    if (durationMatch && currentJob) {
+      currentJob.duration = durationMatch[1];
+    }
+
+    // 補足情報は description に追加
+    if (currentJob) {
       currentJob.description += " " + msg;
     }
   });
+
+  if (currentJob) structured.workHistory.push(currentJob);
 
   return structured;
 }
@@ -253,6 +274,25 @@
     currentStructuredData = extractStructuredData(messages);
     renderWorkHistoryEditor(currentStructuredData);
   }
+  document.getElementById("extractBtn").addEventListener("click", async () => {
+  const messages = Array.from(document.querySelectorAll("#chatBox .user, #chatBox .assistant")).map((el, idx) => {
+    return {
+      id: idx + 1,
+      role: el.classList.contains("user") ? "user" : "assistant",
+      message: el.textContent.trim(),
+      timestamp: new Date().toISOString()
+    };
+  });
+
+  const res = await fetch("/api/extract-structure", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages })
+  });
+
+  const data = await res.json();
+  document.getElementById("structuredOutput").textContent = JSON.stringify(data, null, 2);
+});
 </script>
 </body>
 </html>
