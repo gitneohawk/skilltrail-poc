@@ -291,8 +291,17 @@ function extractStructuredData(messages) {
   });
 
   const data = await res.json();
-  document.getElementById("structuredOutput").textContent = JSON.stringify(data, null, 2);
-});
+document.getElementById("structuredOutput").textContent = JSON.stringify(data, null, 2);
+
+// 構造化データがあればエディタに反映
+if (data.workHistory && data.workHistory.length > 0) {
+  currentStructuredData = data;
+  renderWorkHistoryEditor(currentStructuredData);
+
+  // スクロールしてエディタへ
+  const editorSection = document.getElementById("workHistoryEditor");
+  editorSection.scrollIntoView({ behavior: "smooth" });
+}});
 </script>
 </body>
 </html>
