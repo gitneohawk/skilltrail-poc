@@ -17,20 +17,37 @@
       padding: 20px;
     }
     h1 { color: #ff6f61; }
-    #chatBox {
-      border: 1px solid #eee;
-      padding: 15px;
-      height: 400px;
-      overflow-y: auto;
-      background-color: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      margin-bottom: 10px;
-    }
-    .user, .assistant {
-      margin: 10px 0;
-      line-height: 1.6;
-    }
+#chatBox {
+  border: 1px solid #eee;
+  padding: 20px;
+  height: 500px;
+  overflow-y: auto;
+  background-color: #fafafa;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+}
+ .user {
+  text-align: right;
+  background-color: #f0f0f0;
+  padding: 10px 15px;
+  border-radius: 12px;
+  margin: 10px;
+  display: inline-block;
+  max-width: 80%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.assistant {
+  text-align: left;
+  background-color: #ffffff;
+  padding: 10px 15px;
+  border-radius: 12px;
+  margin: 10px;
+  display: inline-block;
+  max-width: 80%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
     .user { text-align: right; color: #333; }
     .assistant { text-align: left; color: #444; }
     textarea {
