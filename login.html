@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ログイン - SkillTrail</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.3/dist/tailwind.min.css" rel="stylesheet">
+  </head>
+  <body class="bg-gray-50 font-sans">
+    <div class="min-h-screen flex flex-col items-center justify-center px-4">
+      <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl">
+        <h2 class="text-2xl font-bold mb-6 text-gray-900 text-center">ログイン / 新規登録</h2>
+
+        <div class="space-y-4">
+          <button class="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-xl p-3 hover:bg-gray-100">
+            <img src="/assets/microsoft-logo.svg" alt="Microsoft logo" class="w-5 h-5" />
+            Microsoft でログイン
+          </button>
+          <button disabled class="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-xl p-3 hover:bg-gray-100 opacity-50 cursor-not-allowed">
+            <img src="/assets/google-logo.svg" alt="Google logo" class="w-5 h-5" />
+            Google でログイン
+          </button>
+          <button disabled class="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-xl p-3 hover:bg-gray-100 opacity-50 cursor-not-allowed">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12H8m0 0l4-4m-4 4l4 4" /></svg>
+            メールアドレスでログイン
+          </button>
+        </div>
+
+        <div class="text-center mt-6 text-sm">
+          アカウントをお持ちでない方は
+          <a href="register.html" class="text-blue-600 hover:underline">新規登録</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
