@@ -1,7 +1,8 @@
-const { OpenAIClient } = require("@azure/openai");
-const { AzureKeyCredential } = require("@azure/core-auth"); // ←別パッケージ！
+const { OpenAI } = require("openai");
 
-const client = new OpenAIClient(endpoint, new AzureKeyCredential(apiKey));
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 module.exports = async function (context, req) {
   const messages = req.body.messages;
@@ -12,12 +13,6 @@ module.exports = async function (context, req) {
     };
     return;
   }
-
-  const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-  const apiKey = process.env.AZURE_OPENAI_API_KEY;
-  const deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
-
-  const client = new OpenAIClient(endpoint, new AzureKeyCredential(apiKey));
 
   const prompt = `以下の会話ログから、ユーザーの職歴を複数の勤務先に分けてJSONで出力してください。
 出力形式は以下の構造でお願いします。
@@ -38,40 +33,43 @@ module.exports = async function (context, req) {
 ${messages.map(m => `${m.role}: ${m.message}`).join("\n")}
 `;
 
- try {
-  const completion = await client.getChatCompletions(deployment, [
-    { role: "system", content: "あなたは職歴情報の構造化に特化したアシスタントです。" },
-    { role: "user", content: prompt }
-  ]);
-
-  const responseText = completion.choices[0].message.content;
-  context.log("📦 OpenAI raw response:", responseText);
-
-  let parsed;
   try {
-    parsed = JSON.parse(responseText);
-  } catch (e) {
-    context.log("❌ JSON parse error:", e.message);
+    const chatCompletion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content: "あなたは職歴情報の構造化に特化したアシスタントです。" },
+        { role: "user", content: prompt }
+      ]
+    });
+
+    const responseText = chatCompletion.choices[0].message.content;
+    context.log("📦 OpenAI raw response:", responseText);
+
+    let parsed;
+    try {
+      parsed = JSON.parse(responseText);
+    } catch (e) {
+      context.log("❌ JSON parse error:", e.message);
+      context.res = {
+        status: 500,
+        body: {
+          error: "JSON parse error",
+          message: e.message,
+          raw: responseText
+        }
+      };
+      return;
+    }
+
+    context.res = {
+      headers: { "Content-Type": "application/json" },
+      body: parsed
+    };
+  } catch (error) {
+    context.log("❌ OpenAI構造化処理で致命的エラー:", error);
     context.res = {
       status: 500,
-      body: {
-        error: "JSON parse error",
-        message: e.message,
-        raw: responseText
-      }
+      body: { error: "構造化処理中にOpenAI呼び出しでエラーが発生しました。" }
     };
-    return;
   }
-
-  context.res = {
-    headers: { "Content-Type": "application/json" },
-    body: parsed
-  };
-} catch (error) {
-  context.log("❌ OpenAI構造化処理で致命的エラー:", error);
-  context.res = {
-    status: 500,
-    body: { error: "構造化処理中にOpenAI呼び出しでエラーが発生しました。" }
-  };
-}
 };
