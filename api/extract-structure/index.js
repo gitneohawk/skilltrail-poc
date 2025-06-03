@@ -1,4 +1,7 @@
-const { OpenAIClient, AzureKeyCredential } = require("@azure/openai");
+const { OpenAIClient } = require("@azure/openai");
+const { AzureKeyCredential } = require("@azure/core-auth"); // ←別パッケージ！
+
+const client = new OpenAIClient(endpoint, new AzureKeyCredential(apiKey));
 
 module.exports = async function (context, req) {
   const messages = req.body.messages;
