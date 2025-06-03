@@ -194,7 +194,7 @@ function extractStructuredData(messages) {
     const msg = entry.message;
 
     // 新しい職歴の開始を検出
-    const entryMatch = msg.match(/(.+?)(?:に)?(入社|就職|配属|転職|入った)/);
+    const entryMatch = msg.match(/(.+?)(?:に)?(入社|就職|配属|転職|入った|働いています)/);
     if (entryMatch) {
       if (currentJob) structured.workHistory.push(currentJob);
 
