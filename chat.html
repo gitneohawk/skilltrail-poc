@@ -111,13 +111,16 @@
           })
             .then(res => res.json())
             .then(data => {
-              if (data && data.messages && data.messages.length) {
-                data.messages.forEach(msg => {
-                  appendMessage(msg.user, "user");
-                  appendMessage(msg.ai, "assistant");
-                });
-              }
-            })
+  // 👇 セッションデータに entries がある場合、それを展開して表示
+  data.messages.forEach(msg => {
+    if (msg.entries && Array.isArray(msg.entries)) {
+      msg.entries.forEach(entry => {
+        appendMessage(entry.message, entry.role);
+      });
+    }
+  });
+})
+          
             .catch(err => {
               console.warn("💤 前回セッションの読み込みに失敗:", err);
             });
