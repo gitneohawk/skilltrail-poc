@@ -5,17 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Kibun AI Chat</title>
   <style>
+    /* CSSは省略せず全部使ってOK。省略したければ言って。 */
     body {
       font-family: 'Helvetica Neue', sans-serif;
       background-color: #fffdf9;
       margin: 0;
       padding: 20px;
     }
-
-    h1 {
-      color: #ff6f61;
-    }
-
+    h1 { color: #ff6f61; }
     #chatBox {
       border: 1px solid #eee;
       padding: 15px;
@@ -26,22 +23,12 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
       margin-bottom: 10px;
     }
-
     .user, .assistant {
       margin: 10px 0;
       line-height: 1.6;
     }
-
-    .user {
-      text-align: right;
-      color: #333;
-    }
-
-    .assistant {
-      text-align: left;
-      color: #444;
-    }
-
+    .user { text-align: right; color: #333; }
+    .assistant { text-align: left; color: #444; }
     textarea {
       width: 100%;
       height: 60px;
@@ -53,7 +40,6 @@
       border-radius: 8px;
       margin-bottom: 10px;
     }
-
     button {
       padding: 10px 20px;
       background-color: #ff6f61;
@@ -63,11 +49,9 @@
       cursor: pointer;
       border-radius: 6px;
     }
-
     button:hover {
       background-color: #ff3f2f;
     }
-
     select {
       padding: 8px;
       font-size: 14px;
@@ -80,7 +64,6 @@
 <body>
 
   <h1>Kibun AI チャット</h1>
-
   <div id="authStatus">🔍 ログイン確認中...</div>
   <div id="chatBox"></div>
 
@@ -103,14 +86,8 @@
     const statusDiv = document.getElementById("authStatus");
     let isComposing = false;
 
-    inputField.addEventListener("compositionstart", () => {
-      isComposing = true;
-    });
-
-    inputField.addEventListener("compositionend", () => {
-      isComposing = false;
-    });
-
+    inputField.addEventListener("compositionstart", () => isComposing = true);
+    inputField.addEventListener("compositionend", () => isComposing = false);
     inputField.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && !isComposing && !event.shiftKey) {
         event.preventDefault();
@@ -118,58 +95,42 @@
       }
     });
 
-    sendButton.addEventListener("click", () => {
-      sendMessage();
-    });
+    sendButton.addEventListener("click", () => sendMessage());
 
-async function checkLoginStatus() {
-  try {
-    const res = await fetch("/.auth/me");
-    const data = await res.json();
-    if (data.clientPrincipal) {
-      const name = data.clientPrincipal.userDetails;
-      statusDiv.innerHTML = `✅ ようこそ ${name} さん！<a href="/.auth/logout?post_logout_redirect_uri=/">ログアウト</a>`;
+    async function checkLoginStatus() {
+      try {
+        const res = await fetch("/.auth/me");
+        const data = await res.json();
+        if (data.clientPrincipal) {
+          const name = data.clientPrincipal.userDetails;
+          statusDiv.innerHTML = `✅ ようこそ ${name} さん！<a href="/.auth/logout?post_logout_redirect_uri=/">ログアウト</a>`;
 
-      // 👇 ログインしている場合のみセッションをロード
-      fetch("/api/load-session")
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.messages && data.messages.length) {
-            data.messages.forEach(msg => {
-              appendMessage(msg.user, "user");
-              appendMessage(msg.ai, "assistant");
+          // 👇 ログインしている場合のみセッションをロード
+          fetch("/api/load-session", {
+            credentials: "include"
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data && data.messages && data.messages.length) {
+                data.messages.forEach(msg => {
+                  appendMessage(msg.user, "user");
+                  appendMessage(msg.ai, "assistant");
+                });
+              }
+            })
+            .catch(err => {
+              console.warn("💤 前回セッションの読み込みに失敗:", err);
             });
-          }
-        })
-        .catch(err => {
-          console.warn("💤 前回セッションの読み込みに失敗:", err);
-        });
 
-    } else {
-      statusDiv.innerHTML = `👻 ログインしていません。<a href="/.auth/login/aad?post_login_redirect_uri=/chat.html">Microsoftでログイン</a>`;
+        } else {
+          statusDiv.innerHTML = `👻 ログインしていません。<a href="/.auth/login/aad?post_login_redirect_uri=/chat.html">Microsoftでログイン</a>`;
+        }
+      } catch (e) {
+        statusDiv.innerHTML = `👻 認証確認に失敗しました。<a href="/.auth/login/aad?post_login_redirect_uri=/chat.html">再ログイン</a>`;
+      }
     }
-  } catch (e) {
-    document.getElementById("authStatus").innerHTML = `👻 認証確認に失敗しました。<a href="/.auth/login/aad?post_login_redirect_uri=/chat.html">再ログイン</a>`;
-  }
-}
 
     checkLoginStatus();
-
-fetch("/api/load-session", {
-  credentials: "include" // ← これが超重要
-})
-  .then(res => res.json())
-  .then(data => {
-    if (data && data.messages && data.messages.length) {
-      data.messages.forEach(msg => {
-        appendMessage(msg.user, "user");
-        appendMessage(msg.ai, "assistant");
-      });
-    }
-  })
-  .catch(err => {
-    console.warn("💤 前回セッションの読み込みに失敗:", err);
-  });
 
     function appendMessage(content, sender) {
       const div = document.createElement("div");
