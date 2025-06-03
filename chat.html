@@ -140,30 +140,42 @@
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function sendMessage() {
-      const message = inputField.value.trim();
-      if (!message) return;
+  async function sendMessage() {
+  const message = inputField.value.trim();
+  if (!message) return;
 
-      const mode = document.getElementById("modeSelect").value;
-      const formattedMessage = `mode:${mode}, ${message}`;
+  const mode = document.getElementById("modeSelect").value;
+  const formattedMessage = `mode:${mode}, ${message}`;
 
-      appendMessage(message, "user");
-      inputField.value = "";
+  // 👇 mode 5はログイン必須
+  if (mode === "5") {
+    const res = await fetch("/.auth/me");
+    const auth = await res.json();
+    if (!auth.clientPrincipal) {
+      alert("職歴インタビューにはログインが必要です。Microsoftアカウントでログインしてください！");
+      return;
+    }
+  }
 
-      fetch("/api/chatgpt", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ message: formattedMessage })
-      })
-        .then(res => res.text())
-        .then(reply => {
-          appendMessage(reply, "assistant");
-        })
-        .catch(error => {
-          console.error("🔥 AI爆発:", error);
-        });
+  appendMessage(message, "user");
+  inputField.value = "";
+
+  fetch("/api/chatgpt", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    credentials: "include",
+    body: JSON.stringify({ message: formattedMessage })
+  })
+    .then(res => res.text())
+    .then(reply => {
+      appendMessage(reply, "assistant");
+    })
+    .catch(error => {
+      console.error("🔥 AI爆発:", error);
+    });
+
     }
   </script>
 </body>
