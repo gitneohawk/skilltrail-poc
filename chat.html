@@ -75,7 +75,7 @@
             const name = data.clientPrincipal.userDetails;
             statusDiv.innerHTML = `✅ ようこそ ${name} さん！ <a href="#" onclick="handleLogout()">ログアウト</a>`;
 
-            chatBox.innerHTML = "<div class='text-center text-gray-400'>💬 過去のやり取りを読み込み中...</div>";
+            chatBox.innerHTML = "<div id='loadingMessage' class='text-center text-gray-400'>💬 過去のやり取りを読み込み中...</div>";
 
             const session = await fetch("/api/load-session", { credentials: "include" });
             const json = await session.json();
@@ -86,8 +86,9 @@
                 });
               }
             });
-            chatBox.innerHTML = "";
             populateEditorFromMessages(json.messages.flatMap(m => m.entries || []));
+            const loader = document.getElementById("loadingMessage");
+            if (loader) loader.remove();
           } else {
             const wasLoggedIn = sessionStorage.getItem("isLoggedIn");
             sessionStorage.removeItem("isLoggedIn");
