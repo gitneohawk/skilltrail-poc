@@ -18,6 +18,10 @@
   },
   "routes": [
     {
+      "route": "/api/save-message",
+      "allowedRoles": ["authenticated"]
+    },
+    {
       "route": "/api/*",
       "allowedRoles": ["authenticated"]
     },
