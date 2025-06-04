@@ -16,7 +16,7 @@
 
     <!-- メイン -->
     <main class="flex-grow container mx-auto p-4">
-      <div id="chatBox" class="bg-white rounded-xl shadow-inner p-4 mb-4 h-96 overflow-y-auto"></div>
+      <div id="chatBox" class="bg-white rounded-xl shadow-inner p-4 mb-4 h-96 overflow-y-auto space-y-2"></div>
 
       <div class="mb-2">
         <label for="modeSelect" class="block text-sm font-medium text-gray-700 mb-1">今日の気分で選んでください：</label>
@@ -88,8 +88,13 @@
 
       function appendMessage(content, sender) {
         const div = document.createElement("div");
-        div.className = sender === "user" ? "text-right mb-2" : "text-left mb-2";
-        div.innerHTML = `<span class="inline-block px-3 py-2 rounded-lg ${sender === "user" ? "bg-gray-200 text-gray-900" : "bg-white border"} max-w-xl">${content}</span>`;
+        div.className = "flex mb-2 " + (sender === "user" ? "justify-end" : "justify-start");
+        div.innerHTML = `
+          <div class="max-w-[70%] px-4 py-2 rounded-2xl shadow 
+            ${sender === "user" ? "bg-orange-100 text-gray-900" : "bg-white border"}">
+            ${content}
+          </div>
+        `;
         chatBox.appendChild(div);
         chatBox.scrollTop = chatBox.scrollHeight;
       }
