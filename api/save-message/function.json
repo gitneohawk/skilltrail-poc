@@ -11,6 +11,13 @@
       "type": "http",
       "direction": "out",
       "name": "res"
+    },
+    {
+      "type": "blob",
+      "direction": "out",
+      "name": "outputBlob",
+      "path": "interviews/{timestamp}-{role}.json",
+      "connection": "AzureWebJobsStorage"
     }
   ]
 }
