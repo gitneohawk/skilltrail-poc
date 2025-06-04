@@ -66,6 +66,7 @@
       }
 
       async function checkLoginStatus() {
+        statusDiv.innerText = "🔍 ログイン確認中...";
         try {
           const res = await fetch("/.auth/me", { credentials: "include" });
           const data = await res.json();
@@ -73,6 +74,8 @@
             sessionStorage.setItem("isLoggedIn", "true");
             const name = data.clientPrincipal.userDetails;
             statusDiv.innerHTML = `✅ ようこそ ${name} さん！ <a href="#" onclick="handleLogout()">ログアウト</a>`;
+
+            chatBox.innerHTML = "<div class='text-center text-gray-400'>💬 過去のやり取りを読み込み中...</div>";
 
             const session = await fetch("/api/load-session", { credentials: "include" });
             const json = await session.json();
@@ -83,6 +86,7 @@
                 });
               }
             });
+            chatBox.innerHTML = "";
             populateEditorFromMessages(json.messages.flatMap(m => m.entries || []));
           } else {
             const wasLoggedIn = sessionStorage.getItem("isLoggedIn");
@@ -126,6 +130,14 @@
           }
         }
         appendMessage(message, "user");
+
+        const loadingDiv = document.createElement("div");
+        loadingDiv.id = "loadingIndicator";
+        loadingDiv.className = "flex justify-start mb-2";
+        loadingDiv.innerHTML = `<div class="px-4 py-2 bg-white border rounded-2xl shadow text-gray-400 animate-pulse">応答を生成中...</div>`;
+        chatBox.appendChild(loadingDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
         inputField.value = "";
 
         const response = await fetch("/api/chatgpt", {
@@ -135,6 +147,10 @@
           body: JSON.stringify({ message: `mode:${mode}, ${message}` })
         });
         const reply = await response.text();
+
+        const loader = document.getElementById("loadingIndicator");
+        if (loader) loader.remove();
+
         appendMessage(reply, "assistant");
       }
 
