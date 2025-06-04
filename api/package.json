@@ -4,7 +4,7 @@
   "main": "index.js",
   "dependencies": {
     "@azure/openai": "^2.0.0",
-    "@azure/storage-blob": "^12.14.0",
+    "@azure/storage-blob": "^12.27.0",
     "openai": "^4.0.0",
     "uuid": "^9.0.0"
   }
