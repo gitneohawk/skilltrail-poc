@@ -18,12 +18,10 @@
   },
   "routes": [
     {
-      "route": "/api/save-message",
-      "allowedRoles": ["authenticated"]
+      "route": "/api/save-message"
     },
     {
-      "route": "/api/*",
-      "allowedRoles": ["authenticated"]
+      "route": "/api/*"
     },
     {
       "route": "/interview",
