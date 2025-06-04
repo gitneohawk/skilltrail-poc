@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SkillTrail - キャリア棚卸しPoC</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="/dist/output.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@600&display=swap" rel="stylesheet" />
     <style>
       body {
@@ -51,9 +51,22 @@
 </div>
 <script>
   const loginLink = document.getElementById("login-link");
+  const user = sessionStorage.getItem("user");
+
   if (loginLink) {
-    const returnTo = window.location.pathname;
-    loginLink.href = `/login.html?returnTo=${encodeURIComponent(returnTo)}`;
+    if (user) {
+      // ログイン済みの場合はログアウトボタンに変更
+      loginLink.textContent = "ログアウト";
+      loginLink.href = "#";
+      loginLink.addEventListener("click", () => {
+        sessionStorage.removeItem("user");
+        window.location.href = "/";
+      });
+    } else {
+      // 未ログインの場合はlogin.htmlに遷移
+      const returnTo = window.location.pathname;
+      loginLink.href = `/login.html?returnTo=${encodeURIComponent(returnTo)}`;
+    }
   }
 </script>
   </body>
