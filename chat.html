@@ -19,14 +19,7 @@
       <div id="chatBox" class="bg-white rounded-xl shadow-inner p-4 mb-4 h-96 overflow-y-auto space-y-2"></div>
 
       <div class="mb-2">
-        <label for="modeSelect" class="block text-sm font-medium text-gray-700 mb-1">今日の気分で選んでください：</label>
-        <select id="modeSelect" class="w-full border border-gray-300 rounded-md p-2 mb-2">
-          <option value="1">① とにかく話を聞いてほしい</option>
-          <option value="2">② 情報は控えめに、助言だけ欲しい</option>
-          <option value="3">③ 全力で情報提供して、的確なアドバイスが欲しい</option>
-          <option value="4">④ 老師、助けて！</option>
-          <option value="5">⑤ 真面目に転職考えたいので、職歴のインタビューしてほしい！</option>
-        </select>
+        <!-- TODO: 職歴インタビューのトリガーを今後導入予定 -->
         <textarea id="userInput" class="w-full border rounded-md p-2 mb-2" rows="3" placeholder="相談内容を入力..."></textarea>
         <div class="flex gap-2">
           <button id="sendButton" class="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600">送信</button>
@@ -121,16 +114,19 @@
       async function sendMessage() {
         const message = inputField.value.trim();
         if (!message) return;
-        const mode = document.getElementById("modeSelect").value;
-        if (mode === "5") {
-          const res = await fetch("/.auth/me");
-          const auth = await res.json();
-          if (!auth.clientPrincipal) {
-            alert("職歴インタビューにはログインが必要です。Microsoftアカウントでログインしてください！");
-            return;
-          }
-        }
+        // TODO: 職歴インタビュー用の認証チェックや処理は今後導入予定
         appendMessage(message, "user");
+        const userTimestamp = new Date().toISOString();
+        await fetch("/api/save-message", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            message,
+            role: "user",
+            timestamp: userTimestamp
+          })
+        });
 
         const loadingDiv = document.createElement("div");
         loadingDiv.id = "loadingIndicator";
@@ -139,20 +135,29 @@
         chatBox.appendChild(loadingDiv);
         chatBox.scrollTop = chatBox.scrollHeight;
 
-        inputField.value = "";
-
         const response = await fetch("/api/chatgpt", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ message: `mode:${mode}, ${message}` })
+          body: JSON.stringify({ message, timestamp: userTimestamp })
         });
         const reply = await response.text();
+        const assistantTimestamp = new Date().toISOString();
 
         const loader = document.getElementById("loadingIndicator");
         if (loader) loader.remove();
 
         appendMessage(reply, "assistant");
+        await fetch("/api/save-message", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            message: reply,
+            role: "assistant",
+            timestamp: assistantTimestamp
+          })
+        });
       }
 
       checkLoginStatus();
