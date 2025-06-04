@@ -128,17 +128,6 @@
         if (!message) return;
         // TODO: 職歴インタビュー用の認証チェックや処理は今後導入予定
         appendMessage(message, "user");
-        const userTimestamp = new Date().toISOString();
-        await fetch("/api/save-message", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            message,
-            role: "user",
-            timestamp: userTimestamp
-          })
-        });
 
         const loadingDiv = document.createElement("div");
         loadingDiv.id = "loadingIndicator";
@@ -151,25 +140,14 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ message, timestamp: userTimestamp })
+          body: JSON.stringify({ message })
         });
         const reply = await response.text();
-        const assistantTimestamp = new Date().toISOString();
 
         const loader = document.getElementById("loadingIndicator");
         if (loader) loader.remove();
 
         appendMessage(reply, "assistant");
-        await fetch("/api/save-message", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            message: reply,
-            role: "assistant",
-            timestamp: assistantTimestamp
-          })
-        });
         inputField.value = "";
       }
 

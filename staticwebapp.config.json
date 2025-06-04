@@ -18,9 +18,6 @@
   },
   "routes": [
     {
-      "route": "/api/save-message"
-    },
-    {
       "route": "/api/*"
     },
     {
