@@ -17,7 +17,7 @@
       <!-- ヘッダー -->
       <header class="flex justify-between items-center p-6">
         <div class="text-3xl font-bold text-orange-500">SkillTrail</div>
-        <a href="login.html" class="border border-gray-300 text-sm px-4 py-2 rounded-full hover:bg-gray-100 transition">ログイン</a>
+        <a id="login-link" href="login.html" class="border border-gray-300 text-sm px-4 py-2 rounded-full hover:bg-gray-100 transition">ログイン</a>
       </header>
 
       <!-- メイン -->
@@ -48,5 +48,13 @@
         &copy; 2025 SkillTrail / Kibun.ai
       </footer>
     </div>
+</div>
+<script>
+  const loginLink = document.getElementById("login-link");
+  if (loginLink) {
+    const returnTo = window.location.pathname;
+    loginLink.href = `/login.html?returnTo=${encodeURIComponent(returnTo)}`;
+  }
+</script>
   </body>
 </html>
