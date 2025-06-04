@@ -16,14 +16,17 @@
 
     <!-- メイン -->
     <main class="flex-grow container mx-auto p-4">
-      <div id="chatBox" class="bg-white rounded-xl shadow-inner p-4 mb-4 h-96 overflow-y-auto space-y-2"></div>
+      <div id="chatBox" class="bg-white rounded-xl shadow-inner p-4 mb-4 h-96 overflow-y-auto space-y-2">
+        <div id="welcomeMessage" class="text-gray-400 text-center">
+          💡 ここに相談内容を入力すると、AIがあなたのキャリアを一緒に考えます。
+        </div>
+      </div>
 
       <div class="mb-2">
         <!-- TODO: 職歴インタビューのトリガーを今後導入予定 -->
         <textarea id="userInput" class="w-full border rounded-md p-2 mb-2" rows="3" placeholder="相談内容を入力..."></textarea>
         <div class="flex gap-2">
           <button id="sendButton" class="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600">送信</button>
-          <button id="extractBtn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400">構造化データを見る</button>
         </div>
       </div>
 
@@ -81,7 +84,11 @@
             });
             populateEditorFromMessages(json.messages.flatMap(m => m.entries || []));
             const loader = document.getElementById("loadingMessage");
-            if (loader) loader.remove();
+            if (loader) {
+              loader.remove();
+              const welcome = document.getElementById("welcomeMessage");
+              if (welcome) welcome.remove();
+            }
           } else {
             const wasLoggedIn = sessionStorage.getItem("isLoggedIn");
             sessionStorage.removeItem("isLoggedIn");
@@ -112,6 +119,9 @@
       }
 
       async function sendMessage() {
+        const welcome = document.getElementById("welcomeMessage");
+        if (welcome) welcome.remove();
+
         const message = inputField.value.trim();
         if (!message) return;
         // TODO: 職歴インタビュー用の認証チェックや処理は今後導入予定
