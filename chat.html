@@ -72,6 +72,8 @@
             statusDiv.innerHTML = `✅ ようこそ ${name} さん！ <a href="#" onclick="handleLogout()">ログアウト</a>`;
 
             chatBox.innerHTML = "<div id='loadingMessage' class='text-center text-gray-400'>💬 過去のやり取りを読み込み中...</div>";
+            const welcome = document.getElementById("welcomeMessage");
+            if (welcome) welcome.remove();
 
             const session = await fetch("/api/load-session", { credentials: "include" });
             const json = await session.json();
@@ -82,13 +84,13 @@
                 });
               }
             });
+            // Guard: if no messages, show welcome message
+            if (!json.messages || json.messages.length === 0) {
+              chatBox.innerHTML = "<div id='welcomeMessage' class='text-gray-400 text-center'>💡 ここに相談内容を入力すると、AIがあなたのキャリアを一緒に考えます。</div>";
+            }
             populateEditorFromMessages(json.messages.flatMap(m => m.entries || []));
             const loader = document.getElementById("loadingMessage");
-            if (loader) {
-              loader.remove();
-              const welcome = document.getElementById("welcomeMessage");
-              if (welcome) welcome.remove();
-            }
+            if (loader) loader.remove();
           } else {
             const wasLoggedIn = sessionStorage.getItem("isLoggedIn");
             sessionStorage.removeItem("isLoggedIn");
