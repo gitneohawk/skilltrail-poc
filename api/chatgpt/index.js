@@ -25,7 +25,9 @@ async function fetchLatestSessionForUser(userId) {
   for await (const blob of containerClient.listBlobsFlat()) {
     if (blob.name.startsWith(userId)) {
       const match = blob.name.match(/_(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})_/);
-      const blobTimestamp = match ? new Date(match[1].replace(/-/g, ":")) : null;
+      const blobTimestamp = match
+        ? new Date(match[1].replace(/T(\d{2})-(\d{2})-(\d{2})/, "T$1:$2:$3"))
+        : null;
       if (blobTimestamp && blobTimestamp.getTime() > latestTimestamp) {
         latestTimestamp = blobTimestamp.getTime();
         latestBlob = blob.name;
