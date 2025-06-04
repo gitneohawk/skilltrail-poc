@@ -67,7 +67,11 @@
           if (data.clientPrincipal) {
             sessionStorage.setItem("isLoggedIn", "true");
             const name = data.clientPrincipal.userDetails;
-            statusDiv.innerHTML = `✅ ようこそ ${name} さん！ <a href="/.auth/logout?post_logout_redirect_uri=/">ログアウト</a>`;
+            statusDiv.innerHTML = `✅ ようこそ ${name} さん！ <a href="#" onclick="handleLogout()">ログアウト</a>`;
+            function handleLogout() {
+              sessionStorage.clear();
+              window.location.href = "/.auth/logout?post_logout_redirect_uri=/";
+            }
 
             const session = await fetch("/api/load-session", { credentials: "include" });
             const json = await session.json();
@@ -81,14 +85,16 @@
             populateEditorFromMessages(json.messages.flatMap(m => m.entries || []));
           } else {
             const wasLoggedIn = sessionStorage.getItem("isLoggedIn");
+            sessionStorage.removeItem("isLoggedIn");
             if (!wasLoggedIn) {
-              window.location.href = "/login.html";
+              window.location.href = "/login.html?returnTo=/chat";
             }
           }
         } catch (e) {
           const wasLoggedIn = sessionStorage.getItem("isLoggedIn");
+          sessionStorage.removeItem("isLoggedIn");
           if (!wasLoggedIn) {
-            window.location.href = "/login.html";
+            window.location.href = "/login.html?returnTo=/chat";
           }
         }
       }
