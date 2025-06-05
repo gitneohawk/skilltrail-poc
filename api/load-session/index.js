@@ -47,7 +47,11 @@ module.exports = async function (context, req) {
       context.log("📥 blob content:", downloaded); // ← streamToString()後に出力
       const parsed = JSON.parse(downloaded);
       context.log("🧾 parsed:", parsed);           // ← JSON.parse()直後
-      messages.push(parsed);
+      if (Array.isArray(parsed.messages)) {
+        messages.push(...parsed.messages);
+      } else {
+        messages.push(parsed);
+      }
     }
   }
 
