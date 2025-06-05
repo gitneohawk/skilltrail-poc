@@ -33,7 +33,7 @@ module.exports = async function (context, req) {
   }
 
   const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING);
-  const containerClient = blobServiceClient.getContainerClient("interviews");
+  const containerClient = blobServiceClient.getContainerClient("chat-sessions");
 
   const messages = [];
 　context.log("📦 Searching blobs in container for userId prefix...");
