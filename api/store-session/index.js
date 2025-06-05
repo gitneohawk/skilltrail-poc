@@ -13,10 +13,10 @@ module.exports = async function (context, req) {
     }
 
     const body = req.body;
-    if (!body || !body.sessionId || !body.messages) {
+    if (!body || !body.userId || !body.sessionId || !body.messages) {
       context.res = {
         status: 400,
-        body: "Missing sessionId or messages in request body."
+        body: "Missing userId, sessionId, or messages in request body."
       };
       return;
     }
@@ -26,7 +26,8 @@ module.exports = async function (context, req) {
     const containerClient = blobServiceClient.getContainerClient(containerName);
     await containerClient.createIfNotExists();
 
-    const blobName = `${body.sessionId}.json`;
+    const userId = body.userId || "unknown";
+    const blobName = `${userId}-${body.sessionId}.json`;
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
     const content = JSON.stringify(body);
