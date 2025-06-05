@@ -123,7 +123,9 @@ async function appendMessage(content, sender) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ entries: messageLog })
+    body: JSON.stringify({
+      entries: [{ message: content, role: sender }]
+    })
   });
 }
 
