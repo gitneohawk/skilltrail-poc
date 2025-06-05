@@ -13,7 +13,10 @@ module.exports = async function (context, req) {
 
     const blockBlobClient = containerClient.getBlockBlobClient(`${userId}.json`);
 
-    const json = JSON.stringify(data.entries);
+    context.log('Incoming data:', JSON.stringify(data));
+    context.log('Parsed entries:', JSON.stringify(data?.entries));
+    const entries = Array.isArray(data?.entries) ? data.entries : [];
+    const json = JSON.stringify(entries);
     await blockBlobClient.upload(json, Buffer.byteLength(json), {
       blobHTTPHeaders: { blobContentType: "application/json" }
     });
