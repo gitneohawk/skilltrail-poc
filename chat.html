@@ -69,6 +69,8 @@
           if (data.clientPrincipal) {
             sessionStorage.setItem("isLoggedIn", "true");
             const name = data.clientPrincipal.userDetails;
+            const userId = data.clientPrincipal.userId;
+            sessionStorage.setItem("userId", userId);
             statusDiv.innerHTML = `✅ ようこそ ${name} さん！ <a href="#" onclick="handleLogout()">ログアウト</a>`;
 
             chatBox.innerHTML = "<div id='loadingMessage' class='text-center text-gray-400'>💬 過去のやり取りを読み込み中...</div>";
@@ -140,6 +142,20 @@
           body: JSON.stringify({ message })
         });
         const reply = await response.text();
+
+        const storeRes = await fetch("/api/store-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            userId: sessionStorage.getItem("userId") || "anonymous",
+            sessionId: "default",
+            messages: [
+              { role: "user", message },
+              { role: "assistant", message: reply }
+            ]
+          })
+        });
 
         const loader = document.getElementById("loadingIndicator");
         if (loader) loader.remove();
