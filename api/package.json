@@ -1,3 +1,6 @@
+"scripts": {
+  "build": "echo 'No build step required'"
+}
 {
   "name": "skilltrail-api",
   "version": "1.0.0",
@@ -9,3 +12,4 @@
     "uuid": "^9.0.0"
   }
 }
+st

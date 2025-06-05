@@ -1,8 +1,0 @@
-{
-  "name": "store-session",
-  "version": "1.0.0",
-  "main": "index.js",
-  "dependencies": {
-    "@azure/storage-blob": "^12.13.0"
-  }
-}
