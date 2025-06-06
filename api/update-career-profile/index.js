@@ -12,7 +12,10 @@ module.exports = async function (context, req) {
     }
 
     const body = req.body;
-    if (!body || !body.userId || !body.profile) {
+    const userId = body?.userId;
+    if (!body || !userId || !body.profile) {
+      context.log("Request body:", req.body);
+      context.log("User ID:", userId);
       context.res = {
         status: 400,
         body: "Missing userId or profile in request body."
@@ -24,7 +27,7 @@ module.exports = async function (context, req) {
     const containerClient = blobServiceClient.getContainerClient("career-profiles");
     await containerClient.createIfNotExists();
 
-    const blobName = `${body.userId}.json`;
+    const blobName = `${userId}.json`;
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
     let existingProfile = {};
@@ -41,7 +44,7 @@ module.exports = async function (context, req) {
       const downloaded = await streamToString(downloadBlockBlobResponse.readableStreamBody);
       existingProfile = JSON.parse(downloaded);
     } catch (err) {
-      context.log(`No existing profile found. Creating new profile for userId: ${body.userId}`);
+      context.log(`No existing profile found. Creating new profile for userId: ${userId}`);
     }
 
     const mergedProfile = { ...existingProfile, ...body.profile };
