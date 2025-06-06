@@ -1,4 +1,6 @@
-async function streamToString(readableStream) {
+// shared/blobUtils.js
+
+export async function streamToString(readableStream) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     readableStream.on("data", (data) => {

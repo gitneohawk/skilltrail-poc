@@ -15,11 +15,11 @@
   "version": "1.0.0",
   "description": "To install dependencies:",
   "main": "index.js",
-"scripts": {
-  "build": "tailwindcss -i ./src/input.css -o ./dist/output.css",
-  "dev": "tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
-  "test": "echo \"Error: no test specified\" && exit 1"
-},
+  "scripts": {
+    "build": "tailwindcss -i ./src/input.css -o ./dist/output.css",
+    "dev": "tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gitneohawk/skilltrail-poc.git"
