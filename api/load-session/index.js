@@ -15,6 +15,7 @@ async function streamToString(readableStream) {
 }
 
 module.exports = async function (context, req) {
+  context.log("load-session function triggered");
   const clientPrincipalHeader = req.headers["x-ms-client-principal"];
   if (!clientPrincipalHeader) {
     context.res = {
@@ -52,10 +53,12 @@ module.exports = async function (context, req) {
 
   const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
   const containerClient = blobServiceClient.getContainerClient("chat-sessions");
+  context.log("Looking for blob:", blobName);
   const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
   try {
     const downloadBlockBlobResponse = await blockBlobClient.download(0);
+    context.log("Blob downloaded successfully");
     const downloaded = await streamToString(downloadBlockBlobResponse.readableStreamBody);
     const parsed = JSON.parse(downloaded);
     const messages = Array.isArray(parsed.messages) ? parsed.messages : [];
@@ -64,7 +67,7 @@ module.exports = async function (context, req) {
       body: { messages }
     };
   } catch (err) {
-    context.log.warn(`Could not load session data for blob ${blobName}:`, err.message);
+    context.log.warn(`Could not load session data for blob ${blobName}:`, err);
     context.res = {
       status: 200,
       body: { messages: [] }
