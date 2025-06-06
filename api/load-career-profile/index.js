@@ -11,15 +11,29 @@ module.exports = async function (context, req) {
       return;
     }
 
-    const userId = req.query.userId;
-    context.log("Query userId:", userId);
-    if (!userId) {
+    const clientPrincipalHeader = req.headers["x-ms-client-principal"];
+    if (!clientPrincipalHeader) {
       context.res = {
-        status: 400,
-        body: "Missing userId in query parameters."
+        status: 401,
+        body: "Unauthorized"
       };
       return;
     }
+
+    let userId = "unknown";
+    try {
+      const decoded = Buffer.from(clientPrincipalHeader, "base64").toString("utf8");
+      const principal = JSON.parse(decoded);
+      userId = principal.userId || "unknown";
+    } catch (e) {
+      context.res = {
+        status: 400,
+        body: "Invalid client principal."
+      };
+      return;
+    }
+
+    context.log("Extracted userId:", userId);
 
     const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
     const containerClient = blobServiceClient.getContainerClient("career-profiles");
