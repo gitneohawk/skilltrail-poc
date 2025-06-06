@@ -1,5 +1,4 @@
 const { BlobServiceClient } = require('@azure/storage-blob');
-const { streamToString } = require("../shared/blobUtils.js");
 
 module.exports = async function (context, req) {
   try {
@@ -64,5 +63,18 @@ module.exports = async function (context, req) {
       status: 500,
       body: "Internal server error."
     };
+  }
+  // helper function for converting stream to string
+  async function streamToString(readableStream) {
+    return new Promise((resolve, reject) => {
+      const chunks = [];
+      readableStream.on("data", (data) => {
+        chunks.push(data.toString());
+      });
+      readableStream.on("end", () => {
+        resolve(chunks.join(""));
+      });
+      readableStream.on("error", reject);
+    });
   }
 };
