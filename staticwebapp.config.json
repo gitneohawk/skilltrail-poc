@@ -16,6 +16,9 @@
       }
     }
   },
+  "forward": {
+    "AZURE_STORAGE_CONNECTION_STRING": true
+  },
   "routes": [
     {
       "route": "/api/*"
