@@ -11,7 +11,8 @@ module.exports = async function (context, req) {
       return;
     }
 
-    const body = req.body;
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    context.log("Parsed body:", body);
     const userId = body?.userId;
     if (!body || !userId || !body.profile) {
       context.log("Request body:", req.body);

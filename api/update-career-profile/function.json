@@ -6,8 +6,7 @@
       "direction": "in",
       "name": "req",
       "methods": ["post"],
-      "route": "update-career-profile",
-      "dataType": "json"
+      "route": "update-career-profile"
     },
     {
       "type": "http",
