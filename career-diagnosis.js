@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             throw new Error("プロフィールが取得できませんでした");
         }
     } catch (error) {
+        console.error("プロフィール読み込みエラー:", error);
         missingInfoArea.innerText = "プロフィールの読み込みに失敗しました。";
         loadingMessage.style.display = "none";
         return;
@@ -39,9 +40,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         try {
             const res = await fetch("/api/career-diagnosis", { method: "POST" });
+            if (!res.ok) throw new Error("診断APIエラー");
             const result = await res.text();
             adviceArea.innerHTML = result;
         } catch (err) {
+            console.error("診断失敗:", err);
             adviceArea.innerHTML = "診断に失敗しました。時間を置いてお試しください。";
         } finally {
             runButton.disabled = false;

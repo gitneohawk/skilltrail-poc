@@ -3,6 +3,7 @@ const { DefaultAzureCredential } = require('@azure/identity');
 
 module.exports = async function (context, req) {
   const userId = req.headers['x-ms-client-principal-id'];
+  context.log("User ID:", userId);
   if (!userId) {
     context.res = {
       status: 400,
@@ -28,9 +29,10 @@ module.exports = async function (context, req) {
       headers: { "Content-Type": "application/json" }
     };
   } catch (err) {
+    context.log.error("Failed to load career profile:", err.message);
     context.res = {
-      status: 404,
-      body: "Career profile not found"
+      status: 500,
+      body: "Failed to load career profile"
     };
   }
 };
