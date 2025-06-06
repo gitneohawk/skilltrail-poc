@@ -8,7 +8,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let careerProfile = null;
     try {
-        const response = await fetch("/api/load-career-profile");
+        const response = await fetch("/api/load-career-profile", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include"
+        });
         if (response.ok) {
             careerProfile = await response.json();
         } else {
@@ -39,7 +45,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         adviceArea.innerHTML = "診断結果を生成中です...";
 
         try {
-            const res = await fetch("/api/career-diagnosis", { method: "POST" });
+            const res = await fetch("/api/career-diagnosis", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include"
+            });
             if (!res.ok) throw new Error("診断APIエラー");
             const result = await res.text();
             adviceArea.innerHTML = result;
