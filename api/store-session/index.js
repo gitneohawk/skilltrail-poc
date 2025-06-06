@@ -1,5 +1,5 @@
 const { BlobServiceClient } = require('@azure/storage-blob');
-const { streamToString } = require("../../shared/blobUtils.js");
+const { streamToString } = require("../shared/blobUtils.js");
 
 module.exports = async function (context, req) {
   try {
