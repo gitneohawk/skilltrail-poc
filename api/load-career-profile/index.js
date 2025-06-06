@@ -1,50 +1,66 @@
-const { BlobServiceClient } = require('@azure/storage-blob');
+const { BlobServiceClient } = require("@azure/storage-blob");
 
 module.exports = async function (context, req) {
-  const userId = req.headers['x-ms-client-principal-id'];
-  context.log("User ID:", userId);
-  if (!userId) {
-    context.res = {
-      status: 400,
-      body: "Missing user ID"
-    };
-    return;
-  }
-
-  const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AzureWebJobsStorage);
-  const containerClient = blobServiceClient.getContainerClient("career-profiles");
-
-  const blobName = `${userId}-career-profile.json`;
-  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-
   try {
-    const downloadBlockBlobResponse = await blockBlobClient.download(0);
-    const downloaded = await streamToString(downloadBlockBlobResponse.readableStreamBody);
-    const jsonData = JSON.parse(downloaded);
+    const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    if (!AZURE_STORAGE_CONNECTION_STRING) {
+      context.res = {
+        status: 500,
+        body: "Azure Storage connection string not found."
+      };
+      return;
+    }
 
-    context.res = {
-      status: 200,
-      body: jsonData,
-      headers: { "Content-Type": "application/json" }
-    };
-  } catch (err) {
-    context.log.error("Failed to load career profile:", err.message);
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    context.log("Parsed body:", body);
+    const userId = body?.userId;
+    if (!body || !userId) {
+      context.log("Request body:", req.body);
+      context.log("User ID:", userId);
+      context.res = {
+        status: 400,
+        body: "Missing userId in request body."
+      };
+      return;
+    }
+
+    const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+    const containerClient = blobServiceClient.getContainerClient("career-profiles");
+
+    const blobName = `${userId}.json`;
+    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+    let existingProfile = {};
+    try {
+      const downloadBlockBlobResponse = await blockBlobClient.download(0);
+      const streamToString = async (readableStream) => {
+        return new Promise((resolve, reject) => {
+          const chunks = [];
+          readableStream.on("data", (data) => chunks.push(data.toString()));
+          readableStream.on("end", () => resolve(chunks.join("")));
+          readableStream.on("error", reject);
+        });
+      };
+      const downloaded = await streamToString(downloadBlockBlobResponse.readableStreamBody);
+      existingProfile = JSON.parse(downloaded);
+
+      context.res = {
+        status: 200,
+        body: existingProfile,
+        headers: { "Content-Type": "application/json" }
+      };
+    } catch (err) {
+      context.log.error("No career profile found or failed to read profile:", err.message);
+      context.res = {
+        status: 404,
+        body: "Career profile not found."
+      };
+    }
+  } catch (error) {
+    context.log.error("Error loading career profile:", error.message);
     context.res = {
       status: 500,
-      body: "Failed to load career profile"
+      body: "Internal server error."
     };
   }
 };
-
-async function streamToString(readableStream) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    readableStream.on("data", (data) => {
-      chunks.push(data.toString());
-    });
-    readableStream.on("end", () => {
-      resolve(chunks.join(""));
-    });
-    readableStream.on("error", reject);
-  });
-}
