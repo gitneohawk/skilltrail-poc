@@ -38,8 +38,9 @@ module.exports = async function (context, req) {
   }
 
   const userId = clientPrincipal.userId;
-  const sessionId = req.query.sessionId || "default";
-  const blobName = `${userId}-${body.sessionId}.json`;
+  const body = req.body || {};
+  const sessionId = body.sessionId || "default";
+  const blobName = `${userId}-${sessionId}.json`;
 
   const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
   if (!AZURE_STORAGE_CONNECTION_STRING) {
