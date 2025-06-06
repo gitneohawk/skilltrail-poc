@@ -144,6 +144,12 @@
           credentials: "include",
           body: JSON.stringify({ role: "assistant", message: reply })
         });
+        await fetch("/api/update-career-profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ role: "assistant", message: reply })
+        });
       }
 
       async function loadChatHistory() {
