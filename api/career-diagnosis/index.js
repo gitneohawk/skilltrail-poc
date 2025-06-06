@@ -4,7 +4,14 @@ const { BlobServiceClient } = require('@azure/storage-blob');
 const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
 module.exports = async function (context, req) {
-  const userId = req.query.userId || (req.body && req.body.userId);
+  if (req.method !== 'POST') {
+    context.res = {
+      status: 405,
+      body: 'Method Not Allowed'
+    };
+    return;
+  }
+  const userId = req.body && req.body.userId;
   if (!userId) {
     context.res = {
       status: 400,
@@ -35,7 +42,7 @@ module.exports = async function (context, req) {
 
     context.res = {
       status: 200,
-      body: { advice }
+      body: { advice, profile }
     };
   } catch (err) {
     context.log.error("Failed to generate career diagnosis:", err.message);

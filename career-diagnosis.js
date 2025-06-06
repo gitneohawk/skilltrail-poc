@@ -50,7 +50,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                credentials: "include"
+                credentials: "include",
+                body: JSON.stringify({ userId: careerProfile.userId })
             });
             if (!res.ok) throw new Error("診断APIエラー");
             const result = await res.text();
