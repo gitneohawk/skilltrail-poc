@@ -23,9 +23,20 @@ module.exports = async function (context, req) {
   }
 
   const userId = clientPrincipal.userId;
-  const blobName = `${userId}-default.json`;
+  const sessionId = req.query.sessionId || "default";
+  const blobName = `${userId}-${sessionId}.json`;
 
-  const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING);
+  const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
+  if (!AZURE_STORAGE_CONNECTION_STRING) {
+    context.log.error("Azure Storage connection string not found.");
+    context.res = {
+      status: 500,
+      body: "Storage connection string missing."
+    };
+    return;
+  }
+
+  const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
   const containerClient = blobServiceClient.getContainerClient("chat-sessions");
   const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
@@ -39,6 +50,7 @@ module.exports = async function (context, req) {
       body: { messages }
     };
   } catch (err) {
+    context.log.warn(`Could not load session data for blob ${blobName}:`, err.message);
     context.res = {
       status: 200,
       body: { messages: [] }
