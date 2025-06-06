@@ -1,5 +1,4 @@
 const { BlobServiceClient } = require('@azure/storage-blob');
-const { DefaultAzureCredential } = require('@azure/identity');
 
 module.exports = async function (context, req) {
   const userId = req.headers['x-ms-client-principal-id'];
