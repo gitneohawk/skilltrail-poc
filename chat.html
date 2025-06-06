@@ -23,7 +23,6 @@
       </div>
 
       <div class="mb-2">
-        <!-- TODO: 職歴インタビューのトリガーを今後導入予定 -->
         <textarea id="userInput" class="w-full border rounded-md p-2 mb-2" rows="3" placeholder="相談内容を入力..."></textarea>
         <div class="flex gap-2">
           <button id="sendButton" class="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600">送信</button>
@@ -38,7 +37,6 @@
       &copy; 2025 SkillTrail
     </footer>
 
-    <!-- 認証状態とチャットJS -->
     <script>
       const inputField = document.getElementById("userInput");
       const sendButton = document.getElementById("sendButton");
@@ -72,27 +70,6 @@
             const userId = data.clientPrincipal.userId;
             sessionStorage.setItem("userId", userId);
             statusDiv.innerHTML = `✅ ようこそ ${name} さん！ <a href="#" onclick="handleLogout()">ログアウト</a>`;
-
-            chatBox.innerHTML = "<div id='loadingMessage' class='text-center text-gray-400'>💬 過去のやり取りを読み込み中...</div>";
-            const welcome = document.getElementById("welcomeMessage");
-            if (welcome) welcome.remove();
-
-            const session = await fetch("/api/load-session", { credentials: "include" });
-            const json = await session.json();
-            json.messages.forEach(msg => {
-              if (msg.entries && Array.isArray(msg.entries)) {
-                msg.entries.forEach(entry => {
-                  appendMessage(entry.message, entry.role);
-                });
-              }
-            });
-            // Guard: if no messages, show welcome message
-            if (!json.messages || json.messages.length === 0) {
-              chatBox.innerHTML = "<div id='welcomeMessage' class='text-gray-400 text-center'>💡 ここに相談内容を入力すると、AIがあなたのキャリアを一緒に考えます。</div>";
-            }
-            populateEditorFromMessages(json.messages.flatMap(m => m.entries || []));
-            const loader = document.getElementById("loadingMessage");
-            if (loader) loader.remove();
           } else {
             const wasLoggedIn = sessionStorage.getItem("isLoggedIn");
             sessionStorage.removeItem("isLoggedIn");
@@ -109,15 +86,13 @@
         }
       }
 
-
       async function sendMessage() {
         const welcome = document.getElementById("welcomeMessage");
         if (welcome) welcome.remove();
 
         const message = inputField.value.trim();
         if (!message) return;
-        // TODO: 職歴インタビュー用の認証チェックや処理は今後導入予定
-        // appendMessage(message, "user");
+
         const div = document.createElement("div");
         div.className = "flex justify-end mb-2";
         div.innerHTML = `
@@ -143,24 +118,9 @@
         });
         const reply = await response.text();
 
-        const storeRes = await fetch("/api/store-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            userId: sessionStorage.getItem("userId") || "anonymous",
-            sessionId: "default",
-            messages: [
-              { role: "user", message },
-              { role: "assistant", message: reply }
-            ]
-          })
-        });
-
         const loader = document.getElementById("loadingIndicator");
         if (loader) loader.remove();
 
-        // appendMessage(reply, "assistant");
         const replyDiv = document.createElement("div");
         replyDiv.className = "flex justify-start mb-2";
         replyDiv.innerHTML = `
