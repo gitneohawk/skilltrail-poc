@@ -1,5 +1,4 @@
 
-
 {
   "bindings": [
     {
@@ -7,7 +6,7 @@
       "type": "httpTrigger",
       "direction": "in",
       "name": "req",
-      "methods": [ "GET" ]
+      "methods": [ "GET", "POST" ]
     },
     {
       "type": "http",
