@@ -11,15 +11,12 @@ module.exports = async function (context, req) {
       return;
     }
 
-    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-    context.log("Parsed body:", body);
-    const userId = body?.userId;
-    if (!body || !userId) {
-      context.log("Request body:", req.body);
-      context.log("User ID:", userId);
+    const userId = req.query.userId;
+    context.log("Query userId:", userId);
+    if (!userId) {
       context.res = {
         status: 400,
-        body: "Missing userId in request body."
+        body: "Missing userId in query parameters."
       };
       return;
     }
