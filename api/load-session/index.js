@@ -23,42 +23,27 @@ module.exports = async function (context, req) {
   }
 
   const userId = clientPrincipal.userId;
-  context.log("👤 userId:", userId);
-  if (!userId) {
-    context.res = {
-      status: 401,
-      body: "Unauthorized: Missing user ID."
-    };
-    return;
-  }
+  const blobName = `${userId}-default.json`;
 
   const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING);
   const containerClient = blobServiceClient.getContainerClient("chat-sessions");
+  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
-  const messages = [];
-　context.log("📦 Searching blobs in container for userId prefix...");
-
-  for await (const blob of containerClient.listBlobsFlat()) {
-    if (blob.name.startsWith(`${userId}-`)) {
-          context.log("✅ Matching blob found:", blob.name);
-      const blockBlobClient = containerClient.getBlockBlobClient(blob.name);
-      const downloadBlockBlobResponse = await blockBlobClient.download(0);
-      const downloaded = await streamToString(downloadBlockBlobResponse.readableStreamBody);
-      context.log("📥 blob content:", downloaded); // ← streamToString()後に出力
-      const parsed = JSON.parse(downloaded);
-      context.log("🧾 parsed:", parsed);           // ← JSON.parse()直後
-      if (Array.isArray(parsed.messages)) {
-        messages.push(...parsed.messages);
-      } else {
-        messages.push(parsed);
-      }
-    }
+  try {
+    const downloadBlockBlobResponse = await blockBlobClient.download(0);
+    const downloaded = await streamToString(downloadBlockBlobResponse.readableStreamBody);
+    const parsed = JSON.parse(downloaded);
+    const messages = Array.isArray(parsed.messages) ? parsed.messages : [];
+    context.res = {
+      status: 200,
+      body: { messages }
+    };
+  } catch (err) {
+    context.res = {
+      status: 200,
+      body: { messages: [] }
+    };
   }
-
-  context.res = {
-    status: 200,
-    body: { messages }
-  };
 };
 
 async function streamToString(readableStream) {
