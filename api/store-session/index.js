@@ -1,4 +1,5 @@
 const { BlobServiceClient } = require('@azure/storage-blob');
+const { streamToString } = require("../blobUtils");
 
 module.exports = async function (context, req) {
   try {
@@ -30,8 +31,26 @@ module.exports = async function (context, req) {
     const blobName = `${userId}-${body.sessionId}.json`;
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
-    const content = JSON.stringify(body);
-    await blockBlobClient.upload(content, Buffer.byteLength(content), {
+    let mergedMessages = body.messages;
+
+    try {
+      const downloadBlockBlobResponse = await blockBlobClient.download(0);
+      const existingContent = await streamToString(downloadBlockBlobResponse.readableStreamBody);
+      const existingData = JSON.parse(existingContent);
+      if (Array.isArray(existingData.messages)) {
+        mergedMessages = existingData.messages.concat(body.messages);
+      }
+    } catch (err) {
+      context.log("No existing blob found or failed to read it. Proceeding with new content.");
+    }
+
+    const updatedContent = JSON.stringify({
+      userId: body.userId,
+      sessionId: body.sessionId,
+      messages: mergedMessages
+    });
+
+    await blockBlobClient.upload(updatedContent, Buffer.byteLength(updatedContent), {
       blobHTTPHeaders: { blobContentType: "application/json" }
     });
 

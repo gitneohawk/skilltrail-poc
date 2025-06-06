@@ -1,4 +1,5 @@
 const { BlobServiceClient } = require("@azure/storage-blob");
+const { streamToString } = require("../blobUtils");
 
 module.exports = async function (context, req) {
   const clientPrincipalHeader = req.headers["x-ms-client-principal"];
@@ -57,16 +58,3 @@ module.exports = async function (context, req) {
     };
   }
 };
-
-async function streamToString(readableStream) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    readableStream.on("data", (data) => {
-      chunks.push(data.toString());
-    });
-    readableStream.on("end", () => {
-      resolve(chunks.join(""));
-    });
-    readableStream.on("error", reject);
-  });
-}
