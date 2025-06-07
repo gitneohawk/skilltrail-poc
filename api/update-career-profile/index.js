@@ -1,5 +1,6 @@
 const { BlobServiceClient } = require("@azure/storage-blob");
-const openai = require("openai");
+const { OpenAI } = require("openai");
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 module.exports = async function (context, req) {
   try {
@@ -49,7 +50,6 @@ module.exports = async function (context, req) {
       context.log(`No existing profile found. Creating new profile for userId: ${userId}`);
     }
 
-    openai.apiKey = process.env.OPENAI_API_KEY;
 
     if (!body.profile.lastAssistantMessage) {
       context.res = {
