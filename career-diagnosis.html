@@ -4,18 +4,51 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>キャリア診断 | SkillTrail</title>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@600&display=swap" rel="stylesheet" />
+    <style>body { font-family: 'Raleway', sans-serif; }</style>
     <script defer src="career-diagnosis.js"></script>
     <link href="./dist/output.css" rel="stylesheet" />
 </head>
-<body class="bg-gray-100 min-h-screen font-sans">
-    <div class="max-w-3xl mx-auto py-10 px-4">
-        <h1 class="text-3xl font-bold text-center mb-8">キャリア診断</h1>
-        <div id="loadingMessage" class="text-center text-gray-600 mb-4 hidden">プロフィールを読み込み中...</div>
-        <div id="missingInfoArea" class="mb-4"></div>
-        <div class="flex justify-center mb-6">
-            <button id="runDiagnosis" disabled class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 transition">診断を開始</button>
-        </div>
-        <div id="adviceArea" class="bg-white rounded shadow p-4 space-y-4"></div>
+<body class="bg-gradient-to-r from-pink-50 to-orange-50 text-gray-800 min-h-screen flex flex-col items-center justify-start p-4">
+  <div class="w-full max-w-3xl">
+    <div class="text-center mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold text-orange-500 mb-2">話すことで、見えてくる自分のストーリー</h1>
+      <p class="text-lg text-gray-700">AIと一緒にキャリアを再発見しよう</p>
     </div>
+    <div class="rounded-xl shadow-lg bg-white p-6 mb-6">
+      <div id="profileDisplay" class="mb-4"></div>
+      <div id="missingInfoArea" class="text-yellow-900 bg-yellow-100 p-4 rounded shadow mb-4 hidden"></div>
+    </div>
+    <form id="profileForm" class="rounded-xl shadow-lg bg-white p-6 mb-6 hidden">
+      <div class="mb-2">
+        <label for="age" class="block text-sm font-medium text-gray-700">年齢</label>
+        <input type="text" id="age" name="age" class="input input-bordered w-full" placeholder="例: 30代後半">
+      </div>
+      <div class="mb-2">
+        <label for="skills" class="block text-sm font-medium text-gray-700">スキル（カンマ区切り）</label>
+        <input type="text" id="skills" name="skills" class="input input-bordered w-full" placeholder="例: JavaScript, Python, チームマネジメント">
+      </div>
+      <div class="mb-2">
+        <label for="careerGoals" class="block text-sm font-medium text-gray-700">キャリアの希望・目標</label>
+        <input type="text" id="careerGoals" name="careerGoals" class="input input-bordered w-full" placeholder="例: エンジニアリングマネージャーを目指す">
+      </div>
+      <div class="mb-2">
+        <label for="personality" class="block text-sm font-medium text-gray-700">性格</label>
+        <input type="text" id="personality" name="personality" class="input input-bordered w-full" placeholder="例: 忍耐強い、人と話すのが得意">
+      </div>
+      <div class="mb-2">
+        <label for="workStyle" class="block text-sm font-medium text-gray-700">働き方</label>
+        <input type="text" id="workStyle" name="workStyle" class="input input-bordered w-full" placeholder="例: リモート勤務希望、フレックス重視">
+      </div>
+      <div class="mb-4">
+        <label for="location" class="block text-sm font-medium text-gray-700">居住地</label>
+        <input type="text" id="location" name="location" class="input input-bordered w-full" placeholder="例: 東京都">
+      </div>
+      <button type="submit" class="btn btn-primary">プロフィールを更新</button>
+    </form>
+    <button id="startDiagnosis" class="btn btn-success w-full mb-4 text-lg py-3">診断を開始</button>
+    <div id="diagnosisResult" class="bg-white p-4 rounded shadow hidden text-sm leading-relaxed text-gray-700"></div>
+  </div>
+  <script src="./js/career-diagnosis.js" type="module"></script>
 </body>
 </html>

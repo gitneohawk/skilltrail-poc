@@ -29,13 +29,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     loadingMessage.style.display = "none";
 
+    const labelMap = {
+        age: "年齢",
+        skills: "スキル",
+        careerGoals: "キャリアの希望・目標",
+        personality: "性格",
+        workStyle: "働き方",
+        location: "居住地"
+    };
     const missing = [];
-    if (!careerProfile.age) missing.push("年齢");
-    if (!careerProfile.skills || careerProfile.skills.length === 0) missing.push("スキル");
-    if (!careerProfile.goals) missing.push("キャリアの希望・目標");
+    if (!careerProfile.age) missing.push("age");
+    if (!careerProfile.skills || careerProfile.skills.length === 0) missing.push("skills");
+    if (!careerProfile.careerGoals) missing.push("careerGoals");
+    if (!careerProfile.personality) missing.push("personality");
+    if (!careerProfile.workStyle) missing.push("workStyle");
+    if (!careerProfile.location) missing.push("location");
 
     if (missing.length > 0) {
-        missingInfoArea.innerHTML = `以下の情報が不足しています：<br>${missing.join("、")}<br>診断精度を上げるため、入力をおすすめします。`;
+        const displayItems = missing.map(key => labelMap[key] || key);
+        missingInfoArea.innerHTML = `以下の情報が不足しています：<br>${displayItems.join("、")}<br>診断精度を上げるため、入力をおすすめします。`;
     }
 
     runButton.disabled = false;
