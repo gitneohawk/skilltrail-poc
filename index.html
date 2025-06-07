@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AIキャリア診断 - SkillTrail</title>
+    <title>SkillTrail - キャリア棚卸しPoC</title>
     <link href="/dist/output.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@600&display=swap" rel="stylesheet" />
     <style>
@@ -12,28 +12,74 @@
       }
     </style>
   </head>
-  <body class="bg-gradient-to-r from-pink-50 to-orange-50 text-gray-800 min-h-screen flex flex-col items-center justify-start p-4">
-    <div class="w-full max-w-3xl">
-      <div class="text-center mb-8">
-        <h1 class="text-3xl md:text-4xl font-bold text-orange-500 mb-2">話すことで、見えてくる自分のストーリー</h1>
-        <p class="text-lg text-gray-700">AIと一緒にキャリアを再発見しよう</p>
-      </div>
+  <body class="bg-gradient-to-r from-pink-50 to-orange-50 text-gray-800">
+    <div class="min-h-screen flex flex-col">
+      <!-- ヘッダー -->
+      <header class="flex justify-between items-center p-6">
+        <div class="text-3xl font-bold text-orange-500">SkillTrail</div>
+        <div id="headerAuth" class="text-sm text-gray-600">
+          <span id="loginStatus">🔍 ログイン確認中...</span>
+        </div>
+      </header>
 
-      <section id="profileDisplay" class="rounded-xl shadow-lg bg-white p-6 mb-6">
-        <!-- プロフィール表示内容 -->
-      </section>
+      <!-- メイン -->
+      <main class="flex-grow px-4 pb-8">
+        <div class="text-center mb-12">
+          <h1 class="text-4xl font-bold text-orange-500 mb-2">話すことで、見えてくる自分のストーリー</h1>
+          <p class="text-lg text-gray-700">AIと一緒に再発見しよう</p>
+          <div class="max-w-xl mx-auto mb-10">
+            <img src="images/hero-image.png" alt="AIと一緒に未来へ進むイメージ" class="rounded-xl shadow-md" />
+          </div>
+          <p class="mt-4 text-sm text-gray-700">
+            対話型診断であなたの考えを整理すると、AIキャリア診断や履歴書ジェネレータが使えるようになります。
+          </p>
+        </div>
 
-      <section id="missingInfoArea" class="rounded-xl shadow-lg bg-white p-6 mb-6">
-        <!-- 不足情報入力フォーム -->
-      </section>
+        <div class="flex flex-wrap justify-center gap-6">
+          <div class="bg-white rounded-xl shadow-md p-6 max-w-xs w-full text-center">
+            <h2 class="text-purple-600 text-xl font-semibold mb-2"><a href="chat.html">対話型インタビュー</a></h2>
+            <p class="text-sm text-gray-600">自然な会話で職歴やスキルを掘り起こし。夜中の自己棚卸しにも最適。</p>
+          </div>
+          <div class="bg-white rounded-xl shadow-md p-6 max-w-xs w-full text-center">
+            <h2 class="text-purple-600 text-xl font-semibold mb-2"><a href="career-diagnosis.html">AIキャリア診断</a></h2>
+            <p class="text-sm text-gray-600">業界動向 × あなたの強みを分析して、意外な適職をレコメンド。</p>
+          </div>
+          <div class="bg-white rounded-xl shadow-md p-6 max-w-xs w-full text-center">
+            <h2 class="text-purple-600 text-xl font-semibold mb-2"><a href="resume-generator.html">履歴書ジェネレーター</a></h2>
+            <p class="text-sm text-gray-600">魅せる職務経歴書を自動生成。採用担当の心を一撃。</p>
+          </div>
+        </div>
+      </main>
 
-      <button id="startDiagnosis" class="text-lg py-3">
-        診断開始
-      </button>
-
-      <div id="diagnosisResult" class="text-sm leading-relaxed text-gray-700">
-        <!-- 診断結果表示 -->
-      </div>
+      <!-- フッター -->
+      <footer class="text-center text-xs text-gray-500 py-4 border-t">
+        &copy; 2025 SkillTrail / Kibun.ai
+        <div class="text-xs text-gray-500 mt-2 space-x-4">
+          <a href="/company.html" class="hover:underline">運営会社</a>
+          <a href="/terms.html" class="hover:underline">サービス規約</a>
+          <a href="/security.html" class="hover:underline">セキュリティポリシー</a>
+        </div>
+      </footer>
     </div>
+</div>
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    const loginEl = document.getElementById("loginStatus");
+    async function updateLoginStatus() {
+      try {
+        const res = await fetch("/.auth/me", { credentials: "include" });
+        const data = await res.json();
+        if (data.clientPrincipal) {
+          loginEl.innerHTML = `✅ ようこそ ${data.clientPrincipal.userDetails} さん！ <a href="#" onclick="sessionStorage.clear(); window.location.href='/.auth/logout?post_logout_redirect_uri=/'">ログアウト</a>`;
+        } else {
+          loginEl.innerHTML = `<a href="/login.html?returnTo=/">ログイン</a>`;
+        }
+      } catch (e) {
+        loginEl.innerHTML = `<a href="/login.html?returnTo=/">ログイン</a>`;
+      }
+    }
+    updateLoginStatus();
+  });
+</script>
   </body>
 </html>
