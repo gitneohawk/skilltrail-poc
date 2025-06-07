@@ -98,7 +98,17 @@ You may infer attributes from context. For example, if a user mentions wanting w
       lastAssistantMessage: body.profile.lastAssistantMessage
     };
 
-    const mergedProfile = { ...existingProfile, ...structuredProfile };
+    const mergedProfile = { ...existingProfile };
+    for (const key in structuredProfile) {
+      if (
+        structuredProfile[key] !== undefined &&
+        structuredProfile[key] !== null &&
+        structuredProfile[key] !== "" &&
+        !(Array.isArray(structuredProfile[key]) && structuredProfile[key].length === 0)
+      ) {
+        mergedProfile[key] = structuredProfile[key];
+      }
+    }
 
     const content = JSON.stringify(mergedProfile);
     await blockBlobClient.upload(content, Buffer.byteLength(content), {
