@@ -100,13 +100,19 @@ You may infer attributes from context. For example, if a user mentions wanting w
 
     const mergedProfile = { ...existingProfile };
     for (const key in structuredProfile) {
+      const newValue = structuredProfile[key];
       if (
-        structuredProfile[key] !== undefined &&
-        structuredProfile[key] !== null &&
-        structuredProfile[key] !== "" &&
-        !(Array.isArray(structuredProfile[key]) && structuredProfile[key].length === 0)
+        newValue !== undefined &&
+        newValue !== null &&
+        newValue !== "" &&
+        !(Array.isArray(newValue) && newValue.length === 0)
       ) {
-        mergedProfile[key] = structuredProfile[key];
+        if (Array.isArray(newValue) && Array.isArray(mergedProfile[key])) {
+          // Merge arrays without duplicates
+          mergedProfile[key] = Array.from(new Set([...mergedProfile[key], ...newValue]));
+        } else {
+          mergedProfile[key] = newValue;
+        }
       }
     }
 
