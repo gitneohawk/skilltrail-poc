@@ -21,7 +21,8 @@
   },
   "routes": [
     {
-      "route": "/api/*"
+      "route": "/api/*",
+      "allowedRoles": ["anonymous", "authenticated"]
     },
     {
       "route": "/interview",
