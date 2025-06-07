@@ -1,4 +1,5 @@
 const { BlobServiceClient } = require("@azure/storage-blob");
+const openai = require("openai");
 
 module.exports = async function (context, req) {
   try {
@@ -48,7 +49,38 @@ module.exports = async function (context, req) {
       context.log(`No existing profile found. Creating new profile for userId: ${userId}`);
     }
 
-    const mergedProfile = { ...existingProfile, ...body.profile };
+    openai.apiKey = process.env.OPENAI_API_KEY;
+
+    if (!body.profile.lastAssistantMessage) {
+      context.res = {
+        status: 400,
+        body: "Missing lastAssistantMessage in profile."
+      };
+      return;
+    }
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant that extracts structured career profile information (e.g. age range, skills, career goals) from the user's latest chat message."
+        },
+        {
+          role: "user",
+          content: body.profile.lastAssistantMessage
+        }
+      ]
+    });
+
+    const advice = completion.choices[0].message.content;
+    const structuredProfile = {
+      advice,
+      lastAssistantMessage: body.profile.lastAssistantMessage
+    };
+
+    const mergedProfile = { ...existingProfile, ...structuredProfile };
+
     const content = JSON.stringify(mergedProfile);
     await blockBlobClient.upload(content, Buffer.byteLength(content), {
       blobHTTPHeaders: { blobContentType: "application/json" },
