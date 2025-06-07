@@ -64,7 +64,18 @@ module.exports = async function (context, req) {
       messages: [
         {
           role: "system",
-          content: "You are a helpful assistant that extracts structured career profile information (e.g. age range, skills, career goals) from the user's latest chat message."
+          content: `You are a helpful assistant that extracts structured career profile information from a user's latest message.
+Respond only with a JSON object with the following keys:
+- age (e.g., "30代", or a number like "35")
+- skills (array of strings)
+- careerGoals (string)
+- personality (string)
+- workStyle (string)
+- location (e.g., "Tokyo" or general region if inferred)
+- conversationCount (number; if not available, default to 1)
+- notableAttributes (array of strings representing traits or characteristics inferred from the conversation)
+
+Only return a valid JSON object. Do not include any commentary or explanation.`
         },
         {
           role: "user",
@@ -73,9 +84,16 @@ module.exports = async function (context, req) {
       ]
     });
 
-    const advice = completion.choices[0].message.content;
+    let parsed;
+    try {
+      parsed = JSON.parse(completion.choices[0].message.content);
+    } catch (e) {
+      context.log("Failed to parse structured profile JSON:", completion.choices[0].message.content);
+      parsed = {};
+    }
+
     const structuredProfile = {
-      advice,
+      ...parsed,
       lastAssistantMessage: body.profile.lastAssistantMessage
     };
 
