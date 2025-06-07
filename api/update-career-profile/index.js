@@ -75,7 +75,8 @@ Respond only with a JSON object with the following keys:
 - conversationCount (number; if not available, default to 1)
 - notableAttributes (array of strings representing traits or characteristics inferred from the conversation)
 
-Only return a valid JSON object. Do not include any commentary or explanation.`
+Only return a valid JSON object. Do not include any commentary or explanation.
+You may infer attributes from context. For example, if a user mentions wanting work-life balance, add that under workStyle or notableAttributes. If they discuss living or working in a specific area, note that under location.`
         },
         {
           role: "user",
