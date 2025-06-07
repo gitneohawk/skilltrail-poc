@@ -1,4 +1,4 @@
-const { BlobServiceClient } = require("@azure/storage-blob");
+const { BlobServiceClient } = require('@azure/storage-blob');
 
 module.exports = async function (context, req) {
   try {
@@ -41,37 +41,37 @@ module.exports = async function (context, req) {
     const blobName = `${userId}.json`;
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
-    let existingProfile = {};
-    try {
-      const downloadBlockBlobResponse = await blockBlobClient.download(0);
-      const streamToString = async (readableStream) => {
-        return new Promise((resolve, reject) => {
-          const chunks = [];
-          readableStream.on("data", (data) => chunks.push(data.toString()));
-          readableStream.on("end", () => resolve(chunks.join("")));
-          readableStream.on("error", reject);
-        });
-      };
-      const downloaded = await streamToString(downloadBlockBlobResponse.readableStreamBody);
-      existingProfile = JSON.parse(downloaded);
+    const downloadBlockBlobResponse = await blockBlobClient.download(0);
+    const streamToString = async (readableStream) => {
+      return new Promise((resolve, reject) => {
+        const chunks = [];
+        readableStream.on("data", (data) => chunks.push(data.toString()));
+        readableStream.on("end", () => resolve(chunks.join("")));
+        readableStream.on("error", reject);
+      });
+    };
+    const downloaded = await streamToString(downloadBlockBlobResponse.readableStreamBody);
+    const profile = JSON.parse(downloaded);
 
-      context.res = {
-        status: 200,
-        body: existingProfile,
-        headers: { "Content-Type": "application/json" }
-      };
-    } catch (err) {
-      context.log.error("No career profile found or failed to read profile:", err.message);
-      context.res = {
-        status: 404,
-        body: "Career profile not found."
-      };
+    // Sample diagnosis logic based on profile
+    let advice = "あなたのキャリア情報を確認しました。以下の点に注目すると良いでしょう：";
+
+    if (!profile.experience || profile.experience.length === 0) {
+      advice += "\n- 職歴情報が未入力のようです。経験のある職種や業界を入力すると、より具体的なアドバイスが可能です。";
+    } else {
+      advice += `\n- 現在の経験は「${profile.experience[0].title}」のようですね。この分野でスキルを深めるか、関連する業界に広げるとよいかもしれません。`;
     }
-  } catch (error) {
-    context.log.error("Error loading career profile:", error.message);
+
+    context.res = {
+      status: 200,
+      body: { advice, profile },
+      headers: { "Content-Type": "application/json" }
+    };
+  } catch (err) {
+    context.log.error("Failed to generate career diagnosis:", err.message);
     context.res = {
       status: 500,
-      body: "Internal server error."
+      body: "キャリア診断に失敗しました。"
     };
   }
 };

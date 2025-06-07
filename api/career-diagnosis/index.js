@@ -1,33 +1,55 @@
-
-
 const { BlobServiceClient } = require('@azure/storage-blob');
-const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
 module.exports = async function (context, req) {
-  if (req.method !== 'POST') {
-    context.res = {
-      status: 405,
-      body: 'Method Not Allowed'
-    };
-    return;
-  }
-  const userId = req.body && req.body.userId;
-  if (!userId) {
-    context.res = {
-      status: 400,
-      body: "Missing userId"
-    };
-    return;
-  }
-
-  const containerName = 'career-profiles';
-  const blobName = `${userId}.json`;
-
   try {
+    const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    if (!AZURE_STORAGE_CONNECTION_STRING) {
+      context.res = {
+        status: 500,
+        body: "Azure Storage connection string not found."
+      };
+      return;
+    }
+
+    const clientPrincipalHeader = req.headers["x-ms-client-principal"];
+    if (!clientPrincipalHeader) {
+      context.res = {
+        status: 401,
+        body: "Unauthorized"
+      };
+      return;
+    }
+
+    let userId = "unknown";
+    try {
+      const decoded = Buffer.from(clientPrincipalHeader, "base64").toString("utf8");
+      const principal = JSON.parse(decoded);
+      userId = principal.userId || "unknown";
+    } catch (e) {
+      context.res = {
+        status: 400,
+        body: "Invalid client principal."
+      };
+      return;
+    }
+
+    context.log("Extracted userId:", userId);
+
     const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
-    const containerClient = blobServiceClient.getContainerClient(containerName);
+    const containerClient = blobServiceClient.getContainerClient("career-profiles");
+
+    const blobName = `${userId}.json`;
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
     const downloadBlockBlobResponse = await blockBlobClient.download(0);
+    const streamToString = async (readableStream) => {
+      return new Promise((resolve, reject) => {
+        const chunks = [];
+        readableStream.on("data", (data) => chunks.push(data.toString()));
+        readableStream.on("end", () => resolve(chunks.join("")));
+        readableStream.on("error", reject);
+      });
+    };
     const downloaded = await streamToString(downloadBlockBlobResponse.readableStreamBody);
     const profile = JSON.parse(downloaded);
 
@@ -42,7 +64,8 @@ module.exports = async function (context, req) {
 
     context.res = {
       status: 200,
-      body: { advice, profile }
+      body: { advice, profile },
+      headers: { "Content-Type": "application/json" }
     };
   } catch (err) {
     context.log.error("Failed to generate career diagnosis:", err.message);
@@ -52,16 +75,3 @@ module.exports = async function (context, req) {
     };
   }
 };
-
-async function streamToString(readableStream) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    readableStream.on("data", (data) => {
-      chunks.push(data.toString());
-    });
-    readableStream.on("end", () => {
-      resolve(chunks.join(""));
-    });
-    readableStream.on("error", reject);
-  });
-}
