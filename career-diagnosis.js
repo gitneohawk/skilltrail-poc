@@ -66,8 +66,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 body: JSON.stringify({ userId: careerProfile.userId })
             });
             if (!res.ok) throw new Error("診断APIエラー");
-            const result = await res.text();
-            adviceArea.textContent = result;
+            const resultJson = await res.json();
+            const adviceText = resultJson.advice || "診断結果が見つかりませんでした。";
+            adviceArea.textContent = adviceText;
         } catch (err) {
             console.error("診断失敗:", err);
             adviceArea.innerHTML = "診断に失敗しました。時間を置いてお試しください。";
