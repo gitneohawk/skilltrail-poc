@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
             if (!res.ok) throw new Error("診断APIエラー");
             const result = await res.text();
-            adviceArea.innerHTML = result;
+            adviceArea.textContent = result;
         } catch (err) {
             console.error("診断失敗:", err);
             adviceArea.innerHTML = "診断に失敗しました。時間を置いてお試しください。";
