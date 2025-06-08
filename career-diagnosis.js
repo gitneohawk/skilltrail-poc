@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const loadingMessage = document.getElementById("loadingMessage");
     const missingInfoArea = document.getElementById("missingInfoArea");
     const runButton = document.getElementById("runDiagnosis");
-    const adviceArea = document.getElementById("adviceArea");
+    const adviceArea = document.getElementById("diagnosisResult");
 
     loadingMessage.style.display = "block";
 
