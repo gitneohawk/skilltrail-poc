@@ -53,18 +53,69 @@ module.exports = async function (context, req) {
     const downloaded = await streamToString(downloadBlockBlobResponse.readableStreamBody);
     const profile = JSON.parse(downloaded);
 
-    // Sample diagnosis logic based on profile
-    let advice = "あなたのキャリア情報を確認しました。以下の点に注目すると良いでしょう：";
+    // Define required profile fields
+    const requiredFields = ["age", "skills", "careerGoals", "personality", "workStyle", "location"];
+    const missingFields = requiredFields.filter(field => {
+      return !profile[field] || (Array.isArray(profile[field]) ? profile[field].length === 0 : profile[field].trim() === "");
+    });
 
-    if (!profile.experience || profile.experience.length === 0) {
-      advice += "\n- 職歴情報が未入力のようです。経験のある職種や業界を入力すると、より具体的なアドバイスが可能です。";
-    } else {
-      advice += `\n- 現在の経験は「${profile.experience[0].title}」のようですね。この分野でスキルを深めるか、関連する業界に広げるとよいかもしれません。`;
+    if (missingFields.length > 0) {
+      context.res = {
+        status: 200,
+        body: {
+          message: "Missing profile fields",
+          profile,
+          missingFields
+        },
+        headers: { "Content-Type": "application/json" }
+      };
+      return;
     }
+
+    // If profile is complete, generate advice using ChatGPT
+    const openaiEndpoint = "https://api.openai.com/v1/chat/completions";
+    const openaiKey = process.env.OPENAI_API_KEY;
+    if (!openaiKey) {
+      context.res = {
+        status: 500,
+        body: "OpenAI API key is missing."
+      };
+      return;
+    }
+
+    const prompt = `以下のプロフィールに基づいて、キャリアアドバイスを200文字程度で日本語で作成してください:\n${JSON.stringify(profile, null, 2)}`;
+
+    const openaiRes = await fetch(openaiEndpoint, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${openaiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7
+      })
+    });
+
+    const openaiData = await openaiRes.json();
+
+    if (!openaiData.choices || !openaiData.choices[0]) {
+      context.res = {
+        status: 500,
+        body: "ChatGPTからアドバイスを取得できませんでした。"
+      };
+      return;
+    }
+
+    const advice = openaiData.choices[0].message.content;
 
     context.res = {
       status: 200,
-      body: { advice, profile },
+      body: {
+        profile,
+        advice
+      },
       headers: { "Content-Type": "application/json" }
     };
   } catch (err) {
