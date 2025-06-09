@@ -10,12 +10,15 @@
 
     <!-- ヘッダー -->
     <header class="flex justify-between items-center p-4 bg-white shadow-md">
-      <h1 class="text-xl font-bold text-orange-500">SkillTrail チャット</h1>
+      <div>
+        <a href="index.html" class="text-xl font-bold text-orange-500 hover:underline">SkillTrail</a>
+      </div>
       <div id="authStatus" class="text-sm text-gray-600">🔍 ログイン確認中...</div>
     </header>
 
     <!-- メイン -->
     <main class="flex-grow container mx-auto p-4">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">対話型インタビュー</h2>
       <div id="chatBox" class="bg-white rounded-xl shadow-inner p-4 mb-4 h-96 overflow-y-auto space-y-2">
         <div id="welcomeMessage" class="text-gray-400 text-center">
           💡 ここに相談内容を入力すると、AIがあなたのキャリアを一緒に考えます。
