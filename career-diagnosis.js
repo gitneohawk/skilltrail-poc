@@ -2,11 +2,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const loadingMessage = document.getElementById("loadingMessage");
     const missingInfoArea = document.getElementById("missingInfoArea");
     const runButton = document.getElementById("runDiagnosis");
-    const adviceArea = document.getElementById("diagnosisContent");
+    const diagnosisContent = document.getElementById("diagnosisContent");
+    const resultSection = document.getElementById("resultSection");
+    const diagnosisResult = document.getElementById("diagnosisResult");
 
     loadingMessage.style.display = "block";
-    adviceArea.innerHTML = "";
-    adviceArea.classList.add("hidden");
+    diagnosisContent.innerHTML = "";
+    diagnosisContent.classList.add("hidden");
     runButton.disabled = true;
 
     let careerProfile = null;
@@ -31,7 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     loadingMessage.style.display = "none";
-    adviceArea.classList.remove("hidden");
+    diagnosisContent.classList.remove("hidden");
 
     const labelMap = {
         age: "年齢",
@@ -60,10 +62,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         runButton.disabled = true;
         runButton.innerText = "診断中...";
         const spinner = document.getElementById("spinner");
-        const resultBox = document.getElementById("diagnosisResult");
-        const resultContent = document.getElementById("diagnosisContent");
         spinner.classList.remove("hidden");
-        resultBox.classList.add("hidden");
+        resultSection.classList.remove("hidden");
+        diagnosisResult.classList.add("hidden");
+        diagnosisContent.innerHTML = "";
 
         try {
             const res = await fetch("/api/career-diagnosis", {
@@ -78,7 +80,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const resultJson = await res.json();
             const adviceText = resultJson.advice || "診断結果が見つかりませんでした。";
             spinner.classList.add("hidden");
-            resultBox.classList.remove("hidden");
+            diagnosisResult.classList.remove("hidden");
             const profile = resultJson.profile || {};
             let profileHtml = "<h3 class='text-lg font-semibold mb-2'>現在のプロフィール</h3><ul class='list-disc pl-5 mb-4'>";
             for (const key in profile) {
@@ -86,11 +88,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
             profileHtml += "</ul>";
             console.log("診断結果:", adviceText);
-            resultContent.innerHTML = profileHtml + `<div class='bg-white p-4 rounded shadow'><p>${adviceText}</p></div>`;
-            adviceArea.classList.remove("hidden");
+            diagnosisContent.innerHTML = profileHtml + `<div class='bg-white p-4 rounded shadow'><p>${adviceText}</p></div>`;
+            diagnosisContent.classList.remove("hidden");
         } catch (err) {
             console.error("診断失敗:", err);
-            adviceArea.innerHTML = "診断に失敗しました。時間を置いてお試しください。";
+            diagnosisContent.innerHTML = "診断に失敗しました。時間を置いてお試しください。";
         } finally {
             runButton.disabled = false;
             runButton.innerText = "診断を開始";
