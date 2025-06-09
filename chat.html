@@ -171,6 +171,23 @@
             }
           })
         });
+        try {
+          const sessionRes = await fetch("/api/chat-session", {
+            method: "GET",
+            credentials: "include"
+          });
+          const sessionData = await sessionRes.json();
+          const messages = sessionData.messages;
+
+          await fetch("/api/extract-structure", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ messages })
+          });
+        } catch (error) {
+          console.error("extract-structure API error:", error);
+        }
       }
 
       async function loadChatHistory() {
