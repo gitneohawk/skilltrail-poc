@@ -106,11 +106,15 @@ function renderResume(workHistory) {
     });
 
     try {
+      const userId = sessionStorage.getItem("userId");
       const response = await fetch("/api/save-resume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ workHistory: updatedHistory })
+        body: JSON.stringify({
+          userId,
+          resume: { workHistory: updatedHistory }
+        })
       });
 
       if (response.ok) {
