@@ -65,7 +65,17 @@ module.exports = async function (context, req) {
       return;
     }
 
-    const prompt = `以下のプロフィールに基づいて、キャリアアドバイスを200文字程度で日本語で作成してください:\n${JSON.stringify(profile, null, 2)}`;
+    const prompt = `
+    以下はあるユーザのキャリアプロフィールです。
+
+    【プロフィール】
+    ${JSON.stringify(profile, null, 2)}
+
+    このユーザの年齢、スキル、性格、働き方の希望、キャリアゴール、会話から得られた属性などをもとに、
+    「この人だからこそ活かせる経験や方向性、次のステップ」を考慮して、キャリアアドバイスを日本語で200文字程度で書いてください。
+
+    また、形式的な文ではなく、その人に語りかけるように、励ましや共感を含んだ文章にしてください。
+    `;
 
     const openaiRes = await fetch(openaiEndpoint, {
       method: "POST",
