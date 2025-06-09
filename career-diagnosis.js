@@ -81,14 +81,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             const adviceText = resultJson.advice || "診断結果が見つかりませんでした。";
             spinner.classList.add("hidden");
             diagnosisResult.classList.remove("hidden");
-            const profile = resultJson.profile || {};
-            let profileHtml = "<h3 class='text-lg font-semibold mb-2'>現在のプロフィール</h3><ul class='list-disc pl-5 mb-4'>";
-            for (const key in profile) {
-                profileHtml += `<li><strong>${key}:</strong> ${Array.isArray(profile[key]) ? profile[key].join(", ") : profile[key]}</li>`;
-            }
-            profileHtml += "</ul>";
             console.log("診断結果:", adviceText);
-            diagnosisContent.innerHTML = profileHtml + `<div class='bg-white p-4 rounded shadow'><p>${adviceText}</p></div>`;
+            diagnosisContent.innerHTML = `<div class='bg-white p-4 rounded shadow'><p>${adviceText}</p></div>`;
             diagnosisContent.classList.remove("hidden");
         } catch (err) {
             console.error("診断失敗:", err);
