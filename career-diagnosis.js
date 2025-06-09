@@ -5,6 +5,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const adviceArea = document.getElementById("diagnosisResult");
 
     loadingMessage.style.display = "block";
+    adviceArea.innerHTML = "";
+    adviceArea.classList.add("hidden");
     runButton.disabled = true;
 
     let careerProfile = null;
@@ -29,6 +31,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     loadingMessage.style.display = "none";
+    adviceArea.classList.remove("hidden");
 
     const labelMap = {
         age: "年齢",
@@ -61,6 +64,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         runButton.disabled = true;
         runButton.innerText = "診断中...";
         adviceArea.innerHTML = "<div class='flex items-center'><svg class='animate-spin h-5 w-5 mr-2 text-gray-500' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'><circle class='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' stroke-width='4'/><path class='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z'/></svg>診断結果を生成中です...</div>";
+        adviceArea.classList.remove("hidden");
 
         try {
             const res = await fetch("/api/career-diagnosis", {

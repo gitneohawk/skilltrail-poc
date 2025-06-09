@@ -25,14 +25,6 @@
       <div id="profileDisplay" class="mb-4"></div>
       <div id="missingInfoArea" class="text-yellow-900 bg-yellow-100 p-4 rounded shadow mb-4 hidden"></div>
       <div class="text-center mt-6">
-        <button id="runDiagnosis" class="btn btn-primary text-white px-6 py-2 rounded shadow hover:bg-orange-600 transition disabled:opacity-50" disabled>診断を開始</button>
-        <div id="spinner" class="text-center hidden">
-          <svg class="animate-spin h-5 w-5 text-orange-500 mx-auto mt-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-          </svg>
-          <p class="mt-2 text-sm text-gray-600">診断結果を生成中です...</p>
-        </div>
       </div>
     </div>
     <form id="profileForm" class="rounded-xl shadow-lg bg-white p-6 mb-6 hidden">
@@ -63,6 +55,14 @@
       <button type="submit" class="btn btn-primary">プロフィールを更新</button>
     </form>
     <div id="diagnosisResult" class="bg-white p-4 rounded shadow hidden text-sm leading-relaxed text-gray-700"></div>
+    <button id="runDiagnosis" class="btn btn-primary text-white px-4 py-1 text-base rounded shadow hover:bg-orange-600 transition disabled:opacity-50" disabled>診断を開始</button>
+    <div id="spinner" class="text-center hidden">
+      <svg class="animate-spin h-5 w-5 text-orange-500 mx-auto mt-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+      <p class="mt-2 text-sm text-gray-600">診断中です...</p>
+    </div>
   </div>
   <script src="career-diagnosis.js"></script>
 </body>
