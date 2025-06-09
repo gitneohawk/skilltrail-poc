@@ -41,31 +41,48 @@ async function loadResumeData() {
   const resumeArea = document.getElementById("resumeArea");
   resumeArea.innerHTML = "📄 履歴書データを取得中...";
 
+  const userId = sessionStorage.getItem("userId");
+  let loaded = false;
   try {
-    const res = await fetch("/api/chat-session", {
-      method: "GET",
-      credentials: "include"
-    });
-    const sessionData = await res.json();
-    const messages = sessionData.messages;
-
-    const response = await fetch("/api/extract-structure", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ messages })
-    });
-
-    const result = await response.json();
-
-    if (result.workHistory && result.workHistory.length > 0) {
-      renderResume(result.workHistory);
-    } else {
-      resumeArea.innerHTML = "😢 履歴書データが見つかりませんでした。";
+    // まず保存済みデータ（career-profiles）を取得
+    const res = await fetch(`/api/load-career-profile?userId=${encodeURIComponent(userId)}`, { credentials: "include" });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.resume && data.resume.workHistory && data.resume.workHistory.length > 0) {
+        renderResume(data.resume.workHistory);
+        loaded = true;
+      }
     }
-  } catch (err) {
-    console.error("❌ 履歴書読み込み失敗:", err);
-    resumeArea.innerHTML = "⚠️ 履歴書データの取得に失敗しました。";
+  } catch (e) { /* 無視して次へ */ }
+
+  if (!loaded) {
+    // 旧方式（会話履歴から抽出）
+    try {
+      const res = await fetch("/api/chat-session", {
+        method: "GET",
+        credentials: "include"
+      });
+      const sessionData = await res.json();
+      const messages = sessionData.messages;
+
+      const response = await fetch("/api/extract-structure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ messages })
+      });
+
+      const result = await response.json();
+
+      if (result.workHistory && result.workHistory.length > 0) {
+        renderResume(result.workHistory);
+      } else {
+        resumeArea.innerHTML = "😢 履歴書データが見つかりませんでした。";
+      }
+    } catch (err) {
+      console.error("❌ 履歴書読み込み失敗:", err);
+      resumeArea.innerHTML = "⚠️ 履歴書データの取得に失敗しました。";
+    }
   }
 }
 
