@@ -10,7 +10,13 @@
 </head>
 <body class="bg-gradient-to-r from-pink-50 to-orange-50 text-gray-800 min-h-screen flex flex-col items-center justify-start p-4">
   <div class="w-full max-w-3xl">
-    <div id="loadingMessage" class="text-gray-600 mb-4 hidden">診断プロファイルを読み込み中...</div>
+    <div id="loadingMessage" class="text-gray-600 mb-4 flex items-center space-x-2">
+      <svg class="animate-spin h-5 w-5 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+      <p class="text-sm text-gray-600">診断プロファイルを読み込み中...</p>
+    </div>
     <div class="text-center mb-8">
       <h1 class="text-3xl md:text-4xl font-bold text-orange-500 mb-2">AIキャリア診断</h1>
       <p class="text-lg text-gray-700">silltrailでやり取りをした内容をベースに、AIがアドバイスを行います。</p>
@@ -19,7 +25,7 @@
       <div id="profileDisplay" class="mb-4"></div>
       <div id="missingInfoArea" class="text-yellow-900 bg-yellow-100 p-4 rounded shadow mb-4 hidden"></div>
       <div class="text-center mt-6">
-        <button id="runDiagnosis" class="btn btn-success w-full mb-4 text-lg py-3">診断を開始</button>
+        <button id="runDiagnosis" class="btn btn-primary text-white px-6 py-2 rounded shadow hover:bg-orange-600 transition disabled:opacity-50" disabled>診断を開始</button>
         <div id="spinner" class="text-center hidden">
           <svg class="animate-spin h-5 w-5 text-orange-500 mx-auto mt-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
