@@ -68,7 +68,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (!res.ok) throw new Error("診断APIエラー");
             const resultJson = await res.json();
             const adviceText = resultJson.advice || "診断結果が見つかりませんでした。";
+            console.log("診断結果:", adviceText);
             adviceArea.textContent = adviceText;
+            adviceArea.classList.remove("hidden");
         } catch (err) {
             console.error("診断失敗:", err);
             adviceArea.innerHTML = "診断に失敗しました。時間を置いてお試しください。";
