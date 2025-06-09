@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const loadingMessage = document.getElementById("loadingMessage");
     const missingInfoArea = document.getElementById("missingInfoArea");
     const runButton = document.getElementById("runDiagnosis");
-    const adviceArea = document.getElementById("diagnosisResult");
+    const adviceArea = document.getElementById("diagnosisContent");
 
     loadingMessage.style.display = "block";
     adviceArea.innerHTML = "";
@@ -59,8 +59,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     runButton.addEventListener("click", async () => {
         runButton.disabled = true;
         runButton.innerText = "診断中...";
-        adviceArea.innerHTML = "<div class='flex items-center'><svg class='animate-spin h-5 w-5 mr-2 text-gray-500' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'><circle class='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' stroke-width='4'/><path class='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z'/></svg>診断結果を生成中です...</div>";
-        adviceArea.classList.remove("hidden");
+        const spinner = document.getElementById("spinner");
+        const resultBox = document.getElementById("diagnosisResult");
+        const resultContent = document.getElementById("diagnosisContent");
+        spinner.classList.remove("hidden");
+        resultBox.classList.add("hidden");
 
         try {
             const res = await fetch("/api/career-diagnosis", {
@@ -74,6 +77,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (!res.ok) throw new Error("診断APIエラー");
             const resultJson = await res.json();
             const adviceText = resultJson.advice || "診断結果が見つかりませんでした。";
+            spinner.classList.add("hidden");
+            resultBox.classList.remove("hidden");
             const profile = resultJson.profile || {};
             let profileHtml = "<h3 class='text-lg font-semibold mb-2'>現在のプロフィール</h3><ul class='list-disc pl-5 mb-4'>";
             for (const key in profile) {
@@ -81,7 +86,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
             profileHtml += "</ul>";
             console.log("診断結果:", adviceText);
-            adviceArea.innerHTML = profileHtml + `<div class='bg-white p-4 rounded shadow'><p>${adviceText}</p></div>`;
+            resultContent.innerHTML = profileHtml + `<div class='bg-white p-4 rounded shadow'><p>${adviceText}</p></div>`;
             adviceArea.classList.remove("hidden");
         } catch (err) {
             console.error("診断失敗:", err);
