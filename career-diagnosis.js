@@ -54,11 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         missingInfoArea.innerHTML = `以下の情報が不足しています：<br>${displayItems.join("、")}<br>診断精度を上げるため、入力をおすすめします。`;
     }
 
-    if (missing.length === 0) {
-        runButton.disabled = false;
-    } else {
-        runButton.disabled = true;
-    }
+    runButton.disabled = false;
 
     runButton.addEventListener("click", async () => {
         runButton.disabled = true;
