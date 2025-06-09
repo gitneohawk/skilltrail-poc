@@ -48,8 +48,8 @@ async function loadResumeData() {
     const res = await fetch(`/api/load-career-profile?userId=${encodeURIComponent(userId)}`, { credentials: "include" });
     if (res.ok) {
       const data = await res.json();
-      if (data.resume && data.resume.workHistory && data.resume.workHistory.length > 0) {
-        renderResume(data.resume.workHistory);
+      if (data.profile && data.profile.resume && data.profile.resume.workHistory && data.profile.resume.workHistory.length > 0) {
+        renderResume(data.profile.resume.workHistory);
         loaded = true;
       }
     }
