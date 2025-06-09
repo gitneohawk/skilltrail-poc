@@ -53,24 +53,6 @@ module.exports = async function (context, req) {
     const downloaded = await streamToString(downloadBlockBlobResponse.readableStreamBody);
     const profile = JSON.parse(downloaded);
 
-    // Define required profile fields
-    const requiredFields = ["age", "skills", "careerGoals", "personality", "workStyle", "location"];
-    const missingFields = requiredFields.filter(field => {
-      return !profile[field] || (Array.isArray(profile[field]) ? profile[field].length === 0 : profile[field].trim() === "");
-    });
-
-    if (missingFields.length > 0) {
-      context.res = {
-        status: 200,
-        body: {
-          message: "Missing profile fields",
-          profile,
-          missingFields
-        },
-        headers: { "Content-Type": "application/json" }
-      };
-      return;
-    }
 
     // If profile is complete, generate advice using ChatGPT
     const openaiEndpoint = "https://api.openai.com/v1/chat/completions";
@@ -113,7 +95,7 @@ module.exports = async function (context, req) {
     context.res = {
       status: 200,
       body: {
-        advice
+        advice,
       },
       headers: { "Content-Type": "application/json" }
     };
