@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SkillTrail 履歴書ジェネレーター</title>
     <link href="/dist/output.css" rel="stylesheet" />
+    <style>
+      @media print {
+        #generateButton {
+          display: none;
+        }
+      }
+    </style>
   </head>
   <body class="bg-gray-50 font-sans min-h-screen flex flex-col">
     <!-- ヘッダー -->
@@ -17,12 +24,18 @@
     <main class="flex-grow container mx-auto p-4">
       <h1 class="text-2xl font-semibold text-orange-500 mb-4">履歴書プレビューと編集</h1>
 
+      <div class="text-sm text-gray-500 mb-4">
+        履歴書の内容を以下で確認・修正できます。問題なければPDFとして出力してください。
+      </div>
+
       <div id="resumeArea" class="bg-white shadow p-6 rounded-xl space-y-4">
         <!-- ここに履歴書内容がJavaScriptで挿入される -->
       </div>
 
       <div class="text-right mt-4">
-        <button id="generateButton" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">PDF出力</button>
+        <button id="generateButton" class="bg-orange-500 text-white px-6 py-2 rounded shadow hover:bg-orange-600 transition duration-200">
+          PDF出力
+        </button>
       </div>
     </main>
 

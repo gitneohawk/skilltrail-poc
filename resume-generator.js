@@ -9,6 +9,8 @@ document.addEventListener("DOMContentLoaded", () => {
   generateButton.addEventListener("click", () => {
     window.print(); // 簡易的なPDF出力（印刷機能を使う）
   });
+
+  // 保存ボタンのイベントリスナーはボタン生成後に付与される
 });
 
 async function checkLoginStatus() {
@@ -74,15 +76,51 @@ function renderResume(workHistory) {
   workHistory.forEach((job, index) => {
     const jobDiv = document.createElement("div");
     jobDiv.className = "border p-4 rounded-lg bg-white shadow-sm";
-
     jobDiv.innerHTML = `
       <h3 class="text-lg font-bold text-orange-600 mb-1">職歴 ${index + 1}</h3>
-      <p><strong>会社名:</strong> ${job.company || "不明"}</p>
-      <p><strong>役職:</strong> ${job.role || "不明"}</p>
-      <p><strong>在籍期間:</strong> ${job.duration || "不明"}</p>
-      <p><strong>職務内容:</strong> ${job.description || "不明"}</p>
+      <label class="block mb-2"><strong>会社名:</strong><input type="text" data-field="company" value="${job.company || ""}" class="mt-1 w-full border rounded px-2 py-1" /></label>
+      <label class="block mb-2"><strong>役職:</strong><input type="text" data-field="role" value="${job.role || ""}" class="mt-1 w-full border rounded px-2 py-1" /></label>
+      <label class="block mb-2"><strong>在籍期間:</strong><input type="text" data-field="duration" value="${job.duration || ""}" class="mt-1 w-full border rounded px-2 py-1" /></label>
+      <label class="block mb-2"><strong>職務内容:</strong><textarea data-field="description" class="mt-1 w-full border rounded px-2 py-1">${job.description || ""}</textarea></label>
     `;
-
     resumeArea.appendChild(jobDiv);
+  });
+
+  // --- ここで保存ボタンを追加 ---
+  const saveBtn = document.createElement("button");
+  saveBtn.id = "saveButton";
+  saveBtn.textContent = "保存";
+  saveBtn.className = "mt-4 bg-blue-500 text-white px-6 py-2 rounded shadow hover:bg-blue-600 transition duration-200";
+  resumeArea.appendChild(saveBtn);
+
+  // 保存ボタンのイベントリスナー
+  saveBtn.addEventListener("click", async () => {
+    const jobDivs = document.querySelectorAll("#resumeArea > div");
+    const updatedHistory = Array.from(jobDivs).map(div => {
+      return {
+        company: div.querySelector('input[data-field="company"]').value,
+        role: div.querySelector('input[data-field="role"]').value,
+        duration: div.querySelector('input[data-field="duration"]').value,
+        description: div.querySelector('textarea[data-field="description"]').value
+      };
+    });
+
+    try {
+      const response = await fetch("/api/save-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ workHistory: updatedHistory })
+      });
+
+      if (response.ok) {
+        alert("💾 履歴書データを保存しました。");
+      } else {
+        alert("⚠️ 保存に失敗しました。");
+      }
+    } catch (err) {
+      console.error("❌ 保存エラー:", err);
+      alert("⚠️ 保存処理中にエラーが発生しました。");
+    }
   });
 }
