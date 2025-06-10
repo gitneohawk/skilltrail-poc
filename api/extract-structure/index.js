@@ -59,17 +59,24 @@ try {
     .replace(/^```/, '')
     .replace(/```$/, '')
     .trim();
-    
+
+  // JSONらしいかどうかを判定
+  if (!cleanedText.startsWith("{") && !cleanedText.startsWith("[")) {
+    // 職歴情報が含まれていない場合はOpenAIの戻りを無視し、空のworkHistoryを返す
+    context.res = {
+      headers: { "Content-Type": "application/json" },
+      body: { workHistory: [] }
+    };
+    return;
+  }
+
   parsed = JSON.parse(cleanedText);
 } catch (e) {
   context.log("❌ JSON parse error:", e.message);
+  // パースできない場合も空のworkHistoryを返す
   context.res = {
-    status: 500,
-    body: {
-      error: "JSON parse error",
-      message: e.message,
-      raw: responseText
-    }
+    headers: { "Content-Type": "application/json" },
+    body: { workHistory: [] }
   };
   return;
 }
