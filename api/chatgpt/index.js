@@ -171,15 +171,20 @@ module.exports = async function (context, req) {
       return;
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      context.res = { status: 500, body: "Missing OpenAI API key." };
-      return;
+    let actualMessage = "";
+    if (Array.isArray(userMessage)) {
+      // ChatGPT API形式の配列なら、最後のuserメッセージを使う
+      const lastUser = [...userMessage].reverse().find(m => m.role === "user");
+      actualMessage = lastUser ? lastUser.content : "";
+    } else if (typeof userMessage === "string") {
+      actualMessage = userMessage;
+    } else {
+      actualMessage = "";
     }
 
-    const match = userMessage.match(/^mode\s*:\s*(\d)\s*,?\s*(.*)/i);
+    const match = actualMessage.match(/^mode\s*:\s*(\d)\s*,?\s*(.*)/i);
     const mode = match?.[1] || "1";
-    const actualMessage = match?.[2] || userMessage;
+    const messageForOpenAI = match?.[2] || actualMessage;
 
     let systemPrompt = "";
     let interviewType = "";
@@ -226,7 +231,7 @@ case "5":
         model: "gpt-3.5-turbo",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: actualMessage }
+          { role: "user", content: messageForOpenAI }
         ]
       })
     });
