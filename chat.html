@@ -145,16 +145,13 @@ async function sendMessage() {
   chatBox.scrollTop = chatBox.scrollHeight;
 
   const messages = [];
-
   if (!firstMessageSent) {
-    messages.push({ role: "system", content: systemPrompt });
+    messages.push({ role: "system", content: systemPrompt }); // ←ここを必ず追加
     firstMessageSent = true;
-    sessionStorage.setItem("interviewStarted", "true");
   }
-
   messages.push({ role: "user", content: message });
 
-  const response = await fetch("/api/chatgpt", {
+  await fetch("/api/chatgpt", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
