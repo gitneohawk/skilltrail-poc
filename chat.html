@@ -177,51 +177,49 @@ async function sendMessage() {
   chatBox.scrollTop = chatBox.scrollHeight;
   inputField.value = "";
 
-  // 以下はそのままでOK（ログ保存や構造化処理）
+  // ここにログ保存や構造化処理を移動
+  await fetch("/api/chat-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ role: "user", message })
+  });
+  await fetch("/api/chat-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ role: "assistant", message: reply })
+  });
+  const userId = sessionStorage.getItem("userId");
+  await fetch("/api/update-career-profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      userId,
+      profile: {
+        lastAssistantMessage: reply
+      }
+    })
+  });
+  try {
+    const sessionRes = await fetch("/api/chat-session", {
+      method: "GET",
+      credentials: "include"
+    });
+    const sessionData = await sessionRes.json();
+    const messages = sessionData.messages;
+
+    await fetch("/api/extract-structure", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ messages })
+    });
+  } catch (error) {
+    console.error("extract-structure API error:", error);
+  }
 }
-
-        await fetch("/api/chat-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ role: "user", message })
-        });
-        await fetch("/api/chat-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ role: "assistant", message: reply })
-        });
-        const userId = sessionStorage.getItem("userId");
-        await fetch("/api/update-career-profile", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            userId,
-            profile: {
-              lastAssistantMessage: reply
-            }
-          })
-        });
-        try {
-          const sessionRes = await fetch("/api/chat-session", {
-            method: "GET",
-            credentials: "include"
-          });
-          const sessionData = await sessionRes.json();
-          const messages = sessionData.messages;
-
-          await fetch("/api/extract-structure", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ messages })
-          });
-        } catch (error) {
-          console.error("extract-structure API error:", error);
-        }
-      
 
       async function loadChatHistory() {
         const res = await fetch("/api/chat-session", {
