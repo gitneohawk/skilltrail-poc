@@ -221,6 +221,19 @@ case "5":
         systemPrompt = "あなたは親切で頼れるアシスタントです。";
     }
 
+    let messagesForOpenAI;
+    if (Array.isArray(userMessage)) {
+      messagesForOpenAI = [
+        { role: "system", content: systemPrompt },
+        ...userMessage
+      ];
+    } else {
+      messagesForOpenAI = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: messageForOpenAI }
+      ];
+    }
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -229,10 +242,7 @@ case "5":
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: messageForOpenAI }
-        ]
+        messages: messagesForOpenAI
       })
     });
 
