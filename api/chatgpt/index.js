@@ -223,10 +223,16 @@ case "5":
 
     let messagesForOpenAI;
     if (Array.isArray(userMessage)) {
-      messagesForOpenAI = [
-        { role: "system", content: systemPrompt },
-        ...userMessage
-      ];
+      // クライアント側でsystemロールが含まれているか確認
+      const hasSystem = userMessage.some(m => m.role === "system");
+      if (hasSystem) {
+        messagesForOpenAI = userMessage;
+      } else {
+        messagesForOpenAI = [
+          { role: "system", content: systemPrompt },
+          ...userMessage
+        ];
+      }
     } else {
       messagesForOpenAI = [
         { role: "system", content: systemPrompt },
