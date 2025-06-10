@@ -127,31 +127,41 @@ async function sendMessage() {
   const message = inputField.value.trim();
   if (!message) return;
 
-  const div = document.createElement("div");
-  div.className = "flex justify-end mb-2";
-  div.innerHTML = `
-    <div class="max-w-[70%] px-4 py-2 rounded-2xl shadow bg-orange-100 text-gray-900">
-      ${message}
-    </div>
-  `;
-  chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
+  // 直近のキャリア属性を取得
+  let profile = {};
+  try {
+    const userId = sessionStorage.getItem("userId");
+    const res = await fetch("/api/get-career-profile?userId=" + encodeURIComponent(userId), {
+      method: "GET",
+      credentials: "include"
+    });
+    if (res.ok) {
+      profile = await res.json();
+    }
+  } catch (e) {
+    // プロファイル取得失敗時は空のまま
+    profile = {};
+  }
 
-  const loadingDiv = document.createElement("div");
-  loadingDiv.id = "loadingIndicator";
-  loadingDiv.className = "flex justify-start mb-2";
-  loadingDiv.innerHTML = `<div class="px-4 py-2 bg-white border rounded-2xl shadow text-gray-400 animate-pulse">応答を生成中...</div>`;
-  chatBox.appendChild(loadingDiv);
-  chatBox.scrollTop = chatBox.scrollHeight;
+  // 属性がすべて埋まっているか判定
+  const requiredKeys = [
+    "age", "skills", "careerGoals", "personality", "workStyle", "location", "conversationCount", "notableAttributes"
+  ];
+  const isProfileComplete = requiredKeys.every(key => {
+    const value = profile[key];
+    if (Array.isArray(value)) return value.length > 0;
+    return value !== undefined && value !== null && value !== "";
+  });
 
+  // 送信メッセージ配列を構築
   const messages = [];
-  if (!firstMessageSent) {
-    messages.push({ role: "system", content: systemPrompt }); // ←ここを必ず追加
-    firstMessageSent = true;
+  if (!isProfileComplete) {
+    messages.push({ role: "system", content: systemPrompt }); // 属性未充足ならインタビューモード
   }
   messages.push({ role: "user", content: message });
 
-  await fetch("/api/chatgpt", {
+  // OpenAIへ送信
+  const response = await fetch("/api/chatgpt", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
