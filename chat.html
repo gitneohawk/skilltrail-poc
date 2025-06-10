@@ -57,6 +57,23 @@
       const sendButton = document.getElementById("sendButton");
       const chatBox = document.getElementById("chatBox");
       const statusDiv = document.getElementById("authStatus");
+      const systemPrompt = `あなたはキャリアインタビューを行うAIアシスタントです。
+以下のルールに従ってください：
+
+1. 必ず一つの質問だけをユーザーに投げかけてください。
+2. ユーザーの返答を受け取ったら、それを簡潔に確認・要約し、次の質問に進んでください。
+3. 全部で以下の5つのステップで進行してください：
+
+- ステップ1：年齢を尋ねる
+- ステップ2：これまでの職歴を尋ねる
+- ステップ3：現在のスキルや資格を尋ねる
+- ステップ4：勤務地・働き方の希望を尋ねる
+- ステップ5：今後やりたいことや興味ある分野を尋ねる
+
+4. 全ての回答を受け取ったら、まとめとしてキャリアの方向性に対するアドバイスを提供してください。
+5. ユーザーが質問と無関係な話題を返した場合は、やんわり軌道修正してください。
+
+インタビューモードを開始してください。`;
       let isComposing = false;
 
       inputField.addEventListener("compositionstart", () => isComposing = true);
@@ -101,51 +118,67 @@
         }
       }
 
-      async function sendMessage() {
-        const welcome = document.getElementById("welcomeMessage");
-        if (welcome) welcome.remove();
+let firstMessageSent = sessionStorage.getItem("interviewStarted") === "true";
 
-        const message = inputField.value.trim();
-        if (!message) return;
+async function sendMessage() {
+  const welcome = document.getElementById("welcomeMessage");
+  if (welcome) welcome.remove();
 
-        const div = document.createElement("div");
-        div.className = "flex justify-end mb-2";
-        div.innerHTML = `
-          <div class="max-w-[70%] px-4 py-2 rounded-2xl shadow bg-orange-100 text-gray-900">
-            ${message}
-          </div>
-        `;
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
+  const message = inputField.value.trim();
+  if (!message) return;
 
-        const loadingDiv = document.createElement("div");
-        loadingDiv.id = "loadingIndicator";
-        loadingDiv.className = "flex justify-start mb-2";
-        loadingDiv.innerHTML = `<div class="px-4 py-2 bg-white border rounded-2xl shadow text-gray-400 animate-pulse">応答を生成中...</div>`;
-        chatBox.appendChild(loadingDiv);
-        chatBox.scrollTop = chatBox.scrollHeight;
+  const div = document.createElement("div");
+  div.className = "flex justify-end mb-2";
+  div.innerHTML = `
+    <div class="max-w-[70%] px-4 py-2 rounded-2xl shadow bg-orange-100 text-gray-900">
+      ${message}
+    </div>
+  `;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
 
-        const response = await fetch("/api/chatgpt", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ message })
-        });
-        const reply = await response.text();
+  const loadingDiv = document.createElement("div");
+  loadingDiv.id = "loadingIndicator";
+  loadingDiv.className = "flex justify-start mb-2";
+  loadingDiv.innerHTML = `<div class="px-4 py-2 bg-white border rounded-2xl shadow text-gray-400 animate-pulse">応答を生成中...</div>`;
+  chatBox.appendChild(loadingDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
 
-        const loader = document.getElementById("loadingIndicator");
-        if (loader) loader.remove();
+  const messages = [];
 
-        const replyDiv = document.createElement("div");
-        replyDiv.className = "flex justify-start mb-2";
-        replyDiv.innerHTML = `
-          <div class="max-w-[70%] px-4 py-2 rounded-2xl shadow bg-white border">
-            ${reply}
-          </div>
-        `;
-        chatBox.appendChild(replyDiv);
-        chatBox.scrollTop = chatBox.scrollHeight;
-        inputField.value = "";
+  if (!firstMessageSent) {
+    messages.push({ role: "system", content: systemPrompt });
+    firstMessageSent = true;
+    sessionStorage.setItem("interviewStarted", "true");
+  }
+
+  messages.push({ role: "user", content: message });
+
+  const response = await fetch("/api/chatgpt", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ messages })
+  });
+
+  const reply = await response.text();
+
+  const loader = document.getElementById("loadingIndicator");
+  if (loader) loader.remove();
+
+  const replyDiv = document.createElement("div");
+  replyDiv.className = "flex justify-start mb-2";
+  replyDiv.innerHTML = `
+    <div class="max-w-[70%] px-4 py-2 rounded-2xl shadow bg-white border">
+      ${reply}
+    </div>
+  `;
+  chatBox.appendChild(replyDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
+  inputField.value = "";
+
+  // 以下はそのままでOK（ログ保存や構造化処理）
+}
 
         await fetch("/api/chat-session", {
           method: "POST",
@@ -188,7 +221,7 @@
         } catch (error) {
           console.error("extract-structure API error:", error);
         }
-      }
+      
 
       async function loadChatHistory() {
         const res = await fetch("/api/chat-session", {

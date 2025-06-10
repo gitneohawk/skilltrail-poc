@@ -39,7 +39,7 @@ function logout() {
 
 async function loadResumeData() {
   const resumeArea = document.getElementById("resumeArea");
-  resumeArea.innerHTML = "📄 履歴書データを取得中...";
+  resumeArea.innerHTML = "📄 職務経歴書データを取得中...";
 
   const userId = sessionStorage.getItem("userId");
   let loaded = false;
@@ -77,11 +77,11 @@ async function loadResumeData() {
       if (result.workHistory && result.workHistory.length > 0) {
         renderResume(result.workHistory);
       } else {
-        resumeArea.innerHTML = "😢 履歴書データが見つかりませんでした。";
+        resumeArea.innerHTML = "😢 職務経歴書データが見つかりませんでした。";
       }
     } catch (err) {
-      console.error("❌ 履歴書読み込み失敗:", err);
-      resumeArea.innerHTML = "⚠️ 履歴書データの取得に失敗しました。";
+      console.error("❌ 職務経歴書読み込み失敗:", err);
+      resumeArea.innerHTML = "⚠️ 職務経歴書データの取得に失敗しました。";
     }
   }
 }
@@ -162,9 +162,9 @@ function renderResume(workHistory) {
           })
         });
         if (response.ok) {
-          alert("💾 履歴書データを保存しました。");
+          alert("💾 職務経歴書データを保存しました。");
         } else {
-          alert("⚠️ 保存に失敗しました。");
+          alert("⚠️ 職務経歴書データの保存に失敗しました。");
         }
       } catch (err) {
         console.error("❌ 保存エラー:", err);
