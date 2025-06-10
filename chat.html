@@ -158,7 +158,7 @@ async function sendMessage() {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ messages })
+    body: JSON.stringify({ message: messages })
   });
 
   const reply = await response.text();
