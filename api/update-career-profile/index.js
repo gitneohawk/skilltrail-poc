@@ -65,7 +65,7 @@ module.exports = async function (context, req) {
         {
           role: "system",
           content: `You are a helpful assistant that extracts structured career profile information from a user's latest message.
-Respond only with a JSON object with the following keys:
+Respond only with a JSON object with ALL of the following keys:
 - age (e.g., "30代", or a number like "35")
 - skills (array of strings)
 - careerGoals (string)
@@ -75,8 +75,9 @@ Respond only with a JSON object with the following keys:
 - conversationCount (number; if not available, default to 1)
 - notableAttributes (array of strings representing traits or characteristics inferred from the conversation)
 
-Only return a valid JSON object. Do not include any commentary or explanation.
-You may infer attributes from context. For example, if a user mentions wanting work-life balance, add that under workStyle or notableAttributes. If they discuss living or working in a specific area, note that under location.`
+If you cannot infer a value, set it to null, an empty string, or an empty array as appropriate.
+Only return a valid JSON object. Do not include any commentary, explanation, or extra text.
+Do not omit any keys. Always include all keys, even if empty or null.`
         },
         {
           role: "user",
