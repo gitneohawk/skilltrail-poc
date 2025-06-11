@@ -119,17 +119,7 @@ async function sendMessage() {
   const message = inputField.value.trim();
   if (!message) return;
 
-  // ユーザー入力をチャットウィンドウに必ず表示
-  const div = document.createElement("div");
-  div.className = "flex justify-end mb-2";
-  div.innerHTML = `
-    <div class="max-w-[70%] px-4 py-2 rounded-2xl shadow bg-orange-100 text-gray-900">
-      ${message}
-    </div>
-  `;
-  chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
-
+  // ここで直接appendしない
   // 直近のキャリア属性を取得
   let profile = {};
   try {
@@ -232,6 +222,9 @@ async function sendMessage() {
   } catch (error) {
     console.error("extract-structure API error:", error);
   }
+
+  // 送信後に履歴を再描画
+  await loadChatHistory();
 }
 
 // 年齢が未入力なら最初にモーダルで聞く
@@ -271,30 +264,33 @@ inputField.addEventListener("keydown", async (event) => {
 });
 
       async function loadChatHistory() {
-        const res = await fetch("/api/chat-session", {
-          method: "GET",
-          credentials: "include"
-        });
-        const data = await res.json();
-        const messages = data.messages || [];
+  // ここでチャットボックスをクリア
+  chatBox.innerHTML = "";
 
-        if (messages.length > 0) {
-          const welcome = document.getElementById("welcomeMessage");
-          if (welcome) welcome.remove();
+  const res = await fetch("/api/chat-session", {
+    method: "GET",
+    credentials: "include"
+  });
+  const data = await res.json();
+  const messages = data.messages || [];
 
-          for (const msg of messages) {
-            const div = document.createElement("div");
-            div.className = `flex justify-${msg.role === "user" ? "end" : "start"} mb-2`;
-            div.innerHTML = `
-              <div class="max-w-[70%] px-4 py-2 rounded-2xl shadow ${msg.role === "user" ? "bg-orange-100 text-gray-900" : "bg-white border" }">
-                ${msg.message}
-              </div>
-            `;
-            chatBox.appendChild(div);
-          }
-          chatBox.scrollTop = chatBox.scrollHeight;
-        }
-      }
+  if (messages.length > 0) {
+    const welcome = document.getElementById("welcomeMessage");
+    if (welcome) welcome.remove();
+
+    for (const msg of messages) {
+      const div = document.createElement("div");
+      div.className = `flex justify-${msg.role === "user" ? "end" : "start"} mb-2`;
+      div.innerHTML = `
+        <div class="max-w-[70%] px-4 py-2 rounded-2xl shadow ${msg.role === "user" ? "bg-orange-100 text-gray-900" : "bg-white border" }">
+          ${msg.message}
+        </div>
+      `;
+      chatBox.appendChild(div);
+    }
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+}
 
       checkLoginStatus();
       loadChatHistory();
