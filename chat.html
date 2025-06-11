@@ -327,10 +327,11 @@ async function checkAndPromptAge() {
   }
 }
 
-// 年齢送信処理
+// 年齢送信処理（文字列として保存するよう修正）
 ageSubmitButton.addEventListener("click", async () => {
   const age = ageInput.value.trim();
-  if (!age || isNaN(age) || age < 10 || age > 100) {
+  // 入力値が空文字の場合はエラー
+  if (!age) {
     ageInput.classList.add("border-red-500");
     return;
   }
@@ -343,7 +344,7 @@ ageSubmitButton.addEventListener("click", async () => {
     body: JSON.stringify({
       userId,
       profile: {
-        age: age,
+        age: age, // ここは常に文字列
         lastAssistantMessage: ""
       }
     })
@@ -357,7 +358,8 @@ ageSubmitButton.addEventListener("click", async () => {
 // ページロード時に年齢チェック
 checkLoginStatus().then(checkAndPromptAge);
 
-      async function loadChatHistory() {
+// チャット履歴の描画
+async function loadChatHistory() {
   // ここでチャットボックスをクリア
   chatBox.innerHTML = "";
 
@@ -385,9 +387,6 @@ checkLoginStatus().then(checkAndPromptAge);
     chatBox.scrollTop = chatBox.scrollHeight;
   }
 }
-
-      checkLoginStatus();
-      loadChatHistory();
-    </script>
-  </body>
+</script>
+</body>
 </html>
