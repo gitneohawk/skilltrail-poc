@@ -105,6 +105,7 @@
           } else {
             const wasLoggedIn = sessionStorage.getItem("isLoggedIn");
             sessionStorage.removeItem("isLoggedIn");
+            statusDiv.innerText = "未ログインです。再ログインしてください。";
             if (!wasLoggedIn) {
               window.location.href = "/login.html?returnTo=/chat";
             }
@@ -112,6 +113,7 @@
         } catch (e) {
           const wasLoggedIn = sessionStorage.getItem("isLoggedIn");
           sessionStorage.removeItem("isLoggedIn");
+          statusDiv.innerText = "認証エラーが発生しました。再ログインしてください。";
           if (!wasLoggedIn) {
             window.location.href = "/login.html?returnTo=/chat";
           }
@@ -127,6 +129,17 @@ async function sendMessage() {
   const message = inputField.value.trim();
   if (!message) return;
 
+  // ユーザー入力をチャットウィンドウに必ず表示
+  const div = document.createElement("div");
+  div.className = "flex justify-end mb-2";
+  div.innerHTML = `
+    <div class="max-w-[70%] px-4 py-2 rounded-2xl shadow bg-orange-100 text-gray-900">
+      ${message}
+    </div>
+  `;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+
   // 直近のキャリア属性を取得
   let profile = {};
   try {
@@ -139,7 +152,6 @@ async function sendMessage() {
       profile = await res.json();
     }
   } catch (e) {
-    // プロファイル取得失敗時は空のまま
     profile = {};
   }
 
@@ -156,7 +168,7 @@ async function sendMessage() {
   // 送信メッセージ配列を構築
   const messages = [];
   if (!isProfileComplete) {
-    messages.push({ role: "system", content: systemPrompt }); // 属性未充足ならインタビューモード
+    messages.push({ role: "system", content: systemPrompt });
   }
   messages.push({ role: "user", content: message });
 
@@ -170,9 +182,7 @@ async function sendMessage() {
 
   const reply = await response.text();
 
-  const loader = document.getElementById("loadingIndicator");
-  if (loader) loader.remove();
-
+  // アシスタントの返答をチャットウィンドウに表示
   const replyDiv = document.createElement("div");
   replyDiv.className = "flex justify-start mb-2";
   replyDiv.innerHTML = `
