@@ -87,10 +87,14 @@ You may infer attributes from context. For example, if a user mentions wanting w
 
     let parsed;
     try {
-      parsed = JSON.parse(completion.choices[0].message.content);
+      let content = completion.choices[0].message.content.trim();
+      // 余計な囲みやコードブロックを除去
+      content = content.replace(/^```json\s*/i, '').replace(/```$/g, '').trim();
+      parsed = JSON.parse(content);
     } catch (e) {
       context.log("Failed to parse structured profile JSON:", completion.choices[0].message.content);
-      parsed = {};
+      context.res = { status: 400, body: "AIの返答がJSON形式ではありませんでした。" };
+      return;
     }
 
     const structuredProfile = {
