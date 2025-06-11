@@ -59,15 +59,10 @@
       const chatBox = document.getElementById("chatBox");
       const statusDiv = document.getElementById("authStatus");
       const systemPrompt = `
-あなたはキャリアインタビューを行うAIアシスタントです。
-以下のルールに従ってください：
-
-1. ユーザーに一度に一つだけ質問してください。
-2. 年齢、職歴、スキル、勤務地、今後の希望などを順に聞き出してください。
-3. 進行状況やステップ番号、ユーザーIDなどは一切出力せず、質問文のみを返してください。
-4. ユーザーの返答を受け取ったら簡潔に要約し、次の質問に進んでください。
-5. 全ての回答を受け取ったら、まとめとしてキャリアの方向性に対するアドバイスを提供してください。
-6. ユーザーが質問と無関係な話題を返した場合は、やんわり軌道修正してください。
+あなたはキャリアインタビューAIです。
+ユーザーと自然な会話をしながら、まだ聞き出せていない属性（例：勤務地、希望、性格など）があれば、会話の流れを壊さずにさりげなく質問してください。
+同じ質問を繰り返さないよう注意し、ユーザーが答えた内容は覚えておいてください。
+年齢は最初にユーザーから直接入力されるため、AIからは聞かないでください。
 `.trim();
       let isComposing = false;
 
@@ -238,6 +233,42 @@ async function sendMessage() {
     console.error("extract-structure API error:", error);
   }
 }
+
+// 年齢が未入力なら最初にモーダルで聞く
+async function ensureAge() {
+  let age = sessionStorage.getItem("userAge");
+  while (!age || isNaN(age) || age < 10 || age > 100) {
+    age = prompt("最初にあなたの年齢を教えてください（数字のみ）");
+    if (age === null) break; // キャンセル
+  }
+  if (age) {
+    sessionStorage.setItem("userAge", age);
+    // 必要ならAPIでprofileに保存
+    const userId = sessionStorage.getItem("userId");
+    await fetch("/api/update-career-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        userId,
+        profile: { age }
+      })
+    });
+  }
+}
+
+// 送信前に年齢チェック
+sendButton.addEventListener("click", async () => {
+  await ensureAge();
+  sendMessage();
+});
+inputField.addEventListener("keydown", async (event) => {
+  if (event.key === "Enter" && !isComposing && !event.shiftKey) {
+    event.preventDefault();
+    await ensureAge();
+    sendMessage();
+  }
+});
 
       async function loadChatHistory() {
         const res = await fetch("/api/chat-session", {
