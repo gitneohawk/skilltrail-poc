@@ -292,7 +292,17 @@ async function ensureAge() {
       credentials: "include",
       body: JSON.stringify({
         userId,
-        profile: { age }
+        profile: {
+          age: age, // 文字列
+          lastAssistantMessage: "",
+          skills: [],
+          careerGoals: [],
+          personality: "",
+          workStyle: "",
+          location: "",
+          conversationCount: 0,
+          notableAttributes: []
+        }
       })
     });
   }
@@ -344,8 +354,15 @@ ageSubmitButton.addEventListener("click", async () => {
     body: JSON.stringify({
       userId,
       profile: {
-        age: age, // ここは常に文字列
-        lastAssistantMessage: ""
+        age: age, // 文字列
+        lastAssistantMessage: "",
+        skills: [],
+        careerGoals: [],
+        personality: "",
+        workStyle: "",
+        location: "",
+        conversationCount: 0,
+        notableAttributes: []
       }
     })
   });
