@@ -54,177 +54,187 @@
     </footer>
 
     <script>
-      const inputField = document.getElementById("userInput");
-      const sendButton = document.getElementById("sendButton");
-      const chatBox = document.getElementById("chatBox");
-      const statusDiv = document.getElementById("authStatus");
-      const systemPrompt = `
+  const inputField = document.getElementById("userInput");
+  const sendButton = document.getElementById("sendButton");
+  const chatBox = document.getElementById("chatBox");
+  const statusDiv = document.getElementById("authStatus");
+  const systemPrompt = `
 あなたはキャリアインタビューAIです。
 ユーザーと自然な会話をしながら、まだ聞き出せていない属性（例：勤務地、希望、性格など）があれば、会話の流れを壊さずにさりげなく質問してください。
 同じ質問を繰り返さないよう注意し、ユーザーが答えた内容は覚えておいてください。
-年齢は最初にユーザーから直接入力されるため、AIからは聞かないでください。
+年齢や氏名などの個人情報は絶対に質問しないでください。
+インタビューの進行や質問内容をユーザーに委ねず、あなたが主導して必要なキャリア属性を聞き出してください。
 `.trim();
-      let isComposing = false;
+  let isComposing = false;
+  let isSending = false; // 多重送信防止
 
-      inputField.addEventListener("compositionstart", () => isComposing = true);
-      inputField.addEventListener("compositionend", () => isComposing = false);
-      inputField.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" && !isComposing && !event.shiftKey) {
-          event.preventDefault();
-          sendMessage();
-        }
-      });
-      sendButton.addEventListener("click", () => sendMessage());
+  inputField.addEventListener("compositionstart", () => isComposing = true);
+  inputField.addEventListener("compositionend", () => isComposing = false);
 
-      function handleLogout() {
-        sessionStorage.clear();
-        window.location.href = "/.auth/logout?post_logout_redirect_uri=/";
-      }
+  // 送信ボタンのtypeを明示
+  sendButton.type = "button";
 
-      async function checkLoginStatus() {
-        statusDiv.innerText = "🔍 ログイン確認中...";
-        try {
-          const res = await fetch("/.auth/me", { credentials: "include" });
-          const data = await res.json();
-          if (data.clientPrincipal) {
-            sessionStorage.setItem("isLoggedIn", "true");
-            const name = data.clientPrincipal.userDetails;
-            const userId = data.clientPrincipal.userId;
-            sessionStorage.setItem("userId", userId);
-            statusDiv.innerHTML = `✅ ようこそ ${name} さん！ <a href="#" onclick="handleLogout()">ログアウト</a>`;
-          } else {
-            const wasLoggedIn = sessionStorage.getItem("isLoggedIn");
-            sessionStorage.removeItem("isLoggedIn");
-            statusDiv.innerText = "未ログインです。再ログインしてください。";
-            if (!wasLoggedIn) {
-              window.location.href = "/login.html?returnTo=/chat";
-            }
-          }
-        } catch (e) {
-          const wasLoggedIn = sessionStorage.getItem("isLoggedIn");
-          sessionStorage.removeItem("isLoggedIn");
-          statusDiv.innerText = "認証エラーが発生しました。再ログインしてください。";
-          if (!wasLoggedIn) {
-            window.location.href = "/login.html?returnTo=/chat";
-          }
-        }
-      }
-
-let firstMessageSent = sessionStorage.getItem("interviewStarted") === "true";
-
-async function sendMessage() {
-  const welcome = document.getElementById("welcomeMessage");
-  if (welcome) welcome.remove();
-
-  const message = inputField.value.trim();
-  if (!message) return;
-
-  // ここで直接appendしない
-  // 直近のキャリア属性を取得
-  let profile = {};
-  try {
-    const userId = sessionStorage.getItem("userId");
-    const res = await fetch("/api/get-career-profile?userId=" + encodeURIComponent(userId), {
-      method: "GET",
-      credentials: "include"
-    });
-    if (res.ok) {
-      profile = await res.json();
+  // 送信前に年齢チェック
+  sendButton.addEventListener("click", async () => {
+    await ensureAge();
+    await sendMessage();
+  });
+  inputField.addEventListener("keydown", async (event) => {
+    if (event.key === "Enter" && !isComposing && !event.shiftKey) {
+      event.preventDefault();
+      await ensureAge();
+      await sendMessage();
     }
-  } catch (e) {
-    profile = {};
+  });
+
+  function handleLogout() {
+    sessionStorage.clear();
+    window.location.href = "/.auth/logout?post_logout_redirect_uri=/";
   }
 
-  // 属性がすべて埋まっているか判定
-  const requiredKeys = [
-    "age", "skills", "careerGoals", "personality", "workStyle", "location", "conversationCount", "notableAttributes"
-  ];
-  const isProfileComplete = requiredKeys.every(key => {
-    const value = profile[key];
-    if (Array.isArray(value)) return value.length > 0;
-    return value !== undefined && value !== null && value !== "";
-  });
-
-  // 送信メッセージ配列を構築
-  const messages = [];
-  if (!isProfileComplete) {
-    messages.push({ role: "system", content: systemPrompt });
-  }
-  messages.push({ role: "user", content: message });
-
-  // OpenAIへ送信
-  const response = await fetch("/api/chatgpt", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ message: messages })
-  });
-
-  const reply = await response.text();
-
-  // アシスタントの返答をチャットウィンドウに表示
-  const replyDiv = document.createElement("div");
-  replyDiv.className = "flex justify-start mb-2";
-  replyDiv.innerHTML = `
-    <div class="max-w-[70%] px-4 py-2 rounded-2xl shadow bg-white border">
-      ${reply}
-    </div>
-  `;
-  chatBox.appendChild(replyDiv);
-  chatBox.scrollTop = chatBox.scrollHeight;
-  inputField.value = "";
-
-  // ここにログ保存や構造化処理を移動
-  await fetch("/api/chat-session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ role: "user", message })
-  });
-  await fetch("/api/chat-session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ role: "assistant", message: reply })
-  });
-  const userId = sessionStorage.getItem("userId");
-  await fetch("/api/update-career-profile", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({
-      userId,
-      profile: {
-        lastAssistantMessage: reply
+  async function checkLoginStatus() {
+    statusDiv.innerText = "🔍 ログイン確認中...";
+    try {
+      const res = await fetch("/.auth/me", { credentials: "include" });
+      const data = await res.json();
+      if (data.clientPrincipal) {
+        sessionStorage.setItem("isLoggedIn", "true");
+        const name = data.clientPrincipal.userDetails;
+        const userId = data.clientPrincipal.userId;
+        sessionStorage.setItem("userId", userId);
+        statusDiv.innerHTML = `✅ ようこそ ${name} さん！ <a href="#" onclick="handleLogout()">ログアウト</a>`;
+      } else {
+        const wasLoggedIn = sessionStorage.getItem("isLoggedIn");
+        sessionStorage.removeItem("isLoggedIn");
+        statusDiv.innerText = "未ログインです。再ログインしてください。";
+        if (!wasLoggedIn) {
+          window.location.href = "/login.html?returnTo=/chat";
+        }
       }
-    })
-  });
-  try {
-    const sessionRes = await fetch("/api/chat-session", {
-      method: "GET",
-      credentials: "include"
+    } catch (e) {
+      const wasLoggedIn = sessionStorage.getItem("isLoggedIn");
+      sessionStorage.removeItem("isLoggedIn");
+      statusDiv.innerText = "認証エラーが発生しました。再ログインしてください。";
+      if (!wasLoggedIn) {
+        window.location.href = "/login.html?returnTo=/chat";
+      }
+    }
+  }
+
+  let firstMessageSent = sessionStorage.getItem("interviewStarted") === "true";
+
+  async function sendMessage() {
+    if (isSending) return;
+    isSending = true;
+
+    const welcome = document.getElementById("welcomeMessage");
+    if (welcome) welcome.remove();
+
+    const message = inputField.value.trim();
+    if (!message) {
+      isSending = false;
+      return;
+    }
+
+    // 直近のキャリア属性を取得
+    let profile = {};
+    try {
+      const userId = sessionStorage.getItem("userId");
+      const res = await fetch("/api/get-career-profile?userId=" + encodeURIComponent(userId), {
+        method: "GET",
+        credentials: "include"
+      });
+      if (res.ok) {
+        profile = await res.json();
+      }
+    } catch (e) {
+      profile = {};
+    }
+
+    // 属性がすべて埋まっているか判定
+    const requiredKeys = [
+      "age", "skills", "careerGoals", "personality", "workStyle", "location", "conversationCount", "notableAttributes"
+    ];
+    const isProfileComplete = requiredKeys.every(key => {
+      const value = profile[key];
+      if (Array.isArray(value)) return value.length > 0;
+      return value !== undefined && value !== null && value !== "";
     });
-    const sessionData = await sessionRes.json();
-    const messages = sessionData.messages;
 
-    // ChatGPT API形式のmessages配列を持っている場合
-    const messagesForExtract = messages.map(m => ({
-      role: m.role,
-      message: m.content // content→messageに変換
-    }));
+    // 送信メッセージ配列を構築
+    const messages = [];
+    if (!isProfileComplete) {
+      messages.push({ role: "system", content: systemPrompt });
+    }
+    messages.push({ role: "user", content: message });
 
-    await fetch("/api/extract-structure", {
+    // OpenAIへ送信
+    const response = await fetch("/api/chatgpt", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ messages: messagesForExtract })
+      body: JSON.stringify({ message: messages })
     });
-  } catch (error) {
-    console.error("extract-structure API error:", error);
-  }
 
-  // 送信後に履歴を再描画
-  await loadChatHistory();
+    const reply = await response.text();
+
+    // ここで直接appendしない（履歴はloadChatHistoryで描画）
+
+    inputField.value = "";
+
+    // ここにログ保存や構造化処理を移動
+    const userId = sessionStorage.getItem("userId");
+    await fetch("/api/chat-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ role: "user", message })
+    });
+    await fetch("/api/chat-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ role: "assistant", message: reply })
+    });
+    await fetch("/api/update-career-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        userId,
+        profile: {
+          lastAssistantMessage: reply
+        }
+      })
+    });
+    try {
+      const sessionRes = await fetch("/api/chat-session", {
+        method: "GET",
+        credentials: "include"
+      });
+      const sessionData = await sessionRes.json();
+      const messages = sessionData.messages;
+
+      // ChatGPT API形式のmessages配列を持っている場合
+      const messagesForExtract = messages.map(m => ({
+        role: m.role,
+        message: m.content // content→messageに変換
+      }));
+
+      await fetch("/api/extract-structure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ messages: messagesForExtract })
+      });
+    } catch (error) {
+      console.error("extract-structure API error:", error);
+    }
+
+    isSending = false;
+
+    // 送信後に履歴を再描画
+    await loadChatHistory();
 }
 
 // 年齢が未入力なら最初にモーダルで聞く
