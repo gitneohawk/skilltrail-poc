@@ -96,5 +96,35 @@ document.addEventListener("DOMContentLoaded", () => {
   // ページロード時
   checkLoginStatus().then(checkAndPromptAge);
 
-  // ...既存のsendMessage, loadChatHistoryなどはそのまま...
+  // チャット送信処理
+  async function sendMessage() {
+    const userInput = document.getElementById("userInput");
+    const message = userInput.value.trim();
+    if (!message) return;
+
+    const userId = sessionStorage.getItem("userId");
+    // 送信前にUIをロックするなどの処理を入れてもOK
+
+    // ここでAPIにPOSTする（例: /api/chat など、実際のエンドポイントに合わせて修正）
+    await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        userId,
+        message
+      })
+    });
+
+    userInput.value = "";
+    await loadChatHistory();
+  }
+
+  // 相談内容送信ボタンのイベント
+  const sendButton = document.getElementById("sendButton");
+  if (sendButton) {
+    sendButton.addEventListener("click", sendMessage);
+  }
+
+  // ...既存の初期化処理...
 });
