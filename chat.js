@@ -103,16 +103,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!message) return;
 
     const userId = sessionStorage.getItem("userId");
-    // 送信前にUIをロックするなどの処理を入れてもOK
 
-    // ここでAPIにPOSTする（例: /api/chat など、実際のエンドポイントに合わせて修正）
-    await fetch("/api/chat", {
+    await fetch("/api/update-career-profile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({
         userId,
-        message
+        profile: {
+          lastAssistantMessage: message
+          // 必要に応じて他のプロフィール情報もここに追加
+        }
       })
     });
 
