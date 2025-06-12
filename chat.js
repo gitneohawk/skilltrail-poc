@@ -28,10 +28,10 @@ function showWelcomeAgeMessage() {
   `;
 }
 
-// 年齢未入力時は相談入力UIを隠す
-async function checkAndPromptAge() {
+// チャット履歴を表示
+async function loadChatHistory() {
+  const chatBox = document.getElementById("chatBox");
   const userId = sessionStorage.getItem("userId");
-  let hasProfile = false;
   try {
     const res = await fetch("/api/get-career-profile?userId=" + encodeURIComponent(userId), {
       method: "GET",
@@ -39,20 +39,24 @@ async function checkAndPromptAge() {
     });
     if (res.ok) {
       const profile = await res.json();
-      if (profile && profile.age) hasProfile = true;
+      let html = "";
+      // 年齢入力直後はlastAssistantMessageが空なので、入力促しのみ
+      if (profile.conversationCount === 0) {
+        html = `<div class="text-gray-600 text-center py-2">相談内容を入力してください。</div>`;
+      } else {
+        // ユーザー発言（右側）
+        if (profile.lastUserMessage) {
+          html += `<div class="flex justify-end"><span class="inline-block bg-orange-100 text-orange-800 rounded-lg px-3 py-2 mb-1">${profile.lastUserMessage}</span></div>`;
+        }
+        // AI発言（左側）
+        if (profile.lastAssistantMessage) {
+          html += `<div class="flex justify-start"><span class="inline-block bg-gray-100 text-gray-800 rounded-lg px-3 py-2 mb-1">${profile.lastAssistantMessage}</span></div>`;
+        }
+      }
+      chatBox.innerHTML = html;
     }
   } catch (e) {
-    hasProfile = false;
-  }
-  const agePromptArea = document.getElementById("agePromptArea");
-  const inputArea = document.getElementById("inputArea");
-  if (!hasProfile) {
-    agePromptArea.classList.remove("hidden");
-    inputArea.classList.add("hidden");
-    showWelcomeAgeMessage();
-  } else {
-    agePromptArea.classList.add("hidden");
-    inputArea.classList.remove("hidden");
+    chatBox.innerHTML = `<div class="text-red-500">チャット履歴の取得に失敗しました。</div>`;
   }
 }
 
@@ -92,40 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // 「ようこそ」メッセージを消し、入力促しを表示
       const chatBox = document.getElementById("chatBox");
       chatBox.innerHTML = `<div class="text-gray-600 text-center py-2">相談内容を入力してください。</div>`;
-      await loadChatHistory();
     });
-  }
-
-  // チャット履歴を表示
-  async function loadChatHistory() {
-    const chatBox = document.getElementById("chatBox");
-    const userId = sessionStorage.getItem("userId");
-    try {
-      const res = await fetch("/api/get-career-profile?userId=" + encodeURIComponent(userId), {
-        method: "GET",
-        credentials: "include"
-      });
-      if (res.ok) {
-        const profile = await res.json();
-        let html = "";
-        // 年齢入力直後はlastAssistantMessageが空なので、入力促しのみ
-        if (profile.conversationCount === 0) {
-          html += `<div class="text-gray-600 text-center py-2">相談内容を入力してください。</div>`;
-        } else {
-          // ユーザー発言
-          if (profile.lastUserMessage) {
-            html += `<div class="text-right"><span class="inline-block bg-orange-100 text-orange-800 rounded-lg px-3 py-2 mb-1">${profile.lastUserMessage}</span></div>`;
-          }
-          // AI発言
-          if (profile.lastAssistantMessage) {
-            html += `<div class="text-left"><span class="inline-block bg-gray-100 text-gray-800 rounded-lg px-3 py-2 mb-1">${profile.lastAssistantMessage}</span></div>`;
-          }
-        }
-        chatBox.innerHTML = html;
-      }
-    } catch (e) {
-      chatBox.innerHTML = `<div class="text-red-500">チャット履歴の取得に失敗しました。</div>`;
-    }
   }
 
   // チャット送信処理
@@ -136,12 +107,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const userId = sessionStorage.getItem("userId");
 
-    // ユーザー発言を一時的に表示
-    const chatBox = document.getElementById("chatBox");
-    chatBox.innerHTML += `<div class="text-right"><span class="inline-block bg-orange-100 text-orange-800 rounded-lg px-3 py-2 mb-1">${message}</span></div>`;
-
     // APIへ送信
-    const res = await fetch("/api/update-career-profile", {
+    await fetch("/api/update-career-profile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -166,5 +133,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ページロード時
-  checkLoginStatus().then(checkAndPromptAge).then(loadChatHistory);
+  checkLoginStatus().then(async () => {
+    await checkAndPromptAge();
+    // 年齢未入力なら「ようこそ」メッセージを表示
+    const userId = sessionStorage.getItem("userId");
+    const res = await fetch("/api/get-career-profile?userId=" + encodeURIComponent(userId), {
+      method: "GET",
+      credentials: "include"
+    });
+    if (res.ok) {
+      const profile = await res.json();
+      if (!profile.age) {
+        showWelcomeAgeMessage();
+      } else {
+        await loadChatHistory();
+      }
+    }
+  });
 });
