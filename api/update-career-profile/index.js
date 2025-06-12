@@ -50,11 +50,27 @@ module.exports = async function (context, req) {
       context.log(`No existing profile found. Creating new profile for userId: ${userId}`);
     }
 
+    // lastAssistantMessageの必須チェックを削除
+    // if (!body.profile.lastAssistantMessage) {
+    //   context.res = {
+    //     status: 400,
+    //     body: "Missing lastAssistantMessage in profile."
+    //   };
+    //   return;
+    // }
 
+    // lastAssistantMessageが空の場合は構造化AI呼び出しをスキップし、単純に保存
     if (!body.profile.lastAssistantMessage) {
+      // 既存プロフィールにマージ
+      const mergedProfile = { ...existingProfile, ...body.profile };
+      const content = JSON.stringify(mergedProfile);
+      await blockBlobClient.upload(content, Buffer.byteLength(content), {
+        blobHTTPHeaders: { blobContentType: "application/json" },
+        overwrite: true
+      });
       context.res = {
-        status: 400,
-        body: "Missing lastAssistantMessage in profile."
+        status: 200,
+        body: "Career profile updated successfully (age only)."
       };
       return;
     }
