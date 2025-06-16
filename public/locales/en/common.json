@@ -1,0 +1,18 @@
+
+
+{
+  "title": "SkillTrail Profile Input",
+  "ageRange": "Age Range",
+  "location": "Location",
+  "experiences": "Experiences",
+  "company": "Company",
+  "position": "Position",
+  "startDate": "Start Date",
+  "endDate": "End Date",
+  "addExperience": "Add Experience",
+  "remove": "Remove",
+  "submit": "Submit",
+  "profileSaved": "Profile saved successfully!",
+  "profileFailed": "Failed to save profile.",
+  "formError": "Start date cannot be after end date in experiences."
+}

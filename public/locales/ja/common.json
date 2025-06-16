@@ -1,0 +1,18 @@
+
+
+{
+  "title": "SkillTrail プロファイル入力",
+  "ageRange": "年齢範囲",
+  "location": "地域",
+  "experiences": "職歴",
+  "company": "会社名",
+  "position": "役職",
+  "startDate": "開始日",
+  "endDate": "終了日",
+  "addExperience": "職歴を追加",
+  "remove": "削除",
+  "submit": "送信",
+  "profileSaved": "プロファイルが保存されました！",
+  "profileFailed": "プロファイルの保存に失敗しました。",
+  "formError": "開始日は終了日より前でなければなりません。"
+}
