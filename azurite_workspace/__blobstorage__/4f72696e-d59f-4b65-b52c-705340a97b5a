@@ -1,0 +1,188 @@
+{
+  "basicInfo": {
+    "fullName": "Nobukazu Takahashi",
+    "age": 35,
+    "gender": "Male",
+    "residence": "Tokyo",
+    "address": {
+      "prefecture": "Tokyo",
+      "city": "Shinjuku",
+      "postalCode": "160-0022"
+    },
+    "contact": {
+      "email": "user@example.com",
+      "phone": "+81-90-1234-5678"
+    },
+    "workLocationPreferences": [
+      "Tokyo",
+      "Kanagawa",
+      "Hokkaido"
+    ],
+    "remoteWorkPreference": {
+      "type": "Hybrid",
+      "hybridDaysOnsite": 3
+    }
+  },
+  "careerPreferences": {},
+  "certifications": [],
+  "experience": {},
+  "technicalSkills": {},
+  "languageSkills": {},
+  "softSkills": [],
+  "mobilityFlexibility": {},
+  "privacySettings": {
+    "profileVisibility": "HiddenUntilApply",
+    "allowScouting": false
+  }
+}{
+  "basicInfo": {
+    "fullName": "Nobukazu Takahashi",
+    "age": 35,
+    "gender": "Male",
+    "residence": "Tokyo",
+    "address": {
+      "prefecture": "Tokyo",
+      "city": "Shinjuku",
+      "postalCode": "160-0022"
+    },
+    "contact": {
+      "email": "user@example.com",
+      "phone": "+81-90-1234-5678"
+    },
+    "workLocationPreferences": [
+      "Tokyo",
+      "Kanagawa",
+      "Hokkaido"
+    ],
+    "remoteWorkPreference": {
+      "type": "Hybrid",
+      "hybridDaysOnsite": 3
+    }
+  },
+  "careerPreferences": {},
+  "certifications": [],
+  "experience": {},
+  "technicalSkills": {},
+  "languageSkills": {},
+  "softSkills": [],
+  "mobilityFlexibility": {},
+  "privacySettings": {
+    "profileVisibility": "HiddenUntilApply",
+    "allowScouting": false
+  }
+}{
+  "basicInfo": {
+    "fullName": "のぶ",
+    "age": 25,
+    "gender": "",
+    "residence": "東京都",
+    "address": {
+      "prefecture": "",
+      "city": "",
+      "postalCode": ""
+    },
+    "contact": {
+      "email": "neohawk@evoluzio.com",
+      "phone": ""
+    },
+    "workLocationPreferences": [],
+    "remoteWorkPreference": {
+      "type": "Hybrid",
+      "hybridDaysOnsite": 4
+    }
+  },
+  "careerPreferences": {
+    "desiredJobTitles": [
+      "セキュリティエンジニア"
+    ]
+  },
+  "certifications": [],
+  "experience": {},
+  "technicalSkills": {},
+  "languageSkills": {},
+  "softSkills": [],
+  "mobilityFlexibility": {
+    "relocation": true,
+    "travelDaysPerMonth": 3
+  },
+  "privacySettings": {
+    "profileVisibility": "Public",
+    "allowScouting": true
+  }
+}{
+  "basicInfo": {
+    "fullName": "のぶ",
+    "age": 20,
+    "gender": "",
+    "residence": "",
+    "address": {
+      "prefecture": "東京都",
+      "city": "渋谷区",
+      "postalCode": "150-0000"
+    },
+    "contact": {
+      "email": "neohawk@evoluzio.com",
+      "phone": ""
+    },
+    "workLocationPreferences": [],
+    "remoteWorkPreference": {
+      "type": "Onsite",
+      "hybridDaysOnsite": 0
+    }
+  },
+  "careerPreferences": {
+    "desiredJobTitles": [
+      "セキュリティエンジニア（インフラ系）"
+    ]
+  },
+  "certifications": [
+    "CISSP"
+  ],
+  "experience": {},
+  "technicalSkills": {},
+  "languageSkills": {},
+  "softSkills": [],
+  "mobilityFlexibility": {},
+  "privacySettings": {
+    "profileVisibility": "Public",
+    "allowScouting": true
+  }
+}{
+  "basicInfo": {
+    "fullName": "のぶ",
+    "age": 21,
+    "gender": "男性",
+    "residence": "東京都",
+    "address": {
+      "prefecture": "東京都",
+      "city": "渋谷区",
+      "postalCode": "150-0000"
+    },
+    "contact": {
+      "email": "neohawk@evoluzio.com",
+      "phone": ""
+    },
+    "workLocationPreferences": [],
+    "remoteWorkPreference": {
+      "type": "Onsite",
+      "hybridDaysOnsite": 0
+    }
+  },
+  "careerPreferences": {
+    "desiredJobTitles": [
+      "GRC担当"
+    ]
+  },
+  "certifications": [
+    "CompTIA CySA+"
+  ],
+  "experience": {},
+  "technicalSkills": {},
+  "languageSkills": {},
+  "softSkills": [],
+  "mobilityFlexibility": {},
+  "privacySettings": {
+    "profileVisibility": "Public",
+    "allowScouting": true
+  }
+}

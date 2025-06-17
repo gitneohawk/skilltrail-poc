@@ -1,9 +1,12 @@
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { GetServerSideProps } from 'next';
 import { useState } from "react";
-import { useTranslation } from "next-i18next";
+
+import { useSession, signIn, signOut } from "next-auth/react";
+
+const t = (s: string) => s;
 
 export default function Home() {
+  const { data: session } = useSession();
   const [ageRange, setAgeRange] = useState("");
   const [location, setLocation] = useState("");
   const [experiences, setExperiences] = useState([
@@ -11,8 +14,6 @@ export default function Home() {
   ]);
   const [message, setMessage] = useState("");
   const [formError, setFormError] = useState("");
-
-  const { t } = useTranslation('common');
 
   const handleExperienceChange = (index: number, field: string, value: string) => {
     const updatedExperiences = [...experiences];
@@ -74,6 +75,19 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center p-4">
+      <div className="mb-4">
+        {session ? (
+          <div>
+            <p>Signed in as: {session.user?.name || session.user?.email}</p>
+            <button onClick={() => signOut()} className="bg-red-500 text-white px-3 py-1 rounded mt-2">Sign out</button>
+          </div>
+        ) : (
+          <div>
+            <p>Not signed in</p>
+            <button onClick={() => signIn("azure-ad")} className="bg-blue-500 text-white px-3 py-1 rounded mt-2">Sign in with Azure</button>
+          </div>
+        )}
+      </div>
       <h1 className="text-2xl font-bold mb-4">{t("title")}</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-md">
         <div className="flex flex-col">
@@ -226,10 +240,3 @@ export default function Home() {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(locale ?? 'en', ['common'])),
-    },
-  };
-};

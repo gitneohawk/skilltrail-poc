@@ -1,1 +1,35 @@
-{"ageRange":"35-39","location":"新潟県","experiences":[{"company":"テスト","position":"ほげ","start":"2000-01","end":"2001-05"}]}
+{"ageRange":"35-39","location":"新潟県","experiences":[{"company":"テスト","position":"ほげ","start":"2000-01","end":"2001-05"}]}{
+  "basicInfo": {
+    "fullName": "test",
+    "age": 28,
+    "gender": "男",
+    "residence": "東京",
+    "address": {
+      "prefecture": "東京",
+      "city": "渋谷区",
+      "postalCode": "144-0000"
+    },
+    "contact": {
+      "email": "hoge@hogehoge",
+      "phone": "003868599"
+    },
+    "workLocationPreferences": [
+      "東京"
+    ],
+    "remoteWorkPreference": {
+      "type": "Hybrid",
+      "hybridDaysOnsite": 5
+    }
+  },
+  "careerPreferences": {},
+  "certifications": [],
+  "experience": {},
+  "technicalSkills": {},
+  "languageSkills": {},
+  "softSkills": [],
+  "mobilityFlexibility": {},
+  "privacySettings": {
+    "profileVisibility": "Public",
+    "allowScouting": false
+  }
+}

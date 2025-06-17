@@ -1,0 +1,9 @@
+### SkillTrail AI診断テスト
+
+POST http://localhost:3000/api/diagnosis/generate
+Content-Type: application/json
+
+{
+  "provider": "azure",
+  "sub": "CoV-6LNHSlllvSkUJ5FF0s_sk_iAlqu28oyA5TeZQrY"
+}
