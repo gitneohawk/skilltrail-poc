@@ -1,0 +1,25 @@
+{
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.git": true,
+    "**/.next": true,
+    "**/.turbo": true,
+    "**/out": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.git": true,
+    "**/.next": true,
+    "**/.turbo": true,
+    "**/out": true
+  },
+  "typescript.tsserver.maxTsServerMemory": 4096,
+  "editor.inlineSuggest.enabled": true,
+  "github.copilot.enable": {
+    "*": true,
+    "plaintext": false,
+    "markdown": true,
+    "scminput": false
+  },
+  "github.copilot.inlineSuggest.enable": true
+}

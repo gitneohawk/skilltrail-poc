@@ -1,0 +1,22 @@
+{
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.git": true,
+    "**/.next": true,
+    "**/.turbo": true,
+    "**/out": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.git": true,
+    "**/.next": true,
+    "**/.turbo": true,
+    "**/out": true
+  },
+  "github.copilot.inlineSuggest.enable": true,
+  "editor.inlineSuggest.enabled": true,
+  "github.copilot.advanced": 
+  {
+    "authProvider": "github"
+  }
+}
