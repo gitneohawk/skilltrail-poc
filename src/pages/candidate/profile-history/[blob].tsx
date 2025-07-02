@@ -35,21 +35,27 @@ export default function ProfileDetail() {
       try {
         const decodedBlob = decodeURIComponent(blob as string);
         const res = await fetch(`/api/profile?blob=${encodeURIComponent(decodedBlob)}`);
-        console.log("Response: ", res); // レスポンス全体をログに記録
-        const status = res.status ?? 500; // デフォルト値を設定
-        if (status < 200 || status >= 300 || !res.ok) {
-          throw new Error(`Invalid response: status ${status}`);
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
         }
-        const data: ProfileData = await res.json();
+
+        const data = await res.json();
+
+        if (!data || typeof data !== "object" || !data.ageRange || !data.location) {
+          throw new Error("Invalid response structure");
+        }
+
         setProfile({
           ...data,
           experiences: data.experiences ?? [],
         });
       } catch (err) {
-        console.error(err);
-        setError("Failed to load profile");
+        console.error("Error fetching profile:", err);
+        setError("Failed to load profile. Please try again later.");
       }
     };
+
     fetchProfile();
   }, [blob]);
 
