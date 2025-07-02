@@ -5,9 +5,10 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
 import type { CandidateProfile } from '@/types/CandidateProfile';
 import Layout from '@/components/Layout';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getDefaultProvider } from '@/utils/azureBlob';
 import { getLoginStatusText } from '@/utils/stream';
+import type { SecurityQuiz } from '@/utils/quiz';
 
 export default function CandidateMyPage() {
   const { data: session, status } = useSession();
@@ -43,6 +44,27 @@ export default function CandidateMyPage() {
     fetcher,
     { shouldRetryOnError: false }
   );
+
+  // --- 今日の一問 ---
+  const [quiz, setQuiz] = useState<SecurityQuiz | null>(null);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [quizError, setQuizError] = useState<string | null>(null);
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+
+  useEffect(() => {
+    setQuizLoading(true);
+    fetch('/api/quiz/daily')
+      .then(res => res.json())
+      .then(data => {
+        setQuiz(data);
+        setQuizLoading(false);
+      })
+      .catch(err => {
+        setQuizError('クイズの取得に失敗しました');
+        setQuizLoading(false);
+      });
+  }, []);
 
   if (status === "loading" || (shouldFetch && isLoading)) {
     return <div>Loading...</div>;
@@ -121,37 +143,92 @@ export default function CandidateMyPage() {
           <p><strong>メールアドレス:</strong> {session?.user?.email}</p>
         </div>
 
+        {/* 今日の一問 */}
+        <div className="bg-yellow-50 p-6 rounded-lg shadow mb-6 border border-yellow-200">
+          <h2 className="text-lg font-semibold mb-2 text-yellow-800">今日の一問（セキュリティクイズ）</h2>
+          {quizLoading ? (
+            <div>読み込み中...</div>
+          ) : quizError ? (
+            <div className="text-red-600">{quizError}</div>
+          ) : quiz ? (
+            <div>
+              <div className="mb-2 font-bold text-gray-800">Q. {quiz.question}</div>
+              <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-2">
+                {quiz.choices.map((choice, idx) => (
+                  <button
+                    key={idx}
+                    className={`px-4 py-2 rounded border text-left transition-all ${selectedChoice === choice
+                      ? (choice === quiz.answer ? 'bg-green-200 border-green-500' : 'bg-red-200 border-red-500')
+                      : 'bg-white border-gray-300 hover:bg-yellow-100'}`}
+                    disabled={!!selectedChoice}
+                    onClick={() => {
+                      setSelectedChoice(choice);
+                      setShowExplanation(true);
+                    }}
+                  >
+                    {choice}
+                  </button>
+                ))}
+              </div>
+              {showExplanation && (
+                <div className="mt-4 p-4 rounded bg-gray-50 border border-gray-200">
+                  <div className="font-semibold mb-1">
+                    答え: <span className="text-green-700">{quiz.answer}</span>
+                    {selectedChoice === quiz.answer ? (
+                      <span className="ml-2 text-green-600">🎉 正解！おめでとう！</span>
+                    ) : null}
+                  </div>
+                  <div className="mb-1">{quiz.explanation}</div>
+                  {quiz.foxAdvice && <div className="italic text-orange-700">🦊 {quiz.foxAdvice}</div>}
+                  {selectedChoice !== quiz.answer && (
+                    <button
+                      className="mt-3 px-3 py-1 bg-blue-500 text-white rounded"
+                      onClick={() => { setSelectedChoice(null); setShowExplanation(false); }}
+                    >
+                      もう一度挑戦
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : null}
+        </div>
+
         <div className="flex space-x-4">
+          <Link href="/candidate/profile">
+            <button className="px-4 py-2 bg-blue-500 text-white rounded" disabled={isDiagnosing}>
+              プロフィール編集
+            </button>
+          </Link>
+          <Link href="/candidate/skill-chat">
+            <button className="px-4 py-2 bg-purple-600 text-white rounded" disabled={isDiagnosing}>
+              スキルインタビューを開始
+            </button>
+          </Link>
           <button
             onClick={handleDiagnosis}
-            className={`px-4 py-2 rounded text-white ${isDiagnosing ? 'bg-gray-400' : 'bg-green-500'}`}
+            className={`px-4 py-2 rounded text-white flex items-center justify-center ${isDiagnosing ? 'bg-gray-400' : 'bg-green-500'}`}
             disabled={isDiagnosing}
           >
-            {isDiagnosing ? '診断中...' : 'AI診断を実行'}
+            {isDiagnosing ? (
+              <span className="flex items-center">
+                <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                診断中...
+              </span>
+            ) : 'AI診断'}
           </button>
           <button
             onClick={() => signOut()}
             className="px-4 py-2 bg-red-500 text-white rounded"
+            disabled={isDiagnosing}
           >
             Sign Out
           </button>
-
-          <Link href="/candidate/profile">
-            <button className="px-4 py-2 bg-blue-500 text-white rounded">
-              プロフィール編集
-            </button>
-          </Link>
         </div>
         {/* TODO: プロフィール未登録時はこのボタンを非表示にする */}
-        <div className="mt-6">
-          <Link href="/candidate/skill-chat">
-            <button
-              className="px-4 py-2 bg-purple-600 text-white rounded"
-            >
-              スキルインタビューを開始
-            </button>
-          </Link>
-        </div>
       </div>
     </Layout>
   );

@@ -5,11 +5,18 @@ import { buildPrompt } from '@/lib/diagnosis-prompt';
 import { callOpenAIWithDiagnosisPrompt } from '@/lib/openai';
 import { loadJsonFromBlobWithProvider } from '@/utils/azureBlob';
 
+// const containerName = process.env.AZURE_BLOB_CONTAINER;
 const containerName = 'career-profiles';
+
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  if (!containerName) {
+    res.status(500).json({ error: 'Blob container name is not set in environment variables.' });
     return;
   }
 
@@ -26,6 +33,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
+    // buildPromptでプロンプトを生成し、callOpenAIWithDiagnosisPromptに渡す
+    const prompt = buildPrompt(profile);
+    // callOpenAIWithDiagnosisPromptはprofileのみ渡す
     const diagnosis: DiagnosisResult = await callOpenAIWithDiagnosisPrompt(profile);
 
     res.status(200).json(diagnosis);

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import axios from 'axios';
 import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
+import { SKILL_CANDIDATES } from '@/types/Skills';
 
 const prefectures = [
   '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
@@ -93,6 +94,10 @@ export default function CandidateProfileForm() {
 
   const [profile, setProfile] = useState<CandidateProfile>(initialProfile);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showSkillEdit, setShowSkillEdit] = useState(false);
+  const [tempSkills, setTempSkills] = useState<string[]>(profile.skills || []);
+  const [otherSkill, setOtherSkill] = useState('');
+  const [skillError, setSkillError] = useState('');
 
   React.useEffect(() => {
     if (fetchedProfile) {
@@ -238,6 +243,17 @@ export default function CandidateProfileForm() {
 
     localStorage.setItem('pendingProfile', JSON.stringify(profile));
     router.push('/candidate/profile/confirm');
+  };
+
+  // スキル編集UIの保存処理
+  const handleSkillSave = () => {
+    if (tempSkills.length === 0 && !otherSkill.trim()) {
+      setSkillError('1つ以上スキルを選択または入力してください');
+      return;
+    }
+    setProfile(prev => ({ ...prev, skills: otherSkill.trim() ? [...tempSkills, otherSkill.trim()] : tempSkills }));
+    setShowSkillEdit(false);
+    setSkillError('');
   };
 
   if (authStatus === 'loading') {
@@ -494,6 +510,61 @@ export default function CandidateProfileForm() {
           </div>
 
           <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">変更を保存する</button>
+
+          {/* スキル編集UI */}
+          <div className="mt-8">
+            <button
+              type="button"
+              className="bg-purple-600 text-white px-4 py-2 rounded mb-2"
+              onClick={() => setShowSkillEdit(v => !v)}
+            >
+              {showSkillEdit ? 'スキル編集を閉じる' : 'スキルを編集'}
+            </button>
+            {showSkillEdit && (
+              <div className="border rounded p-4 bg-gray-50 mt-2">
+                <div className="mb-2 font-semibold">保有スキル（複数選択可）</div>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {SKILL_CANDIDATES.map(skill => (
+                    <label key={skill} className={`px-3 py-1 rounded border cursor-pointer ${tempSkills.includes(skill) ? 'bg-blue-600 text-white' : 'bg-white text-gray-800'}`}>
+                      <input
+                        type="checkbox"
+                        className="mr-1"
+                        checked={tempSkills.includes(skill)}
+                        onChange={e => {
+                          setTempSkills(prev =>
+                            e.target.checked
+                              ? [...prev, skill]
+                              : prev.filter(s => s !== skill)
+                          );
+                        }}
+                      />
+                      {skill}
+                    </label>
+                  ))}
+                </div>
+                <div className="mb-4">
+                  <label className="block font-semibold mb-1">その他スキル</label>
+                  <input
+                    type="text"
+                    className="border p-2 w-full bg-white"
+                    placeholder="その他のスキルを入力"
+                    value={otherSkill}
+                    onChange={e => setOtherSkill(e.target.value)}
+                  />
+                </div>
+                {skillError && (
+                  <div className="text-red-600 mb-2">{skillError}</div>
+                )}
+                <button
+                  type="button"
+                  className="bg-blue-600 text-white px-4 py-2 rounded w-full"
+                  onClick={handleSkillSave}
+                >
+                  スキルを保存
+                </button>
+              </div>
+            )}
+          </div>
         </form>
       </div>
     </Layout>

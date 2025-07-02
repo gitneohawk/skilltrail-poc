@@ -15,6 +15,7 @@ export default function SkillChat() {
   const [input, setInput] = useState('');
   const [entries, setEntries] = useState<SkillInterviewMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
 
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -48,7 +49,7 @@ export default function SkillChat() {
           const initialMessage: SkillInterviewMessage = {
             id: Date.now(),
             role: 'assistant',
-            message: 'ここではスキルのインタビューをします。AIとのやりとりが終わったら「スキルセット終了」と入力してください。',
+            message: 'ここではスキルのインタビューを行います。5〜8往復程度で終了します。終了したい場合はマイページへ戻るをクリックして終了してください。まず、あなたの経験をまとめてAIに送ってください。',
             timestamp: new Date().toISOString(),
           };
           setEntries([initialMessage]);
@@ -74,36 +75,50 @@ export default function SkillChat() {
     setIsLoading(true);
 
     try {
+      // 新方式: ユーザー入力ごとにAIで構造化＋次の質問生成
       const res = await fetch('/api/ai/skill-interview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, entry: userEntry }),
+        body: JSON.stringify({
+          userId,
+          provider,
+          entry: userEntry,
+          entries: [...entries, userEntry], // 直近までの会話履歴
+          profile: profileData, // 現状のスキル情報
+        }),
       });
       const data = await res.json();
-      if (data.reply) {
+      // data: { nextQuestion: string, structuredSkills: any, error?: string }
+      if (data.error) {
+        alert(`AI処理に失敗しました: ${data.error}`);
+        return;
+      }
+      // スキル構造化結果をstateに反映（必要に応じてUIで表示・保存）
+      // ここでは一旦console.logのみ
+      if (data.structuredSkills) {
+        console.log('[AI構造化スキル]', data.structuredSkills);
+        // TODO: 必要に応じてstateやUIに反映
+      }
+      // 次の質問をAIから受け取り、entriesに追加
+      if (data.nextQuestion) {
         setEntries(prev => [...prev, {
           id: Date.now() + 1,
           role: 'assistant',
-          message: data.reply,
+          message: data.nextQuestion,
+          timestamp: new Date().toISOString(),
+        }]);
+      } else {
+        // nextQuestionがnullならインタビュー終了メッセージを追加
+        setEntries(prev => [...prev, {
+          id: Date.now() + 1,
+          role: 'assistant',
+          message: 'インタビューは終了しました。マイページへ戻るをクリックしてください。',
           timestamp: new Date().toISOString(),
         }]);
       }
-      if (input.trim() === 'スキルセット終了') {
-        try {
-          const res = await fetch('/api/ai/skill-extraction', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, blob: [...entries, userEntry] }),
-          });
-          const result = await res.json();
-          console.log('[skill-extraction] result:', result);
-          // TODO: Show extracted skills in UI for user confirmation
-        } catch (err) {
-          console.error('[skill-extraction] failed:', err);
-        }
-      }
     } catch (e) {
       console.error('Error during chat:', e);
+      alert('AIとの通信に失敗しました');
     } finally {
       setIsLoading(false);
     }
@@ -117,9 +132,31 @@ export default function SkillChat() {
     }
   };
 
+  const handleSkillExtraction = async () => {
+    setIsExtracting(true);
+    try {
+      const res = await fetch('/api/ai/skill-extraction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, provider, blob: { entries }, profile: profileData }),
+      });
+      const result = await res.json();
+      // TODO: 必要に応じてUIでスキルセットを表示
+      alert('スキル分析が完了しました');
+    } catch (err) {
+      console.error('[skill-extraction] failed:', err);
+      alert('スキル分析に失敗しました');
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [entries]);
+
+  // 入力欄・送信ボタンの無効化判定
+  const isInterviewEnded = entries.some(e => e.message.includes('インタビューは終了しました'));
 
   return (
     <Layout>
@@ -142,20 +179,30 @@ export default function SkillChat() {
         </div>
         <div className="mt-6 w-full max-w-3xl flex flex-col sm:flex-row gap-2">
           <textarea
-            className="flex-1 min-h-[80px] border border-gray-300 rounded p-2 resize-none"
+            className="flex-1 min-h-[80px] border border-gray-300 rounded p-2 resize-none bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="メッセージを入力してください"
+            disabled={isInterviewEnded || isLoading}
           />
           <button
             onClick={handleSubmit}
-            disabled={isLoading}
-            className="self-end w-auto px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+            disabled={isLoading || isInterviewEnded}
+            className="self-end w-auto px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50 flex items-center justify-center"
           >
-            送信
+            {isLoading ? (
+              <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+            ) : null}
+            {isLoading ? '送信中...' : '送信'}
           </button>
         </div>
+        {isLoading && (
+          <div className="mt-2 text-blue-600 text-sm">AIの応答を待っています...</div>
+        )}
         <div className="mt-8 text-center">
           <button
             onClick={() => router.push('/candidate/mypage')}

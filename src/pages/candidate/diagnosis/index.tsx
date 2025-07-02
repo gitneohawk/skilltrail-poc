@@ -119,6 +119,30 @@ export default function DiagnosisPage() {
           </div>
         )}
 
+        {result.learningRoadmap && result.learningRoadmap.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-2 text-gray-700">学習ロードマップ</h2>
+            <div className="flex flex-col md:flex-row gap-6">
+              {result.learningRoadmap.map((stage, idx) => (
+                <div key={idx} className="flex-1 bg-blue-50 rounded-lg shadow p-4 mb-4 md:mb-0 border border-blue-200">
+                  <div className="flex items-center mb-2">
+                    <div className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold mr-3">{stage.stage}</div>
+                    <div className="font-bold text-lg text-blue-800">{stage.title || `ステージ${stage.stage}`}</div>
+                  </div>
+                  <div className="ml-2">
+                    <div className="mb-1"><span className="font-semibold text-blue-700">習得スキル:</span> <span className="text-gray-900">{stage.skills?.join(', ') || '-'}</span></div>
+                    <div className="mb-1"><span className="font-semibold text-blue-700">推奨アクション:</span> <span className="text-gray-900">{stage.actions?.join(', ') || '-'}</span></div>
+                    <div className="mb-1"><span className="font-semibold text-blue-700">参考リソース:</span> <span className="text-gray-900">{stage.resources?.join(', ') || '-'}</span></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 text-sm text-gray-600 text-center">
+              <span className="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full">左から右へ進むイメージです。各ステージを順にクリアしていきましょう！</span>
+            </div>
+          </div>
+        )}
+
         <div className="mt-8 text-center">
           <button
             onClick={() => router.push('/candidate/mypage')}

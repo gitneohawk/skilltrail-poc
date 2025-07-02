@@ -1,7 +1,7 @@
 import type { CandidateProfile } from '@/types/CandidateProfile';
 import type { DiagnosisResult } from '@/types/diagnosis-result';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { buildSkillInterviewPrompt, buildSkillExtractionPrompt } from './skill-prompt';
+import { buildSkillInterviewPrompt, buildSkillExtractionPrompt, buildSkillStructuringAndNextQuestionPrompt } from './skill-prompt';
 import { buildPrompt } from './diagnosis-prompt';
 import OpenAI from 'openai';
 
@@ -69,6 +69,41 @@ export async function callOpenAIWithDiagnosisPrompt(
   const aiData = await callOpenAI(payload);
   const reply = aiData.choices?.[0]?.message?.content?.trim() ?? '';
   return JSON.parse(reply);
+}
+
+/**
+ * スキル構造化＋次の質問生成を1リクエストで行う
+ */
+export async function callOpenAIWithSkillStructuringAndNextQuestion(
+  profile: CandidateProfile,
+  entries: { role: 'user' | 'assistant'; message: string }[]
+): Promise<{ skills: any[]; nextQuestion: string }> {
+  const systemPrompt = buildSkillStructuringAndNextQuestionPrompt(profile, entries);
+  const payload = {
+    model: 'gpt-4',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...entries.map((e) => ({ role: e.role, content: e.message })),
+    ],
+    temperature: 0.7,
+  };
+  const aiData = await callOpenAI(payload);
+  const content = aiData.choices?.[0]?.message?.content?.trim() ?? '';
+  let jsonText = content;
+  try {
+    // 先頭に余計なテキストが混じる場合に備え、最初の { から最後の } までを抽出
+    const match = content.match(/{[\s\S]*}/);
+    if (match) {
+      jsonText = match[0];
+    }
+    const parsed = JSON.parse(jsonText);
+    return {
+      skills: Array.isArray(parsed.skills) ? parsed.skills : [],
+      nextQuestion: typeof parsed.nextQuestion === 'string' ? parsed.nextQuestion : '',
+    };
+  } catch (e) {
+    throw new Error('AI応答のJSONパースに失敗しました: ' + content);
+  }
 }
 
 type Entry = {

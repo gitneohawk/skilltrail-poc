@@ -5,12 +5,17 @@ export default function CandidateHome() {
   return (
     <Layout>
       <div className="flex flex-col justify-center items-center p-4">
-        <h1 className="text-3xl font-bold mb-6">個人ユーザ専用ページ</h1>
+        <h1 className="text-3xl font-bold mb-4">個人ユーザ専用ページ</h1>
+        <img
+          src="/images/SecurityFox.png"
+          alt="SkillTrailキャラクター SecurityFox"
+          className="w-40 h-40 mb-4 drop-shadow-lg"
+        />
         <p className="mb-8 text-center max-w-xl text-lg">
           SkillTrailはあなたのセキュリティキャリアをAIでサポートします。
         </p>
          <p className="mb-8 text-left max-w-xl text-lg">
-          こんにちは。SkillTrailです。<br />
+          こんにちは。SkillTrail主催、Seucurity Foxです。<br />
           このページを見ているあなた、セキュリティ関連の業務を行なっているか、もしくは興味を持ってくれている方ですね。<br />
           私は、セキュリティ業界で30年仕事をしてきました。
           セキュリティ業界において常に人が足りず、人材の育成が難しいという課題をなんとかしたいと考えています。<br />
