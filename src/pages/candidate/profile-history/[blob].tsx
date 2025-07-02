@@ -116,6 +116,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile?blob=${encodeURIComponent(blob)}`);
 
+    console.log("API response details:", response);
+
     if (!response.ok) {
       const status = response.status || "unknown";
       console.error(`HTTP error! status: ${status}`);
