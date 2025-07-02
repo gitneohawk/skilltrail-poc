@@ -22,6 +22,7 @@ const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STR
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!AZURE_STORAGE_CONNECTION_STRING) {
+    console.error('Storage connection string is not configured.');
     res.status(500).json({ error: 'Storage connection string is not configured.' });
     return;
   }
@@ -31,6 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const body: ProfileData = req.body;
       const session = (await getServerSession(req, res, authOptions)) as Session | null;
       if (!session) {
+        console.error('Unauthorized access attempt.');
         res.status(401).json({ error: 'Unauthorized' });
         return;
       }
@@ -38,18 +40,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const timestamp = new Date().toISOString();
       const blobName = `user-profile-${timestamp}.json`;
 
-      // containerNameを追加
       await uploadJsonToBlob(CONTAINER_NAME, session, body);
 
-      console.log('受信データ:', body);
+      console.log('Received data:', body);
       res.status(200).json({ message: 'Profile saved to Blob Storage!' });
     } catch (err) {
-      console.error('Error saving to Blob Storage', err);
+      console.error('Error saving to Blob Storage:', err);
       res.status(500).json({ error: 'Internal server error' });
     }
   } else if (req.method === 'GET') {
     const session = (await getServerSession(req, res, authOptions)) as Session | null;
     if (!session) {
+      console.error('Unauthorized access attempt.');
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
@@ -57,9 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const blob = req.query.blob as string | undefined;
 
     if (blob) {
-      // Fetch specific blob content
       try {
-        // containerNameを追加
         const jsonData = await downloadJsonFromBlob<ProfileData>(CONTAINER_NAME, session);
         res.status(200).json(jsonData);
       } catch (err) {
@@ -67,17 +67,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         res.status(500).json({ error: 'Failed to read blob' });
       }
     } else {
-      // List blobs
       try {
-        // containerNameを追加
         const blobs = await listProfileBlobNames(CONTAINER_NAME);
         res.status(200).json({ blobs });
       } catch (err) {
-        console.error('Error listing blobs', err);
+        console.error('Error listing blobs:', err);
         res.status(500).json({ error: 'Internal server error' });
       }
     }
   } else {
+    console.error('Method not allowed:', req.method);
     res.status(405).json({ error: 'Method not allowed' });
   }
 }

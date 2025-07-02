@@ -18,30 +18,30 @@ type ProfileData = {
 export default function ProfileDetail() {
   const { t } = useTranslation("common");
   const router = useRouter();
-  // `router.query` はクライアントサイドでのみ利用可能
   const { blob } = router.query;
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // `blob` が文字列であることを確認し、処理を進める
-    if (typeof blob !== "string") {
-      // `blob` がまだ利用できない、または不正な場合は何もしないか、エラーを設定
-      if (blob === undefined) {
-        // ルーターがまだ準備できていない状態
-        return;
+    // router.isReady が true になるまで待機し、router.query が利用可能であることを確認
+    // また、blob が文字列であることを厳密にチェック
+    if (!router.isReady || typeof blob !== "string") {
+      // router が準備できていないか、blob が有効な文字列でない場合は何もしない
+      // ただし、blob が完全にない場合はエラーを表示する
+      if (router.isReady && blob === undefined) {
+        setError("URLが不正です（パラメータがありません）");
       }
-      setError("URLが不正です（パラメータがありません）");
       return;
     }
 
     const fetchProfile = async () => {
       try {
-        const decodedBlob = decodeURIComponent(blob); // 型アサーションが不要になる
+        const decodedBlob = decodeURIComponent(blob);
         const response = await fetch(`/api/profile?blob=${encodeURIComponent(decodedBlob)}`);
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        // レスポンスが undefined になる可能性を考慮してチェック
+        if (!response || !response.ok) { // response が undefined の場合もここでハンドリング
+          throw new Error(`HTTP error! status: ${response ? response.status : 'unknown'}`);
         }
 
         const data: ProfileData = await response.json();
@@ -58,14 +58,14 @@ export default function ProfileDetail() {
     };
 
     fetchProfile();
-  }, [blob]); // `blob` が変更されたときに再実行
+  }, [blob, router.isReady]); // router.isReady を依存配列に追加
 
   if (error) {
     return <div className="p-4 text-red-500">{error}</div>;
   }
 
-  // `profile` がロードされるまではローディング表示
   if (!profile) {
+    // データの読み込み中、または router がまだ準備できていない場合
     return <div className="p-4">{t("loading")}</div>;
   }
 
@@ -92,10 +92,7 @@ export default function ProfileDetail() {
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { locale } = context; // `params` の参照を削除
-
-  // `params.blob` はクライアントサイドで処理されるため、
-  // ここではi18nの翻訳プロパティのみを返します。
+  const { locale } = context;
   return {
     props: {
       ...(await serverSideTranslations(locale ?? "en", ["common"])),
