@@ -94,10 +94,42 @@ export default function ProfileDetail() {
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { locale } = context;
-  return {
-    props: {
-      ...(await serverSideTranslations(locale ?? "en", ["common"])),
-    },
-  };
+  const { locale, query } = context;
+  const blob = query.blob as string | undefined;
+
+  if (!blob) {
+    return {
+      props: {
+        error: "Blob parameter is missing",
+        ...(await serverSideTranslations(locale ?? "en", ["common"])),
+      },
+    };
+  }
+
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile?blob=${encodeURIComponent(blob)}`);
+
+    if (!response.ok) {
+      const status = response.status || "unknown";
+      console.error(`HTTP error! status: ${status}`);
+      throw new Error(`HTTP error! status: ${status}`);
+    }
+
+    const data = await response.json();
+
+    return {
+      props: {
+        profile: data,
+        ...(await serverSideTranslations(locale ?? "en", ["common"])),
+      },
+    };
+  } catch (err) {
+    console.error("Error fetching profile in SSR:", err);
+    return {
+      props: {
+        error: "Failed to fetch profile",
+        ...(await serverSideTranslations(locale ?? "en", ["common"])),
+      },
+    };
+  }
 };
