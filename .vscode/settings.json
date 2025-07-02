@@ -1,22 +1,53 @@
 {
+  // Copilot Chat / Inline Suggest 有効化
+  "github.copilot.inlineSuggest.enable": true,
+  "editor.inlineSuggest.enabled": true,
+  "github.copilot.advanced": {
+    "authProvider": "github"
+  },
+  "github.copilot.enable": {
+    "*": true,
+    "plaintext": false,
+    "markdown": false
+  },
+
+  // コード整形関連（Prettier前提）
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // ファイル除外（検索・サイドバー両方）
   "files.exclude": {
     "**/node_modules": true,
     "**/.git": true,
     "**/.next": true,
     "**/.turbo": true,
-    "**/out": true
+    "**/out": true,
+    "**/dist": true,
+    "**/.DS_Store": true
   },
   "search.exclude": {
     "**/node_modules": true,
     "**/.git": true,
     "**/.next": true,
     "**/.turbo": true,
-    "**/out": true
+    "**/out": true,
+    "**/dist": true
   },
-  "github.copilot.inlineSuggest.enable": true,
-  "editor.inlineSuggest.enabled": true,
-  "github.copilot.advanced": 
-  {
-    "authProvider": "github"
-  }
+
+  // ファイル保存時の動作
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+
+  // Copilot Chat のサイドバー使用時に補完候補が重くならないよう調整
+  "editor.suggest.showWords": false
 }
