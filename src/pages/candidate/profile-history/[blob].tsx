@@ -107,6 +107,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 
   try {
+    console.log("Fetching profile with blob:", blob);
+    console.log("API URL:", `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile?blob=${encodeURIComponent(blob)}`);
+
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile?blob=${encodeURIComponent(blob)}`);
 
     if (!response.ok) {
