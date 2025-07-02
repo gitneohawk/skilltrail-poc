@@ -35,7 +35,7 @@ export default function ProfileDetail() {
       try {
         const decodedBlob = decodeURIComponent(blob as string);
         const res = await fetch(`/api/profile?blob=${encodeURIComponent(decodedBlob)}`);
-        if (!res.ok) throw new Error("Failed to fetch");
+        if (!res.ok || !res.status) throw new Error("Failed to fetch");
         const data: ProfileData = await res.json();
         setProfile({
           ...data,
