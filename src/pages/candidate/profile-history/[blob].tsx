@@ -18,19 +18,26 @@ type ProfileData = {
 export default function ProfileDetail() {
   const { t } = useTranslation("common");
   const router = useRouter();
+  // `router.query` はクライアントサイドでのみ利用可能
   const { blob } = router.query;
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!blob) {
-      setError("URLが不正です（パラメータがありませんよ）");
+    // `blob` が文字列であることを確認し、処理を進める
+    if (typeof blob !== "string") {
+      // `blob` がまだ利用できない、または不正な場合は何もしないか、エラーを設定
+      if (blob === undefined) {
+        // ルーターがまだ準備できていない状態
+        return;
+      }
+      setError("URLが不正です（パラメータがありません）");
       return;
     }
 
     const fetchProfile = async () => {
       try {
-        const decodedBlob = decodeURIComponent(blob as string);
+        const decodedBlob = decodeURIComponent(blob); // 型アサーションが不要になる
         const response = await fetch(`/api/profile?blob=${encodeURIComponent(decodedBlob)}`);
 
         if (!response.ok) {
@@ -39,7 +46,7 @@ export default function ProfileDetail() {
 
         const data: ProfileData = await response.json();
 
-        if (!data || typeof data !== "object" || !data.ageRange || !data.location) {
+        if (!data || !data.ageRange || !data.location) {
           throw new Error("Invalid response structure");
         }
 
@@ -51,12 +58,13 @@ export default function ProfileDetail() {
     };
 
     fetchProfile();
-  }, [blob]);
+  }, [blob]); // `blob` が変更されたときに再実行
 
   if (error) {
     return <div className="p-4 text-red-500">{error}</div>;
   }
 
+  // `profile` がロードされるまではローディング表示
   if (!profile) {
     return <div className="p-4">{t("loading")}</div>;
   }
@@ -84,10 +92,10 @@ export default function ProfileDetail() {
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { locale, params } = context;
-  if (!params || !params.blob) {
-    return { notFound: true };
-  }
+  const { locale } = context; // `params` の参照を削除
+
+  // `params.blob` はクライアントサイドで処理されるため、
+  // ここではi18nの翻訳プロパティのみを返します。
   return {
     props: {
       ...(await serverSideTranslations(locale ?? "en", ["common"])),
