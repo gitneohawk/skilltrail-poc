@@ -113,7 +113,11 @@ export default function ProfileDetail() {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const { locale, params } = context;
+  if (!params || !params.blob) {
+    return { notFound: true };
+  }
   return {
     props: {
       ...(await serverSideTranslations(locale ?? "en", ["common"])),
