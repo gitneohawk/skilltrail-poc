@@ -12,7 +12,6 @@ on:
 jobs:
   build_and_deploy_job:
     runs-on: ubuntu-latest
-    name: Build and Deploy Job
     steps:
       - uses: actions/checkout@v3
       - name: Build And Deploy
@@ -22,6 +21,7 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "/" # Next.jsプロジェクトルート
-          output_location: ".next" # Next.jsのビルド出力
-          # api_locationは未指定（Next.jsのAPI Routeを自動でFunctions化）
+          app_location: "/"
+          output_location: ".next"
+        env:
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
