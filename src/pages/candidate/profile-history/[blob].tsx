@@ -1,5 +1,3 @@
-
-
 import { GetServerSideProps } from "next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
@@ -23,9 +21,13 @@ export default function ProfileDetail() {
   const { blob } = router.query;
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [error, setError] = useState("");
-
   const [diagnosis, setDiagnosis] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // blobがundefinedの場合はガード
+  if (typeof window !== "undefined" && !blob) {
+    return <div className="p-4 text-red-500">URLが不正です（パラメータがありません）</div>;
+  }
 
   useEffect(() => {
     if (!blob) return;
