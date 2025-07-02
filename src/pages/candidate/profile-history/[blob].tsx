@@ -1,3 +1,5 @@
+// pages/candidate/profile-history/[blob].tsx
+
 import { GetServerSideProps } from "next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
@@ -18,13 +20,19 @@ type ProfileData = {
 export default function ProfileDetail() {
   const { t } = useTranslation("common");
   const router = useRouter();
-  const { blob } = router.query;
+  const { blob } = router.query; // URLの [blob] パラメータ
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // **重要:** クライアントサイドでのみ実行されることを保証
+    // typeof window === 'undefined' はサーバーサイド（ビルド時含む）ではtrue
+    if (typeof window === 'undefined') {
+      return; // サーバーサイドでは何もしない
+    }
+
     // router.isReady が true になるまで待機し、router.query が利用可能であることを確認
-    // また、blob が文字列であることを厳密にチェック
+    // blob が文字列であることを厳密にチェック
     if (!router.isReady || typeof blob !== "string") {
       // router が準備できていないか、blob が有効な文字列でない場合は何もしない
       // ただし、blob が完全にない場合はエラーを表示する
@@ -37,13 +45,18 @@ export default function ProfileDetail() {
     const fetchProfile = async () => {
       try {
         const decodedBlob = decodeURIComponent(blob);
-        const response = await fetch(`/api/profile?blob=${encodeURIComponent(decodedBlob)}`);
+        // **API呼び出しURLの修正:**
+        // pages/api/profile/[provider]/[sub].ts に対応するURLに修正
+        // ここでは 'default' をプロバイダーとして仮定します。
+        // 実際のプロバイダーはアプリケーションのロジックに合わせてください。
+        const provider = 'default'; // 例: 認証情報などから取得
+        const apiUrl = `/api/profile/${encodeURIComponent(provider)}/${encodeURIComponent(decodedBlob)}`;
 
-        // レスポンスが undefined になる可能性を考慮してチェック
+        const response = await fetch(apiUrl);
+
         if (!response || !response.ok) {
-          const status = response ? response.status : 'unknown';
-          console.error(`HTTP error! status: ${status}`);
-          throw new Error(`HTTP error! status: ${status}`);
+          console.error("API Response was not OK:", response); // デバッグ用
+          throw new Error(`HTTP error! status: ${response ? response.status : 'unknown'}`);
         }
 
         const data: ProfileData = await response.json();
@@ -94,51 +107,12 @@ export default function ProfileDetail() {
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { locale, query } = context;
-  const blob = query.blob as string | undefined;
-
-  if (!blob) {
-    return {
-      props: {
-        error: "Blob parameter is missing",
-        ...(await serverSideTranslations(locale ?? "en", ["common"])),
-      },
-    };
-  }
-
-  try {
-    console.log("Fetching profile with blob:", blob);
-    console.log("API URL:", `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile?blob=${encodeURIComponent(blob)}`);
-    console.log("SSR request details:", {
-      blob,
-      apiUrl: `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile?blob=${encodeURIComponent(blob)}`
-    });
-
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile?blob=${encodeURIComponent(blob)}`);
-
-    console.log("API response details:", response);
-
-    if (!response.ok) {
-      const status = response.status || "unknown";
-      console.error(`HTTP error! status: ${status}`);
-      throw new Error(`HTTP error! status: ${status}`);
-    }
-
-    const data = await response.json();
-
-    return {
-      props: {
-        profile: data,
-        ...(await serverSideTranslations(locale ?? "en", ["common"])),
-      },
-    };
-  } catch (err) {
-    console.error("Error fetching profile in SSR:", err);
-    return {
-      props: {
-        error: "Failed to fetch profile",
-        ...(await serverSideTranslations(locale ?? "en", ["common"])),
-      },
-    };
-  }
+  const { locale } = context;
+  // getServerSideProps では、クライアントサイドでのデータフェッチに必要な
+  // 最小限のプロパティ（ここではi18nの翻訳）のみを返します。
+  return {
+    props: {
+      ...(await serverSideTranslations(locale ?? "en", ["common"])),
+    },
+  };
 };
