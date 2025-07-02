@@ -69,6 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await saveJsonToBlobWithProvider(containerName, provider, sub, profile);
       res.status(200).json({ message: 'Profile saved successfully.' });
     } else {
+      console.error(`Method not allowed: ${req.method}`);
       res.status(405).json({ error: 'Method not allowed' });
     }
   } catch (error: any) {
