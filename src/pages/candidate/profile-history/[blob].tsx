@@ -40,8 +40,10 @@ export default function ProfileDetail() {
         const response = await fetch(`/api/profile?blob=${encodeURIComponent(decodedBlob)}`);
 
         // レスポンスが undefined になる可能性を考慮してチェック
-        if (!response || !response.ok) { // response が undefined の場合もここでハンドリング
-          throw new Error(`HTTP error! status: ${response ? response.status : 'unknown'}`);
+        if (!response || !response.ok) {
+          const status = response ? response.status : 'unknown';
+          console.error(`HTTP error! status: ${status}`);
+          throw new Error(`HTTP error! status: ${status}`);
         }
 
         const data: ProfileData = await response.json();
