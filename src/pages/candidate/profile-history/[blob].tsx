@@ -24,7 +24,7 @@ export default function ProfileDetail() {
 
   useEffect(() => {
     if (!blob) {
-      setError("URLが不正です（パラメータがありません）");
+      setError("URLが不正です（パラメータがありませんよ）");
       return;
     }
 
