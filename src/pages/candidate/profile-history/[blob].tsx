@@ -35,8 +35,10 @@ export default function ProfileDetail() {
       try {
         const decodedBlob = decodeURIComponent(blob as string);
         const res = await fetch(`/api/profile?blob=${encodeURIComponent(decodedBlob)}`);
-        if (!res || typeof res.status === "undefined" || !res.ok) {
-          throw new Error("Invalid response or failed to fetch");
+        console.log("Response: ", res); // レスポンス全体をログに記録
+        const status = res.status ?? 500; // デフォルト値を設定
+        if (status < 200 || status >= 300 || !res.ok) {
+          throw new Error(`Invalid response: status ${status}`);
         }
         const data: ProfileData = await res.json();
         setProfile({
