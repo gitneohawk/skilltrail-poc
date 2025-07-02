@@ -20,39 +20,33 @@ export default function ProfileDetail() {
   const router = useRouter();
   const { blob } = router.query;
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [error, setError] = useState("");
-  const [diagnosis, setDiagnosis] = useState("");
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  // blobがundefinedの場合はガード
-  if (typeof window !== "undefined" && !blob) {
-    return <div className="p-4 text-red-500">URLが不正です（パラメータがありません）</div>;
-  }
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!blob) return;
+    if (!blob) {
+      setError("URLが不正です（パラメータがありません）");
+      return;
+    }
+
     const fetchProfile = async () => {
       try {
         const decodedBlob = decodeURIComponent(blob as string);
-        const res = await fetch(`/api/profile?blob=${encodeURIComponent(decodedBlob)}`);
+        const response = await fetch(`/api/profile?blob=${encodeURIComponent(decodedBlob)}`);
 
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await res.json();
+        const data: ProfileData = await response.json();
 
         if (!data || typeof data !== "object" || !data.ageRange || !data.location) {
           throw new Error("Invalid response structure");
         }
 
-        setProfile({
-          ...data,
-          experiences: data.experiences ?? [],
-        });
+        setProfile(data);
       } catch (err) {
         console.error("Error fetching profile:", err);
-        setError("Failed to load profile. Please try again later.");
+        setError("プロフィールの読み込みに失敗しました。後でもう一度お試しください。");
       }
     };
 
@@ -84,40 +78,6 @@ export default function ProfileDetail() {
             </div>
           ))}
         </div>
-      </div>
-      <div className="mt-4 w-full max-w-lg">
-        <button
-          onClick={async () => {
-            if (!profile) return;
-            setIsAnalyzing(true);
-            setDiagnosis("");
-            try {
-              const res = await fetch("/api/analyze", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(profile),
-              });
-              if (!res.ok) throw new Error("Failed to analyze");
-              const data = await res.json();
-              setDiagnosis(data.result);
-            } catch (err) {
-              console.error(err);
-              setDiagnosis("AI診断に失敗しました");
-            } finally {
-              setIsAnalyzing(false);
-            }
-          }}
-          className="bg-purple-600 text-white py-2 px-4 rounded"
-        >
-          {isAnalyzing ? "診断中..." : "AI診断する"}
-        </button>
-
-        {diagnosis && (
-          <div className="mt-4 p-4 border rounded bg-white">
-            <h2 className="font-semibold mb-2">AI診断結果:</h2>
-            <p>{diagnosis}</p>
-          </div>
-        )}
       </div>
     </div>
   );
