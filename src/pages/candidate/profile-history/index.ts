@@ -22,7 +22,7 @@ const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STR
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!AZURE_STORAGE_CONNECTION_STRING) {
-    console.error('Storage connection string is not configured.');
+    console.error('Storage connection string is not configured. Please check your environment variables.');
     res.status(500).json({ error: 'Storage connection string is not configured.' });
     return;
   }
@@ -61,6 +61,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (blob) {
       try {
         const jsonData = await downloadJsonFromBlob<ProfileData>(CONTAINER_NAME, session);
+        if (!jsonData) {
+          console.error('Blob content is empty or invalid.');
+          res.status(404).json({ error: 'Blob not found or content is invalid.' });
+          return;
+        }
         res.status(200).json(jsonData);
       } catch (err) {
         console.error('Error reading blob:', err);
