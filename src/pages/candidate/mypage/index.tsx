@@ -104,9 +104,13 @@ export default function CandidateMyPage() {
   async function handleDiagnosis() {
     try {
       setIsDiagnosing(true);
+      const provider = 'azure'; // 固定値として設定
+      const sub = session?.user?.sub || 'unknown'; // セッションから取得
+
       const response = await fetch(`/api/diagnosis/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, sub }), // providerとsubをリクエストボディに含める
       });
 
       if (!response.ok) {
