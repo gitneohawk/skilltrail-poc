@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build:css": "npx tailwindcss -i ./src/styles/globals.css -o ./public/styles.css",
+    "build:css": "postcss ./src/styles/globals.css -o ./public/styles.css",
     "build": "npm run build:css && next build",
     "start": "next start",
     "lint": "next lint"
@@ -38,6 +38,7 @@
     "@types/uuid": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
+    "postcss-cli": "^11.0.1",
     "tailwindcss": "^4.1.10",
     "typescript": "^5"
   }
