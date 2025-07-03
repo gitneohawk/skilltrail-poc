@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   switch (req.method) {
     case 'GET':
       try {
-        const blobName = `${provider}/${sub}.json`;
+        const blobName = `${provider}-${sub}.json`; // 修正: provider/sub.json -> provider-sub.json
         const blockBlobClient = containerClient.getBlockBlobClient(blobName);
         const downloadBlockBlobResponse = await blockBlobClient.download(0);
         const profileData = JSON.parse(await streamToString(downloadBlockBlobResponse.readableStreamBody));
@@ -39,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     case 'POST':
       try {
-        const blobName = `${provider}/${sub}.json`;
+        const blobName = `${provider}-${sub}.json`; // 修正: provider/sub.json -> provider-sub.json
         const blockBlobClient = containerClient.getBlockBlobClient(blobName);
         await blockBlobClient.upload(JSON.stringify(req.body), JSON.stringify(req.body).length);
         return res.status(200).json({ message: 'Profile updated successfully' });
