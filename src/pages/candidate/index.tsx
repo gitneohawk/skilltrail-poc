@@ -5,7 +5,7 @@ export default function CandidateHome() {
   return (
     <Layout>
       <div className="flex flex-col justify-center items-center p-4">
-        <h1 className="text-3xl font-bold mb-4">個人ユーザ専用ページ</h1>
+        <h1 className="text-3xl font-bold mb-4">個人ユーザ用ページ</h1>
         <img
           src="/images/SecurityFox.png"
           alt="SkillTrailキャラクター SecurityFox"

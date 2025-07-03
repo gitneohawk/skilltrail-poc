@@ -1,1 +1,0 @@
-project-guidelines.md、handover.mdはdocs/配下に移動済みです。ルートの同名ファイルは削除してください。

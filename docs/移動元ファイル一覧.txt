@@ -1,5 +1,0 @@
-以下のファイルをdocs/ディレクトリに移動しました:
-- project-guidelines.md
-- handover.md
-
-（元ファイルはプロジェクトルートから削除してください）

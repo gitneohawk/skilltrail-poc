@@ -38,9 +38,7 @@ export default function CandidateMyPage() {
   const safeSub = sub ? encodeURIComponent(sub) : null;
 
   const { data: profileData, error, isLoading } = useSWR<CandidateProfile | null>(
-    shouldFetch && provider && safeSub
-      ? `/api/candidate/profile/${provider}/${safeSub}`
-      : null,
+    shouldFetch ? `/api/candidate/profile` : null, // APIのURLをシンプルに
     fetcher,
     { shouldRetryOnError: false }
   );
@@ -103,7 +101,6 @@ export default function CandidateMyPage() {
       const response = await fetch(`/api/diagnosis/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider, sub }),
       });
 
       if (!response.ok) {
@@ -117,9 +114,7 @@ export default function CandidateMyPage() {
       setIsDiagnosing(false);
       router.push('/candidate/diagnosis');
     } catch (err) {
-      console.error("診断処理エラー", err);
-      alert("AI診断実行中にエラーが発生しました");
-      setIsDiagnosing(false);
+      console.error("診断失敗", err);
     }
   }
 
