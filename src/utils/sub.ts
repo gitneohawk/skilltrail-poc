@@ -20,8 +20,5 @@ export function getSafeSub(session?: Session | null): string {
  * 現時点では "azure" をデフォルトとして返します。
  */
 export function getDefaultProvider(session?: Session | null): string {
-  if (session?.user?.email?.endsWith('@google.com')) {
-    return "google";
-  }
-  return "azure";
+  return 'azure'; // 固定値に変更
 }

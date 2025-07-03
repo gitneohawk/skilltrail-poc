@@ -4,12 +4,11 @@ import { useSession } from 'next-auth/react';
 import { SkillInterviewMessage } from '@/types/SkillInterviewBlob';
 import Layout from '@/components/Layout';
 import { useRouter } from 'next/router';
-import { getDefaultProvider } from '@/utils/azureBlob';
 
 export default function SkillChat() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const provider = getDefaultProvider(session);
+  const provider = 'azure'; // getDefaultProviderを削除し、固定値に変更
   const userId = encodeURIComponent(session?.user?.sub || 'unknown');
 
   const [input, setInput] = useState('');

@@ -45,7 +45,7 @@ export async function uploadJsonToBlob(
   session: Session,
   data: unknown
 ) {
-  const provider = getDefaultProvider(session);
+  const provider = 'azure'; // getDefaultProviderを削除し、固定値に変更
   const userId = getUserIdFromSession(session);
   return saveJsonToBlobWithProvider(containerName, provider, userId, data);
 }

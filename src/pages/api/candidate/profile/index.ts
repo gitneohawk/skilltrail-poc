@@ -2,7 +2,6 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
-import { getDefaultProvider } from '@/utils/sub';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -11,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  const provider = getDefaultProvider(session);
+  const provider = 'azure'; // getDefaultProviderを削除し、固定値に変更
   const sub = session.user.sub || 'unknown';
 
   const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;

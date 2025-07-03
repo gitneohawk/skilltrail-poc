@@ -1,12 +1,12 @@
 import { CandidateProfile } from '@/types/CandidateProfile';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Readable } from 'node:stream';
-import { getDefaultProvider, loadJsonFromBlobWithProvider, saveJsonToBlobWithProvider } from '@/utils/azureBlob';
+import { loadJsonFromBlobWithProvider, saveJsonToBlobWithProvider } from '@/utils/azureBlob';
 
 const containerName = 'career-profiles';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const provider = getDefaultProvider(null); // Sessionは利用しないAPIのためnull
+  const provider = 'azure'; // getDefaultProviderを削除し、固定値に変更
   const rawSub = req.query.sub as string;
   const sub = decodeURIComponent(rawSub);
   if (!provider || typeof provider !== 'string' || !sub || typeof sub !== 'string') {

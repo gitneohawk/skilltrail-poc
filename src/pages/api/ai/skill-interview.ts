@@ -38,8 +38,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const userId = session.user.sub;
-  const provider = getDefaultProvider(session);
-  
+  const provider = 'azure'; // getDefaultProviderを削除し、固定値に変更
+
   if (req.body?.loadHistory) {
     try {
       const existing = await loadSkillChatFromBlob(CHAT_CONTAINER, provider, userId) as SkillInterviewBlob | null;
