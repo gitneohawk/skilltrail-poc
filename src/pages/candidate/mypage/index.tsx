@@ -64,12 +64,22 @@ export default function CandidateMyPage() {
     return <div>Loading...</div>;
   }
 
-  if (status !== "authenticated") {
+   if (status !== "authenticated") {
     return (
-      <div className="p-6">
-        <h1 className="text-xl font-bold mb-4">Candidate MyPage</h1>
-        <p>{getLoginStatusText(session, status)}</p>
-      </div>
+      <Layout>
+        <div className="p-8 text-center">
+          <h1 className="text-2xl font-bold mb-4">Candidate MyPage</h1>
+          <p className="mb-6 text-gray-600">
+            全ての機能を利用するにはサインインが必要です。
+          </p>
+          <button
+            onClick={() => signIn("azure-ad")}
+            className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 transition-colors"
+          >
+            Microsoftアカウントでサインイン
+          </button>
+        </div>
+      </Layout>
     );
   }
 
