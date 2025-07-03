@@ -6,7 +6,6 @@ import Link from "next/link";
 import type { CandidateProfile } from '@/types/CandidateProfile';
 import Layout from '@/components/Layout';
 import { useEffect, useState } from 'react';
-import { getDefaultProvider } from '@/utils/azureBlob';
 import { getLoginStatusText } from '@/utils/stream';
 import type { SecurityQuiz } from '@/utils/quiz';
 
@@ -33,9 +32,6 @@ export default function CandidateMyPage() {
   };
 
   const shouldFetch = status === "authenticated";
-  const provider = shouldFetch ? getDefaultProvider(session) : null;
-  const sub = shouldFetch ? (session?.user?.sub || "unknown") : null;
-  const safeSub = sub ? encodeURIComponent(sub) : null;
 
   const { data: profileData, error, isLoading } = useSWR<CandidateProfile | null>(
     shouldFetch ? `/api/candidate/profile` : null, // APIのURLをシンプルに
