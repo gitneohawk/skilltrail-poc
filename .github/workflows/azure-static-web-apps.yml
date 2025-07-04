@@ -31,4 +31,4 @@ jobs:
           action: "upload"
           app_location: "/"
         env:
-          NEXT_PUBLIC_APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING_PUBLIC }}
+          NEXT_PUBLIC_APPLICATIONINSIGHTS_CONNECTION_STRING: 'InstrumentationKey=8a888898-eb08-4842-9116-3c5cbbba1a53;IngestionEndpoint=https://centralus-2.in.applicationinsights.azure.com/;LiveEndpoint=https://centralus.livediagnostics.monitor.azure.com/;ApplicationId=bc3963bb-cd3c-4e45-a27e-651404f33fd6'
