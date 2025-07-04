@@ -131,7 +131,7 @@ export default function CandidateMyPage() {
   return (
     <Layout>
       <div className="p-8 max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Candidate MyPage (プロフィール管理)</h1>
+        <h1 className="text-2xl font-bold mb-6">My Page</h1>
 
         <div className="bg-white p-6 rounded-lg shadow mb-6">
           <h2 className="text-lg font-semibold mb-2">アカウント情報</h2>
@@ -201,39 +201,44 @@ export default function CandidateMyPage() {
 
         <div className="flex space-x-4">
           <Link href="/candidate/profile">
-            <button className="px-4 py-2 bg-blue-500 text-white rounded" disabled={isDiagnosing}>
+            <button
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+              disabled={isDiagnosing}
+            >
               プロフィール編集
             </button>
           </Link>
           <Link href="/candidate/skill-chat">
-            <button className="px-4 py-2 bg-purple-600 text-white rounded" disabled={isDiagnosing}>
+            <button
+              className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
+              disabled={isDiagnosing}
+            >
               スキルインタビューを開始
             </button>
           </Link>
           <button
-            onClick={handleDiagnosis}
-            className={`px-4 py-2 rounded text-white flex items-center justify-center ${isDiagnosing ? 'bg-gray-400' : 'bg-green-500'}`}
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
             disabled={isDiagnosing}
           >
-            {isDiagnosing ? (
-              <span className="flex items-center">
-                <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
-                診断中...
-              </span>
-            ) : 'AI診断'}
+            AI診断
           </button>
           <button
             onClick={() => signOut()}
-            className="px-4 py-2 bg-red-500 text-white rounded"
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
             disabled={isDiagnosing}
           >
             Sign Out
           </button>
         </div>
-        {/* TODO: プロフィール未登録時はこのボタンを非表示にする */}
+
+        {/* サポート窓口セクション */}
+        <div className="bg-gray-100 p-6 rounded-lg shadow mb-6">
+          <h2 className="text-lg font-semibold mb-2">サポート窓口</h2>
+          <p className="text-gray-700 mb-4">ご質問やお問い合わせがある場合は、以下のリンクをご利用ください。</p>
+          <Link href="/support">
+            <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">お問い合わせ</button>
+          </Link>
+        </div>
       </div>
     </Layout>
   );

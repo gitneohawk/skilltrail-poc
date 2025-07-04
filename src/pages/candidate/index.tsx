@@ -1,18 +1,19 @@
 import Layout from '@/components/Layout';
 import Link from 'next/link';
+import { ArrowRightOnRectangleIcon, UserCircleIcon, ChatBubbleLeftRightIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
 export default function CandidateHome() {
   return (
     <Layout>
       <div className="flex flex-col justify-center items-center p-4">
-        <h1 className="text-3xl font-bold mb-4">個人ユーザ用ページ</h1>
+        <h1 className="text-4xl font-bold mb-6">SkillTrailへようこそ</h1>
         <img
           src="/images/SecurityFox.png"
           alt="SkillTrailキャラクター SecurityFox"
-          className="w-40 h-40 mb-4 drop-shadow-lg"
+          className="w-48 h-48 mb-6 drop-shadow-lg" // サイズを少し大きく
         />
-        <p className="mb-8 text-center max-w-xl text-lg">
-          SkillTrailはあなたのセキュリティキャリアをAIでサポートします。
+        <p className="mb-8 text-center max-w-xl text-xl font-bold">
+          SkillTrailはセキュリティ人材の<br />キャリア支援を目的としたプラットフォームです。
         </p>
          <p className="mb-8 text-left max-w-xl text-lg">
           こんにちは。SkillTrail主催、Seucurity Foxです。<br />
@@ -25,6 +26,29 @@ export default function CandidateHome() {
           まずは、ご自分のプロファイルを登録し、AIと会話することによって現状把握をしてみてください。<br />
           あなたの歩く道筋に光が当たりますように。<br />
         </p>
+
+        {/* 流れを示すビジュアルセクション */}
+        <div className="flex flex-col items-center mb-8">
+          <h2 className="text-2xl font-semibold mb-4">SkillTrailの利用ステップ</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+            <div className="flex flex-col items-center">
+              <ArrowRightOnRectangleIcon className="w-16 h-16 text-blue-500 mb-2" />
+              <p className="text-center text-sm">Microsoft IDでログイン</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <UserCircleIcon className="w-16 h-16 text-blue-500 mb-2" />
+              <p className="text-center text-sm">プロファイルを作成</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <ChatBubbleLeftRightIcon className="w-16 h-16 text-blue-500 mb-2" />
+              <p className="text-center text-sm">AIとスキルインタビュー</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <CheckCircleIcon className="w-16 h-16 text-blue-500 mb-2" />
+              <p className="text-center text-sm">AI診断結果を確認</p>
+            </div>
+          </div>
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-6 mb-8">
           <Link href="/candidate/mypage" className="bg-white text-blue-800 font-semibold py-4 px-8 rounded-lg shadow-lg hover:bg-blue-100 transition">
