@@ -13,7 +13,7 @@ export default function CandidateHome() {
           className="w-48 h-48 mb-6 drop-shadow-lg" // サイズを少し大きく
         />
         <p className="mb-8 text-center max-w-xl text-xl font-bold">
-          SkillTrailはセキュリティ人材の<br />キャリア支援を目的としたプラットフォームです。
+          SkillTrailはセキュリティ人材の<br />キャリア支援を目的としたプラットフォームです！
         </p>
          <p className="mb-8 text-left max-w-xl text-lg">
           こんにちは。SkillTrail主催、Seucurity Foxです。<br />
