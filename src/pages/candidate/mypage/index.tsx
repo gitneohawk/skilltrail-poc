@@ -136,7 +136,7 @@ export default function CandidateMyPage() {
     <Layout>
       <div className="flex">
         {/* --- サイドバー --- */}
-        <aside className="w-64 flex-shrink-0 p-6 bg-white border-r border-slate-200">
+        <aside className="hidden md:block w-64 flex-shrink-0 p-6 bg-white border-r border-slate-200">
           <div className="flex items-center gap-3 mb-8">
             <UserCircleIcon className="h-12 w-12 text-slate-400" />
             <div>
@@ -156,6 +156,24 @@ export default function CandidateMyPage() {
             <button onClick={() => signOut()} className="flex items-center gap-3 px-3 py-2 text-red-600 rounded-md hover:bg-red-50 mt-8">
               <ArrowRightOnRectangleIcon className="h-5 w-5" />
               サインアウト
+            </button>
+          </nav>
+        </aside>
+
+        {/* --- モバイル用サイドバー --- */}
+        <aside className="block md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4">
+          <nav className="flex justify-around">
+            <Link href="/candidate/profile" className="flex flex-col items-center text-slate-700">
+              <PencilSquareIcon className="h-6 w-6 text-slate-500" />
+              <span className="text-xs">プロフィール</span>
+            </Link>
+            <Link href="/candidate/skill-chat" className="flex flex-col items-center text-slate-700">
+              <ChatBubbleLeftRightIcon className="h-6 w-6 text-slate-500" />
+              <span className="text-xs">スキル</span>
+            </Link>
+            <button onClick={() => signOut()} className="flex flex-col items-center text-red-600">
+              <ArrowRightOnRectangleIcon className="h-6 w-6" />
+              <span className="text-xs">サインアウト</span>
             </button>
           </nav>
         </aside>

@@ -99,7 +99,8 @@ export default function CandidateProfileForm() {
       if (response.data.results) {
         const result = response.data.results[0];
         handleNestedChange('basicInfo.address.prefecture', result.address1);
-        handleNestedChange('basicInfo.address.city', result.address2 + result.address3);
+        handleNestedChange('basicInfo.address.city', result.address2);
+        handleNestedChange('basicInfo.address.detail', result.address3);
       } else {
         alert('該当する住所が見つかりませんでした');
       }
@@ -145,6 +146,30 @@ export default function CandidateProfileForm() {
                      <input type="text" className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" maxLength={7} value={profile.basicInfo.address.postalCode} onChange={e => handleNestedChange('basicInfo.address.postalCode', e.target.value.replace(/[^0-9]/g, ''))} />
                      <button type="button" className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-semibold" onClick={searchAddress}>住所検索</button>
                    </div>
+                </FormRow>
+                <FormRow label="都道府県">
+                  <input
+                    type="text"
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={profile.basicInfo.address.prefecture}
+                    onChange={e => handleNestedChange('basicInfo.address.prefecture', e.target.value)}
+                  />
+                </FormRow>
+                <FormRow label="市区町村">
+                  <input
+                    type="text"
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={profile.basicInfo.address.city}
+                    onChange={e => handleNestedChange('basicInfo.address.city', e.target.value)}
+                  />
+                </FormRow>
+                <FormRow label="住所詳細">
+                  <input
+                    type="text"
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={profile.basicInfo.address.detail}
+                    onChange={e => handleNestedChange('basicInfo.address.detail', e.target.value)}
+                  />
                 </FormRow>
                 <FormRow label="希望勤務地">
                   <MultiSelectButtons options={prefectures} selected={profile.basicInfo.workLocationPreferences || []} onChange={sel => handleNestedChange('basicInfo.workLocationPreferences', sel)} scrollable={true} />
