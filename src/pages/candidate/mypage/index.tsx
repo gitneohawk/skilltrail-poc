@@ -18,6 +18,7 @@ export default function CandidateMyPage() {
   const router = useRouter();
 
   const [isDiagnosing, setIsDiagnosing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const fetcher = async (url: string): Promise<CandidateProfile | null> => {
     try {
@@ -174,6 +175,66 @@ export default function CandidateMyPage() {
             <button onClick={() => signOut()} className="flex flex-col items-center text-red-600">
               <ArrowRightOnRectangleIcon className="h-6 w-6" />
               <span className="text-xs">サインアウト</span>
+            </button>
+          </nav>
+        </aside>
+
+        {/* --- ハンバーガーメニュー --- */}
+        <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 p-4 flex justify-between items-center">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="text-slate-700 focus:outline-none"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+              stroke="currentColor"
+              className="w-6 h-6"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3.75 5.25h16.5M3.75 12h16.5M3.75 18.75h16.5"
+              />
+            </svg>
+          </button>
+          <p className="text-slate-800 font-semibold">MyPage</p>
+        </div>
+
+        {/* --- モバイル用スライドインメニュー --- */}
+        <aside
+          className={`fixed top-0 left-0 bottom-0 bg-white border-r border-slate-200 p-6 transform transition-transform duration-300 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        >
+          <button
+            onClick={() => setMenuOpen(false)}
+            className="absolute top-4 right-4 text-slate-700 focus:outline-none"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+              stroke="currentColor"
+              className="w-6 h-6"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+          <nav className="flex flex-col gap-4">
+            <Link href="/candidate/profile" className="text-slate-700">
+              プロフィール編集
+            </Link>
+            <Link href="/candidate/skill-chat" className="text-slate-700">
+              スキルインタビュー
+            </Link>
+            <button onClick={() => signOut()} className="text-red-600">
+              サインアウト
             </button>
           </nav>
         </aside>
