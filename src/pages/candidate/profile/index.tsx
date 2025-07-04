@@ -112,13 +112,28 @@ export default function CandidateProfileForm() {
 
   const fetcher = async (url: string): Promise<CandidateProfile> => axios.get<CandidateProfile>(url).then(res => res.data);
 
-  const { data: fetchedProfile } = useSWR<CandidateProfile>(
-    session ? `/api/candidate/profile/azure/${encodeURIComponent(session.user.sub || 'unknown')}` : null,
-    fetcher
-  );
-
   const [profile, setProfile] = useState<CandidateProfile>(initialProfile);
   const [openSection, setOpenSection] = useState<string>('basicInfo');
+
+  const provider = "azure";
+  const sub = session?.user?.sub || "unknown";
+  const safeSub = encodeURIComponent(sub);
+  const swrKey = session ? `/api/candidate/profile/${provider}/${safeSub}` : null;
+
+  console.log("Auth Status:", authStatus);
+  console.log("Session Object:", session);
+  console.log("SWR Key:", swrKey);
+
+  const { data: fetchedProfile, error } = useSWR<CandidateProfile>(
+    swrKey,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnMount: true,
+      dedupingInterval: 2000,
+    }
+  );
+
 
   useEffect(() => {
     if (fetchedProfile) {
