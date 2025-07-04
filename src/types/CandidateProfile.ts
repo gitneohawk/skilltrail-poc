@@ -29,7 +29,7 @@ export interface CandidateProfile {
     preferredStartTime: string;
   };
   certifications: string[];
-  certificationsOther: string;
+  certificationsOther?: string;
   experience: any;
   technicalSkills: any;
   languageSkills: any;
@@ -41,4 +41,5 @@ export interface CandidateProfile {
   },
   careerSummary: string;
   skills: string[];
+  skillsOther?: string;
 }

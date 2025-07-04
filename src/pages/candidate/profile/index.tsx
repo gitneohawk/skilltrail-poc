@@ -209,6 +209,14 @@ export default function CandidateProfileForm() {
                   <FormRow label="希望職種">
                     <MultiSelectButtons options={jobTitles} selected={profile.careerPreferences?.desiredJobTitles || []} onChange={sel => handleNestedChange('careerPreferences.desiredJobTitles', sel)} />
                   </FormRow>
+                  <FormRow label="その他希望職種">
+                    <input
+                      type="text"
+                      className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      value={profile.careerPreferences?.otherDesiredJobTitle || ''}
+                      onChange={e => handleNestedChange('careerPreferences.otherDesiredJobTitle', e.target.value)}
+                    />
+                  </FormRow>
                </div>
             )}
           </div>
@@ -221,8 +229,24 @@ export default function CandidateProfileForm() {
                    <FormRow label="保有スキル">
                      <MultiSelectButtons options={SKILL_CANDIDATES} selected={profile.skills || []} onChange={sel => handleNestedChange('skills', sel)} />
                    </FormRow>
+                   <FormRow label="その他保有スキル">
+                     <input
+                       type="text"
+                       className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                       value={profile.skillsOther || ''}
+                       onChange={e => handleNestedChange('skillsOther', e.target.value)}
+                     />
+                   </FormRow>
                    <FormRow label="保有資格">
                      <MultiSelectButtons options={certificationsList} selected={profile.certifications || []} onChange={sel => handleNestedChange('certifications', sel)} />
+                   </FormRow>
+                   <FormRow label="その他保有資格">
+                     <input
+                       type="text"
+                       className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                       value={profile.certificationsOther || ''}
+                       onChange={e => handleNestedChange('certificationsOther', e.target.value)}
+                     />
                    </FormRow>
                 </div>
              )}
