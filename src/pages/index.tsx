@@ -7,7 +7,7 @@ export default function Home() {
       <div className="flex flex-col justify-center items-center p-4">
         {/* PoC試験運用の注意書き */}
         <div className="bg-yellow-100 text-yellow-800 p-4 rounded-lg shadow-md mb-6 max-w-xl text-center">
-          <p className="font-semibold">このプラットフォームは現在PoC試験運用中です。</p>
+          <p className="font-semibold">このプラットフォームは、現在PoC試験運用中です。</p>
           <p>データは定期的に削除される可能性があります。個人情報は入力しないでください。</p>
         </div>
 
