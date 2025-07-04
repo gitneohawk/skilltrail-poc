@@ -1,8 +1,8 @@
-
-
 import { CandidateProfile } from '@/types/CandidateProfile';
 
 export function buildPrompt(profile: CandidateProfile): string {
+  const age = profile.basicInfo.age ?? null; // 未入力の場合はnullを渡す
+
   return `
 あなたは熟練したキャリアアドバイザーです。以下の候補者プロフィールを分析し、キャリア診断を作成してください。
 

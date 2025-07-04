@@ -1,7 +1,7 @@
 export interface CandidateProfile {
   basicInfo: {
     fullName: string;
-    age: number;
+    age: number | null; // 年齢フィールドをnumber | null型に変更
     gender: string;
     address: {
       prefecture: string;

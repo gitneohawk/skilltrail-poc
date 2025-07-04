@@ -59,7 +59,11 @@ export default function CandidateProfileForm() {
           const url = `/api/candidate/profile/${provider}/${encodeURIComponent(sub)}`;
 
           const response = await axios.get<CandidateProfile>(url);
-          setProfile(response.data || initialProfile);
+          const fetchedProfile = response.data || initialProfile;
+          if (!fetchedProfile.basicInfo.age) {
+            fetchedProfile.basicInfo.age = null; // 未入力の場合はnullを設定
+          }
+          setProfile(fetchedProfile);
         } catch (error: any) {
           if (error.response && error.response.status === 404) {
             setProfile(initialProfile);
@@ -140,6 +144,14 @@ export default function CandidateProfileForm() {
               <div className="p-6 border rounded-b-lg bg-white space-y-4 shadow-sm">
                 <FormRow label="氏名" required>
                   <input type="text" className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" value={profile.basicInfo.fullName} onChange={e => handleNestedChange('basicInfo.fullName', e.target.value)} />
+                </FormRow>
+                <FormRow label="年齢">
+                  <input
+                    type="number"
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={profile.basicInfo.age || ''}
+                    onChange={e => handleNestedChange('basicInfo.age', e.target.value ? parseInt(e.target.value, 10) : null)}
+                  />
                 </FormRow>
                 <FormRow label="郵便番号">
                    <div className="flex gap-2">
