@@ -4,6 +4,8 @@ import { useSession } from 'next-auth/react';
 import { SkillInterviewMessage } from '@/types/SkillInterviewBlob';
 import Layout from '@/components/Layout';
 import { useRouter } from 'next/router';
+import { UserCircleIcon, CpuChipIcon, PaperAirplaneIcon, ArrowUturnLeftIcon, ArrowPathIcon } from '@heroicons/react/24/solid'; // アイコンをインポート
+
 
 export default function SkillChat() {
   const { data: session, status } = useSession();
@@ -150,6 +152,31 @@ export default function SkillChat() {
     }
   };
 
+  const handleResetInterview = async () => {
+    try {
+      const initialMessage: SkillInterviewMessage = {
+        id: Date.now(),
+        role: 'assistant',
+        message: 'ここではスキルのインタビューを行います。5〜8往復程度で終了します。終了したい場合はマイページへ戻るをクリックして終了してください。まず、あなたの経験をまとめてAIに送ってください。',
+        timestamp: new Date().toISOString(),
+      };
+      setEntries([initialMessage]);
+      setInput('');
+
+      // Blobのskillset関連情報をクリアするAPI呼び出し
+      await fetch('/api/ai/skill-interview/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, provider }),
+      });
+
+      alert('インタビュー内容がリセットされました');
+    } catch (err) {
+      console.error('インタビューリセットに失敗しました:', err);
+      alert('インタビューリセットに失敗しました');
+    }
+  };
+
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [entries]);
@@ -157,58 +184,96 @@ export default function SkillChat() {
   // 入力欄・送信ボタンの無効化判定
   const isInterviewEnded = entries.some(e => e.message.includes('インタビューは終了しました'));
 
-  return (
+
+// ...関数の定義などは変更なし
+
+// ▼▼▼ return文以降を全て書き換える ▼▼▼
+return (
     <Layout>
-      <div className="flex flex-col items-center py-6 px-4">
-        <div className="w-full max-w-3xl space-y-4">
-          {entries.map((entry, idx) => (
-            <div key={idx} className={`flex ${entry.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className={`max-w-xl p-4 rounded text-sm whitespace-pre-wrap shadow ${
-                  entry.role === 'user'
-                    ? 'bg-blue-100 text-blue-900'
-                    : 'bg-gray-100 text-gray-900'
-                }`}
-              >
-                {entry.message}
-              </div>
-            </div>
-          ))}
-          <div ref={chatBottomRef} />
-        </div>
-        <div className="mt-6 w-full max-w-3xl flex flex-col sm:flex-row gap-2">
-          <textarea
-            className="flex-1 min-h-[80px] border border-gray-300 rounded p-2 resize-none bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="メッセージを入力してください"
-            disabled={isInterviewEnded || isLoading}
-          />
-          <button
-            onClick={handleSubmit}
-            disabled={isLoading || isInterviewEnded}
-            className="self-end w-auto px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50 flex items-center justify-center"
-          >
-            {isLoading ? (
-              <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-              </svg>
-            ) : null}
-            {isLoading ? '送信中...' : '送信'}
-          </button>
-        </div>
-        {isLoading && (
-          <div className="mt-2 text-blue-600 text-sm">AIの応答を待っています...</div>
-        )}
-        <div className="mt-8 text-center">
+      <div className="flex flex-col h-[calc(100vh-4rem)] max-h-[900px] max-w-4xl mx-auto">
+
+        {/* --- ヘッダーエリア --- */}
+        <div className="flex justify-between items-center p-4 border-b border-slate-200">
+          <h1 className="text-xl font-bold text-slate-800">AIスキルインタビュー</h1>
           <button
             onClick={() => router.push('/candidate/mypage')}
-            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
           >
+            <ArrowUturnLeftIcon className="h-4 w-4" />
             マイページへ戻る
           </button>
+        </div>
+
+        {/* --- チャットウィンドウ --- */}
+        <div className="flex-1 bg-white flex flex-col">
+          {/* メッセージ表示エリア (スクロール) */}
+          <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+            {entries.map((entry, idx) => (
+              <div key={idx} className={`flex items-end gap-3 ${entry.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                {/* アバター */}
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
+                  {entry.role === 'user' ? (
+                    <UserCircleIcon className="h-6 w-6 text-slate-500" />
+                  ) : (
+                    <CpuChipIcon className="h-6 w-6 text-blue-600" />
+                  )}
+                </div>
+                {/* チャットバブル */}
+                <div
+                  className={`max-w-lg p-3 rounded-lg text-sm whitespace-pre-wrap shadow-sm ${
+                    entry.role === 'user'
+                      ? 'bg-blue-600 text-white rounded-br-none'
+                      : 'bg-slate-100 text-slate-800 rounded-bl-none'
+                  }`}
+                >
+                  {entry.message}
+                </div>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="flex items-end gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
+                  <CpuChipIcon className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="max-w-lg p-3 rounded-lg text-sm bg-slate-100 text-slate-400 rounded-bl-none shadow-sm">
+                  <span className="animate-pulse">考え中...</span>
+                </div>
+              </div>
+            )}
+            <div ref={chatBottomRef} />
+          </div>
+
+          {/* 入力エリア */}
+          <div className="p-4 bg-white border-t border-slate-200">
+            <div className="flex items-center gap-2 p-1 border border-slate-300 rounded-lg focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition-all">
+              <textarea
+                className="flex-1 resize-none bg-transparent focus:outline-none p-2"
+                rows={3}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={isInterviewEnded ? "インタビューは終了しました。" : "メッセージを入力... (Shift+Enterで改行)"}
+                disabled={isInterviewEnded || isLoading}
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={!input.trim() || isLoading || isInterviewEnded}
+                className="h-10 w-10 flex-shrink-0 bg-blue-600 text-white rounded-md disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700 flex items-center justify-center transition-colors"
+              >
+                <PaperAirplaneIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="text-right mt-2">
+              <button
+                onClick={handleResetInterview}
+                className="flex items-center gap-1.5 px-3 py-1 text-xs text-slate-500 rounded-md hover:bg-slate-100 transition-colors"
+                disabled={isLoading}
+              >
+                <ArrowPathIcon className="h-3 w-3" />
+                リセット
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </Layout>

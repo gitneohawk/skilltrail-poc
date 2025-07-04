@@ -8,6 +8,10 @@ import Layout from '@/components/Layout';
 import { useEffect, useState } from 'react';
 import { getLoginStatusText } from '@/utils/stream';
 import type { SecurityQuiz } from '@/utils/quiz';
+import {
+  UserCircleIcon, PencilSquareIcon, ChatBubbleLeftRightIcon,
+  SparklesIcon, ArrowRightOnRectangleIcon
+} from '@heroicons/react/24/outline'; // アイコンをインポート
 
 export default function CandidateMyPage() {
   const { data: session, status } = useSession();
@@ -128,117 +132,148 @@ export default function CandidateMyPage() {
     }
   }
 
-  return (
+ return (
     <Layout>
-      <div className="p-8 max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">My Page</h1>
-
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h2 className="text-lg font-semibold mb-2">アカウント情報</h2>
-          {profileData && profileData.basicInfo ? (
-            <div className="mt-4">
-              <p><strong>氏名:</strong> {profileData.basicInfo.fullName || "未登録"}</p>
-              <p><strong>居住地:</strong> {profileData.basicInfo.address.prefecture || "未登録"}</p>
-              <p><strong>希望勤務地:</strong> {profileData.basicInfo.workLocationPreferences?.join(", ") || "未登録"}</p>
-            </div>
-          ) : (
-            <p>基本プロフィール情報が未登録です。</p>
-          )}
-          <p><strong>氏名 (アカウント):</strong> {session?.user?.name || "Unknown User"}</p>
-          <p><strong>メールアドレス:</strong> {session?.user?.email}</p>
-        </div>
-
-        {/* 今日の一問 */}
-        <div className="bg-yellow-50 p-6 rounded-lg shadow mb-6 border border-yellow-200">
-          <h2 className="text-lg font-semibold mb-2 text-yellow-800">今日の一問（セキュリティクイズ）</h2>
-          {quizLoading ? (
-            <div>読み込み中...</div>
-          ) : quizError ? (
-            <div className="text-red-600">{quizError}</div>
-          ) : quiz ? (
+      <div className="flex">
+        {/* --- サイドバー --- */}
+        <aside className="w-64 flex-shrink-0 p-6 bg-white border-r border-slate-200">
+          <div className="flex items-center gap-3 mb-8">
+            <UserCircleIcon className="h-12 w-12 text-slate-400" />
             <div>
-              <div className="mb-2 font-bold text-gray-800">Q. {quiz.question}</div>
-              <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-2">
-                {quiz.choices.map((choice, idx) => (
-                  <button
-                    key={idx}
-                    className={`px-4 py-2 rounded border text-left transition-all ${selectedChoice === choice
-                      ? (choice === quiz.answer ? 'bg-green-200 border-green-500' : 'bg-red-200 border-red-500')
-                      : 'bg-white border-gray-300 hover:bg-yellow-100'}`}
-                    disabled={!!selectedChoice}
-                    onClick={() => {
-                      setSelectedChoice(choice);
-                      setShowExplanation(true);
-                    }}
-                  >
-                    {choice}
-                  </button>
-                ))}
+              <p className="font-semibold text-slate-800">{session?.user?.name || "Unknown User"}</p>
+              <p className="text-sm text-slate-500">{session?.user?.email}</p>
+            </div>
+          </div>
+          <nav className="flex flex-col gap-2">
+            <Link href="/candidate/profile" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-100">
+              <PencilSquareIcon className="h-5 w-5 text-slate-500" />
+              プロフィール編集
+            </Link>
+            <Link href="/candidate/skill-chat" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-100">
+              <ChatBubbleLeftRightIcon className="h-5 w-5 text-slate-500" />
+              スキルインタビュー
+            </Link>
+            <button onClick={() => signOut()} className="flex items-center gap-3 px-3 py-2 text-red-600 rounded-md hover:bg-red-50 mt-8">
+              <ArrowRightOnRectangleIcon className="h-5 w-5" />
+              サインアウト
+            </button>
+          </nav>
+        </aside>
+
+{/* --- メインコンテンツ --- */}
+<main className="flex-1 p-8">
+  <h1 className="text-3xl font-bold text-slate-800 mb-8">
+    こんにちは、{session?.user?.name?.split(' ')[0] || 'ゲスト'}さん
+  </h1>
+
+  {/* ▼▼▼ この部分のレイアウトを変更 ▼▼▼ */}
+  <div className="flex flex-col gap-8">
+
+    {/* AI診断カード */}
+    <div className="bg-blue-600 text-white p-8 rounded-2xl shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+      <div className="flex-1">
+        <SparklesIcon className="h-8 w-8 mb-4 opacity-70" />
+        <h2 className="text-2xl font-bold mb-2">AIスキル診断</h2>
+        <p className="opacity-90">あなたのスキルをAIが分析し、キャリアパスや学習プランを提案します。</p>
+      </div>
+      <div className="flex-shrink-0">
+        <button
+          onClick={handleDiagnosis}
+          className="bg-white text-blue-600 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors w-full sm:w-auto"
+          disabled={isDiagnosing}
+        >
+          {isDiagnosing ? '診断中...' : '今すぐ診断する'}
+        </button>
+      </div>
+    </div>
+
+    {/* 今日の一問カード */}
+    <div className="bg-white p-6 rounded-2xl border border-slate-200">
+      <h2 className="text-lg font-semibold mb-4 text-slate-800">今日の一問</h2>
+      {quizLoading ? (
+        <div className="text-slate-500">読み込み中...</div>
+      ) : quizError ? (
+        <div className="text-red-500">{quizError}</div>
+      ) : quiz ? (
+        <div>
+          <p className="font-semibold text-slate-700 mb-4">Q. {quiz.question}</p>
+
+          <div className="space-y-2 mb-4">
+            {quiz.choices.map((choice, idx) => (
+              <button
+                key={idx}
+                className={`w-full px-4 py-2 rounded-lg border text-left transition-all text-sm
+                  ${selectedChoice
+                    ? (choice === quiz.answer
+                        ? 'bg-green-100 border-green-400 text-green-800 font-semibold'
+                        : (selectedChoice === choice ? 'bg-red-100 border-red-400 text-red-800' : 'bg-slate-50 text-slate-500 border-slate-200'))
+                    : 'bg-white border-slate-300 hover:bg-slate-50'
+                  }`}
+                disabled={!!selectedChoice}
+                onClick={() => {
+                  setSelectedChoice(choice);
+setShowExplanation(true);
+                }}
+              >
+                {choice}
+              </button>
+            ))}
+          </div>
+
+          {showExplanation && (
+            <div className="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200 text-sm">
+              <div className="font-semibold mb-2">
+                {selectedChoice === quiz.answer ? (
+                  <span className="text-green-600">🎉 正解！</span>
+                ) : (
+                  <span className="text-red-600">不正解...</span>
+                )}
+                <span className="ml-2 text-slate-800">答え: {quiz.answer}</span>
               </div>
-              {showExplanation && (
-                <div className="mt-4 p-4 rounded bg-gray-50 border border-gray-200">
-                  <div className="font-semibold mb-1">
-                    答え: <span className="text-green-700">{quiz.answer}</span>
-                    {selectedChoice === quiz.answer ? (
-                      <span className="ml-2 text-green-600">🎉 正解！おめでとう！</span>
-                    ) : null}
-                  </div>
-                  <div className="mb-1">{quiz.explanation}</div>
-                  {quiz.foxAdvice && <div className="italic text-orange-700">🦊 {quiz.foxAdvice}</div>}
-                  {selectedChoice !== quiz.answer && (
-                    <button
-                      className="mt-3 px-3 py-1 bg-blue-500 text-white rounded"
-                      onClick={() => { setSelectedChoice(null); setShowExplanation(false); }}
-                    >
-                      もう一度挑戦
-                    </button>
-                  )}
-                </div>
+              <p className="text-slate-600 mb-2">{quiz.explanation}</p>
+              {quiz.foxAdvice && <p className="italic text-orange-700">🦊 {quiz.foxAdvice}</p>}
+
+              {selectedChoice !== quiz.answer && (
+                <button
+                  className="mt-3 px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600"
+                  onClick={() => { setSelectedChoice(null); setShowExplanation(false); }}
+                >
+                  もう一度挑戦
+                </button>
               )}
             </div>
-          ) : null}
+          )}
         </div>
+      ) : (
+        <div className="text-slate-500">今日のクイズはありません。</div>
+      )}
+    </div>
 
-        <div className="flex space-x-4">
-          <Link href="/candidate/profile">
-            <button
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-              disabled={isDiagnosing}
-            >
-              プロフィール編集
-            </button>
-          </Link>
-          <Link href="/candidate/skill-chat">
-            <button
-              className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
-              disabled={isDiagnosing}
-            >
-              スキルインタビューを開始
-            </button>
-          </Link>
-          <button
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-            disabled={isDiagnosing}
-          >
-            AI診断
-          </button>
-          <button
-            onClick={() => signOut()}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-            disabled={isDiagnosing}
-          >
-            Sign Out
-          </button>
+    {/* アカウント情報カード */}
+    <div className="bg-white p-6 rounded-2xl border border-slate-200">
+      <h2 className="text-lg font-semibold mb-2 text-slate-800">アカウント情報詳細</h2>
+      {profileData && profileData.basicInfo ? (
+        <div className="mt-4 text-sm text-slate-600 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <p><strong>氏名:</strong> {profileData.basicInfo.fullName || "未登録"}</p>
+          <p><strong>居住地:</strong> {profileData.basicInfo.address.prefecture || "未登録"}</p>
+          <p><strong>希望勤務地:</strong> {profileData.basicInfo.workLocationPreferences?.join(", ") || "未登録"}</p>
         </div>
+      ) : (
+        <p>基本プロフィール情報が未登録です。</p>
+      )}
+    </div>
 
-        {/* サポート窓口セクション */}
-        <div className="bg-gray-100 p-6 rounded-lg shadow mb-6">
-          <h2 className="text-lg font-semibold mb-2">サポート窓口</h2>
-          <p className="text-gray-700 mb-4">ご質問やお問い合わせがある場合は、以下のリンクをご利用ください。</p>
-          <Link href="/support">
-            <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">お問い合わせ</button>
-          </Link>
-        </div>
+    <div className="text-center mt-8">
+      <Link href="/candidate">
+        <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+          トップに戻る
+        </button>
+      </Link>
+    </div>
+
+  </div>
+  {/* ▲▲▲ この部分のレイアウトを変更 ▲▲▲ */}
+</main>
       </div>
     </Layout>
   );
