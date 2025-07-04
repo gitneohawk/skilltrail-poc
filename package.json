@@ -12,6 +12,8 @@
   "dependencies": {
     "@azure/storage-blob": "^12.27.0",
     "@heroicons/react": "^2.2.0",
+    "@microsoft/applicationinsights-react-js": "^19.3.6",
+    "@microsoft/applicationinsights-web": "^3.3.9",
     "axios": "^1.10.0",
     "i18next": "^25.2.1",
     "i18next-http-backend": "^3.0.2",
