@@ -1,158 +1,153 @@
 import Layout from '@/components/Layout';
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { DiagnosisResult } from '@/types/diagnosis-result';
+import { useEffect, useState, FC } from 'react';
+import { useSession } from 'next-auth/react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+// 表示する診断結果の型を定義
+interface DiagnosisContent {
+  summary?: string;
+  strengths?: string;
+  recommendations?: string;
+  skillGapAnalysis?: string;
+  practicalSteps?: string;
+  learningRoadmapJson?: string; // JSON文字列を受け取る
+}
+// 学習ロードマップのステップの型
+interface RoadmapStep {
+  stage: number;
+  title: string;
+  skills: string[];
+  actions: string[];
+  resources: string[];
+}
+
+// テキストセクションを描画するコンポーネント
+const TextSection: FC<{ title: string; text?: string }> = ({ title, text }) => {
+  if (!text) return null;
+  return (
+    <div className="mb-8">
+      <h2 className="text-xl font-bold text-slate-800 mb-3">{title}</h2>
+      <div className="prose prose-slate max-w-none text-slate-700">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+      </div>
+    </div>
+  );
+};
 
 export default function DiagnosisPage() {
-  const { data: session, status } = useSession();
   const router = useRouter();
-  const [result, setResult] = useState<DiagnosisResult | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { data: session, status } = useSession();
+  const [content, setContent] = useState<DiagnosisContent>({});
+  const [roadmap, setRoadmap] = useState<RoadmapStep[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === 'loading') return;
-    if (!session) {
-      router.push('/api/auth/signin');
+    if (status !== 'authenticated' || !session?.user?.sub) {
+      if (status === 'unauthenticated') {
+        setError('この機能を利用するにはサインインが必要です。');
+        setIsLoading(false);
+      }
       return;
     }
 
-    const fetchDiagnosis = async () => {
-      setLoading(true);
-      const provider = 'azure';
-      const sub = session.user?.sub || 'unknown';
-      try {
-        const response = await fetch(`/api/diagnosis/generate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ provider, sub }),
-        });
+      const eventSource = new EventSource(`/api/diagnosis/generate?provider=azure&sub=${encodeURIComponent(session.user.sub)}`);
+      let buffer = '';
 
-        if (!response.ok) {
-          console.error("診断API呼び出し失敗", await response.text());
+      eventSource.onmessage = (event) => {
+        if (event.data === '[DONE]') {
+          eventSource.close();
+          setIsLoading(false);
+        // ストリーム完了後、最終的なJSONを解析してロードマップを設定
+        try {
+          const finalContent = JSON.parse(buffer);
+          if (finalContent.learningRoadmapJson) {
+            const roadmapData = JSON.parse(finalContent.learningRoadmapJson);
+            setRoadmap(roadmapData || []);
+          }
+        } catch (e) {
+          console.error("最終的なJSONの解析に失敗:", e);
+        }
           return;
         }
+        buffer += event.data;
+        try {
+          const parsed = JSON.parse(buffer);
+          setContent(parsed);
+        } catch (e) {
+          // JSONがまだ不完全な場合は何もしない
+        }
+      };
 
-        const data = await response.json();
-        setResult(data);
-      } catch (err) {
-        console.error("診断取得エラー", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+      eventSource.addEventListener('error', (event: any) => {
+        if (event.data) {
+          try {
+            const errorData = JSON.parse(event.data);
+            setError(`エラー: ${errorData.message}`);
+          } catch {
+            setError('不明なエラーが発生しました。');
+          }
+        } else {
+          setError('AIとの通信に失敗しました。');
+        }
+        setIsLoading(false);
+        eventSource.close();
+      });
 
-    fetchDiagnosis();
-  }, [session, status, router]);
-
-  if (loading) {
-    return (
-      <Layout>
-        <div className="p-4">診断結果を取得中です...</div>
-      </Layout>
-    );
-  }
-
-  if (!result) {
-    return (
-      <Layout>
-        <div className="p-4">診断結果が取得できませんでした。</div>
-      </Layout>
-    );
-  }
+      return () => eventSource.close();
+  }, [status, session]);
 
   return (
     <Layout>
-      <div className="p-8 max-w-3xl mx-auto bg-white shadow rounded-lg">
-        <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">AIキャリア診断結果</h1>
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2 text-gray-700">要約</h2>
-          <p className="text-gray-800">{result.summary}</p>
-        </div>
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2 text-gray-700">強み</h2>
-          <ul className="list-disc list-inside text-gray-800">
-            {result.strengths.map((s, idx) => (
-              <li key={idx}>{s}</li>
-            ))}
-          </ul>
-        </div>
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2 text-gray-700">今後のアドバイス</h2>
-          <ul className="list-disc list-inside text-gray-800">
-            {result.recommendations.length === 0 ? (
-              <li>現時点では具体的なアドバイスがありません。</li>
-            ) : (
-              result.recommendations.map((r, idx) => (
-                <li key={idx}>{r}</li>
-              ))
-            )}
-          </ul>
-        </div>
+      <div className="max-w-4xl mx-auto p-8">
+        <h1 className="text-3xl font-bold mb-8 text-center">AIキャリア診断結果</h1>
 
-        {result.skillGapAnalysis && (
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-2 text-gray-700">スキルギャップ分析</h2>
-            <p className="text-gray-800">{result.skillGapAnalysis}</p>
-          </div>
-        )}
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 min-h-[400px]">
+          {isLoading && Object.keys(content).length === 0 && !error && (
+            <p className="text-slate-500 animate-pulse">AIが診断結果を生成中です...</p>
+          )}
+          {error && <div className="text-red-500">{error}</div>}
 
-        {result.learningPath && result.learningPath.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-2 text-gray-700">習得すべきスキル（推奨順）</h2>
-            <ol className="list-decimal list-inside text-gray-800">
-              {result.learningPath.map((item, idx) => (
-                <li key={idx}>{item}</li>
-              ))}
-            </ol>
-          </div>
-        )}
+          <TextSection title="要約" text={content.summary} />
+          <TextSection title="強み" text={content.strengths} />
+          <TextSection title="今後のアドバイス" text={content.recommendations} />
+          <TextSection title="スキルギャップ分析" text={content.skillGapAnalysis} />
+          <TextSection title="実務経験を積む方法" text={content.practicalSteps} />
 
-        {result.practicalSteps && result.practicalSteps.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-2 text-gray-700">実務経験を積む方法</h2>
-            <ul className="list-disc list-inside text-gray-800">
-              {result.practicalSteps.map((step, idx) => (
-                <li key={idx}>{step}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {result.learningRoadmap && result.learningRoadmap.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-2 text-gray-700">学習ロードマップ</h2>
-            <div className="flex flex-col md:flex-row gap-6">
-              {result.learningRoadmap.map((stage, idx) => (
-                <div key={idx} className="flex-1 bg-blue-50 rounded-lg shadow p-4 mb-4 md:mb-0 border border-blue-200">
-                  <div className="flex items-center mb-2">
-                    <div className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold mr-3">{stage.stage}</div>
-                    <div className="font-bold text-lg text-blue-800">{stage.title || `ステージ${stage.stage}`}</div>
+          {/* ▼▼▼【ここを修正】JSONデータからロードマップを描画▼▼▼ */}
+          {roadmap.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold text-slate-800 mb-6">学習ロードマップ</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
+                {roadmap.map((step, index) => (
+                  <div key={index} className="bg-slate-50 border border-slate-200 rounded-lg p-6 h-full flex flex-col relative">
+                    <div className="absolute -top-4 -left-4 bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
+                      {step.stage || index + 1}
+                    </div>
+                    <h3 className="font-bold text-slate-800 mb-2">{step.title}</h3>
+                    <div className="text-sm text-slate-600 space-y-3">
+                      <p><strong>習得スキル:</strong> {(step.skills || []).join(', ')}</p>
+                      <p><strong>推奨アクション:</strong> {(step.actions || []).join(', ')}</p>
+                      <p><strong>参考リソース:</strong> {(step.resources || []).join(', ')}</p>
+                    </div>
                   </div>
-                  <div className="ml-2">
-                    <div className="mb-1"><span className="font-semibold text-blue-700">習得スキル:</span> <span className="text-gray-900">{stage.skills?.join(', ') || '-'}</span></div>
-                    <div className="mb-1"><span className="font-semibold text-blue-700">推奨アクション:</span> <span className="text-gray-900">{stage.actions?.join(', ') || '-'}</span></div>
-                    <div className="mb-1"><span className="font-semibold text-blue-700">参考リソース:</span> <span className="text-gray-900">{stage.resources?.join(', ') || '-'}</span></div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-            <div className="mt-4 text-sm text-gray-600 text-center">
-              <span className="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full">左から右へ進むイメージです。各ステージを順にクリアしていきましょう！</span>
-            </div>
-          </div>
-        )}
+          )}
+          {/* ▲▲▲【ここまでを修正】▲▲▲ */}
+        </div>
 
         <div className="mt-8 text-center">
           <button
             onClick={() => router.push('/candidate/mypage')}
-            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg"
           >
             マイページへ戻る
           </button>
         </div>
-
-        {/* TODO: 将来的にフリーチャットの履歴を反映した診断強化 */}
       </div>
     </Layout>
   );

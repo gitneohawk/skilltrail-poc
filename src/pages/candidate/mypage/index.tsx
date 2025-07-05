@@ -106,32 +106,14 @@ export default function CandidateMyPage() {
     );
   }
 
-  async function handleDiagnosis() {
-    try {
-      setIsDiagnosing(true);
-      const provider = 'azure'; // 固定値として設定
-      const sub = session?.user?.sub || 'unknown'; // セッションから取得
-
-      const response = await fetch(`/api/diagnosis/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider, sub }), // providerとsubをリクエストボディに含める
-      });
-
-      if (!response.ok) {
-        console.error("診断API呼び出し失敗", await response.text());
-        alert("AI診断に失敗しました");
-        setIsDiagnosing(false);
-        return;
-      }
-
-      await response.json();
-      setIsDiagnosing(false);
-      router.push('/candidate/diagnosis');
-    } catch (err) {
-      console.error("診断失敗", err);
-    }
+// ▼▼▼ この関数全体を置き換えてください ▼▼▼
+  function handleDiagnosis() {
+    // 診断ページに遷移するだけ。
+    // データの取得とストリーミングは診断ページ側で行います。
+    setIsDiagnosing(true); // ユーザーにフィードバックするためローディング状態はオンにする
+    router.push('/candidate/diagnosis');
   }
+  // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
  return (
     <Layout>
