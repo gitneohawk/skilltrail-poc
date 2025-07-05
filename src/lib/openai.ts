@@ -2,7 +2,7 @@ import type { CandidateProfile } from '@/types/CandidateProfile';
 import type { DiagnosisResult } from '@/types/diagnosis-result';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { buildSkillInterviewPrompt, buildSkillExtractionPrompt, buildSkillStructuringAndNextQuestionPrompt } from './skill-prompt';
-import { buildPrompt } from './diagnosis-prompt';
+import { buildPromptForBlockStreaming } from './diagnosis-prompt';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
@@ -59,7 +59,7 @@ export async function callOpenAIWithSkillExtractionPrompt(
 export async function callOpenAIWithDiagnosisPrompt(
   profile: CandidateProfile
 ): Promise<DiagnosisResult> {
-  const prompt = buildPrompt(profile);
+  const prompt = buildPromptForBlockStreaming(profile);
   const payload = {
     model: 'gpt-4',
     messages: [{ role: 'system', content: prompt }],
