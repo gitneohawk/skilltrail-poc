@@ -52,43 +52,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.end();
 
     // --- ストリーム完了後の非同期処理 ---
-    (async () => {
-      try {
-        const jsonMatch = fullResponse.match(/```json\n([\s\S]*?)\n```/);
-        if (jsonMatch && jsonMatch[1]) {
-          const roadmapData = JSON.parse(jsonMatch[1]);
-
-          if (roadmapData.learningRoadmap) {
-            await saveJsonToBlobWithProvider(learningPlanContainerName, provider, sub, roadmapData.learningRoadmap);
-            console.log('学習計画の概要をBlobに保存しました。');
-
-            const detailGenerationPromises = roadmapData.learningRoadmap.map(async (step: any) => {
-              try {
-                const detailPrompt = DiagnosisPrompt.buildPromptForStageDetail(step);
-                const detailResponse = await openai.chat.completions.create({
-                  model: 'gpt-4-turbo',
-                  messages: [{ role: 'user', content: detailPrompt }],
-                });
-                const markdownContent = detailResponse.choices[0].message.content;
-
-                if (markdownContent) {
-                  const detailBlobName = `${sub}/${step.stage}.md`;
-                  await saveTextToBlob(learningPlanDetailsContainerName, detailBlobName, markdownContent);
-                  console.log(`詳細コンテンツを保存しました: ${detailBlobName}`);
-                }
-              } catch (detailError) {
-                console.error(`ステージ${step.stage}の詳細コンテンツ生成に失敗:`, detailError);
-              }
-            });
-
-            await Promise.all(detailGenerationPromises);
-            console.log('全ての詳細コンテンツの生成処理が完了しました。');
-          }
+     try {
+      const jsonMatch = fullResponse.match(/```json\n([\s\S]*?)\n```/);
+      if (jsonMatch && jsonMatch[1]) {
+        const roadmapData = JSON.parse(jsonMatch[1]);
+        if (roadmapData.learningRoadmap) {
+          // 概要の保存のみ行う
+          await saveJsonToBlobWithProvider('learning-plans', provider, sub, roadmapData.learningRoadmap);
+          console.log('学習計画の概要をBlobに保存しました。');
         }
-      } catch (e) {
-        console.error("ストリーム完了後の処理に失敗しました:", e);
       }
-    })();
+    } catch (e) {
+      console.error("学習計画の概要保存に失敗しました:", e);
+    }
 
   } catch (error: any) {
     console.error('Diagnosis generation error:', error);
