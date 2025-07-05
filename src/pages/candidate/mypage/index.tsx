@@ -1,50 +1,77 @@
-import useSWR from 'swr';
-import axios from 'axios';
+import useSWR, { useSWRConfig } from 'swr';
 import { useRouter } from 'next/router';
 import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
 import type { CandidateProfile } from '@/types/CandidateProfile';
+import type { RoadmapStep } from '@/types/learning-plan';
 import Layout from '@/components/Layout';
-import { useEffect, useState } from 'react';
-import { getLoginStatusText } from '@/utils/stream';
+import { useEffect, useState, FC } from 'react';
 import type { SecurityQuiz } from '@/utils/quiz';
 import {
   UserCircleIcon, PencilSquareIcon, ChatBubbleLeftRightIcon,
-  SparklesIcon, ArrowRightOnRectangleIcon
-} from '@heroicons/react/24/outline'; // アイコンをインポート
+  SparklesIcon, ArrowRightOnRectangleIcon, CheckCircleIcon
+} from '@heroicons/react/24/solid';
 
+// --- ヘルパーコンポーネント ---
+const LearningPlanCard: FC<{ step: RoadmapStep; onStatusChange: (stage: number, newStatus: RoadmapStep['status']) => void; }> = ({ step, onStatusChange }) => {
+  const isCompleted = step.status === 'completed';
+
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    // チェックボックスのクリックが、カード全体のリンク遷移を妨げないようにする
+    e.stopPropagation();
+  };
+
+  return (
+    <Link href={`/candidate/learning/${step.stage}`} passHref legacyBehavior>
+      <a className={`block p-6 rounded-2xl border transition-all cursor-pointer ${isCompleted ? 'bg-green-50 border-green-200 hover:border-green-400' : 'bg-white border-slate-200 hover:border-blue-500 hover:shadow-md'}`}>
+        <div className="flex items-start gap-4">
+          <div onClick={handleCheckboxClick} className="flex items-center h-full">
+            <input
+              type="checkbox"
+              className="h-6 w-6 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              checked={isCompleted}
+              onChange={(e) => onStatusChange(step.stage, e.target.checked ? 'completed' : 'todo')}
+            />
+          </div>
+          <div className="flex-1">
+            <h3 className={`font-bold text-slate-800 ${isCompleted ? 'line-through text-slate-500' : ''}`}>{step.stage}. {step.title}</h3>
+            <div className={`mt-2 text-sm text-slate-600 space-y-2 ${isCompleted ? 'opacity-60' : ''}`}>
+              <p><strong>習得スキル:</strong> {(step.skills || []).join(', ')}</p>
+            </div>
+          </div>
+          {isCompleted && <CheckCircleIcon className="h-6 w-6 text-green-500 flex-shrink-0" />}
+        </div>
+      </a>
+    </Link>
+  );
+};
+
+
+// --- メインコンポーネント ---
 export default function CandidateMyPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { mutate } = useSWRConfig();
 
   const [isDiagnosing, setIsDiagnosing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const fetcher = async (url: string): Promise<CandidateProfile | null> => {
-    try {
-      const res = await axios.get<CandidateProfile>(url, {
-        headers: { 'Cache-Control': 'no-cache' }
-      });
-      return res.data;
-    } catch (err: any) {
-      if (err.response && err.response.status === 404) {
-        // 新規ユーザなどプロフィール未登録の場合は null 扱いにする
-        return null;
-      }
-      console.error("プロフィール取得失敗", err);
-      throw err;
-    }
-  };
+  // --- データ取得 ---
+  const fetcher = (url: string) => fetch(url).then(res => res.json());
 
-  const shouldFetch = status === "authenticated";
-
-  const { data: profileData, error, isLoading } = useSWR<CandidateProfile | null>(
-    shouldFetch ? `/api/candidate/profile` : null, // APIのURLをシンプルに
+  const { data: profileData, isLoading: isProfileLoading } = useSWR<CandidateProfile | null>(
+    status === "authenticated" ? `/api/candidate/profile` : null,
     fetcher,
-    { shouldRetryOnError: false }
+    { revalidateOnFocus: false }
   );
 
-  // --- 今日の一問 ---
+  const { data: roadmap, error: roadmapError } = useSWR<RoadmapStep[]>(
+    status === "authenticated" ? `/api/candidate/learning-plan` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+
+  // --- 今日の一問のロジック ---
   const [quiz, setQuiz] = useState<SecurityQuiz | null>(null);
   const [quizLoading, setQuizLoading] = useState(false);
   const [quizError, setQuizError] = useState<string | null>(null);
@@ -65,18 +92,63 @@ export default function CandidateMyPage() {
       });
   }, []);
 
-  if (status === "loading" || (shouldFetch && isLoading)) {
-    return <div>Loading...</div>;
+
+  // --- イベントハンドラ ---
+  const handleDiagnosis = async () => {
+    setIsDiagnosing(true);
+    try {
+      const existingPlanRes = await fetch('/api/candidate/learning-plan');
+      if (existingPlanRes.ok) {
+        const confirmed = window.confirm(
+          "既存の学習計画があります。新しい診断を実行すると、計画が更新され、進捗がリセットされる可能性があります。続行しますか？"
+        );
+        if (!confirmed) {
+          setIsDiagnosing(false);
+          return;
+        }
+      }
+      router.push('/candidate/diagnosis');
+    } catch (error) {
+      console.error("Error checking for existing plan:", error);
+      router.push('/candidate/diagnosis');
+    }
+  };
+
+  const handleStatusChange = async (stage: number, newStatus: RoadmapStep['status']) => {
+    if (!roadmap) return;
+
+    const originalRoadmap = [...roadmap];
+    const newRoadmap = roadmap.map(step =>
+      step.stage === stage ? { ...step, status: newStatus } : step
+    );
+    mutate('/api/candidate/learning-plan', newRoadmap, false);
+
+    try {
+      await fetch('/api/candidate/learning-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage, status: newStatus }),
+      });
+      mutate('/api/candidate/learning-plan');
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      mutate('/api/candidate/learning-plan', originalRoadmap, false);
+      alert('進捗の更新に失敗しました。');
+    }
+  };
+
+
+  // --- レンダリングロジック ---
+  if (status === 'loading' || (status === 'authenticated' && isProfileLoading)) {
+    return <Layout><div>Loading...</div></Layout>;
   }
 
-   if (status !== "authenticated") {
+  if (status !== 'authenticated') {
     return (
       <Layout>
         <div className="p-8 text-center">
           <h1 className="text-2xl font-bold mb-4">Candidate MyPage</h1>
-          <p className="mb-6 text-gray-600">
-            全ての機能を利用するにはサインインが必要です。
-          </p>
+          <p className="mb-6 text-gray-600">全ての機能を利用するにはサインインが必要です。</p>
           <button
             onClick={() => signIn("azure-ad")}
             className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 transition-colors"
@@ -88,37 +160,27 @@ export default function CandidateMyPage() {
     );
   }
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
   if (profileData === null) {
     return (
-      <div className="p-6">
-        <h1 className="text-xl font-bold mb-4">Candidate MyPage</h1>
-        <p>プロフィールが未登録です。以下からプロフィール登録をお願いします。</p>
-        <Link href="/candidate/profile">
-          <button className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
-            プロフィール登録
-          </button>
-        </Link>
-      </div>
+      <Layout>
+        <div className="p-6">
+          <h1 className="text-xl font-bold mb-4">Candidate MyPage</h1>
+          <p>プロフィールが未登録です。以下からプロフィール登録をお願いします。</p>
+          <Link href="/candidate/profile">
+            <button className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
+              プロフィール登録
+            </button>
+          </Link>
+        </div>
+      </Layout>
     );
   }
 
-// ▼▼▼ この関数全体を置き換えてください ▼▼▼
-  function handleDiagnosis() {
-    // 診断ページに遷移するだけ。
-    // データの取得とストリーミングは診断ページ側で行います。
-    setIsDiagnosing(true); // ユーザーにフィードバックするためローディング状態はオンにする
-    router.push('/candidate/diagnosis');
-  }
-  // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
- return (
+  return (
     <Layout>
       <div className="flex">
-        {/* --- サイドバー --- */}
+        {/* --- サイドバー (PC) --- */}
         <aside className="hidden md:block w-64 flex-shrink-0 p-6 bg-white border-r border-slate-200">
           <div className="flex items-center gap-3 mb-8">
             <UserCircleIcon className="h-12 w-12 text-slate-400" />
@@ -143,198 +205,128 @@ export default function CandidateMyPage() {
           </nav>
         </aside>
 
-        {/* --- モバイル用サイドバー --- */}
-        <aside className="block md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4">
-          <nav className="flex justify-around">
-            <Link href="/candidate/profile" className="flex flex-col items-center text-slate-700">
-              <PencilSquareIcon className="h-6 w-6 text-slate-500" />
-              <span className="text-xs">プロフィール</span>
-            </Link>
-            <Link href="/candidate/skill-chat" className="flex flex-col items-center text-slate-700">
-              <ChatBubbleLeftRightIcon className="h-6 w-6 text-slate-500" />
-              <span className="text-xs">スキル</span>
-            </Link>
-            <button onClick={() => signOut()} className="flex flex-col items-center text-red-600">
-              <ArrowRightOnRectangleIcon className="h-6 w-6" />
-              <span className="text-xs">サインアウト</span>
-            </button>
-          </nav>
-        </aside>
+        {/* --- メインコンテンツ --- */}
+        <main className="flex-1 p-8 pb-24 md:pb-8">
+          <h1 className="text-3xl font-bold text-slate-800 mb-8">
+            こんにちは、{session?.user?.name?.split(' ')[0] || 'ゲスト'}さん
+          </h1>
 
-        {/* --- ハンバーガーメニュー --- */}
-        <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 p-4 flex justify-between items-center">
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="text-slate-700 focus:outline-none"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="w-6 h-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3.75 5.25h16.5M3.75 12h16.5M3.75 18.75h16.5"
-              />
-            </svg>
-          </button>
-          <p className="text-slate-800 font-semibold">MyPage</p>
-        </div>
-
-        {/* --- モバイル用スライドインメニュー --- */}
-        <aside
-          className={`fixed top-0 left-0 bottom-0 bg-white border-r border-slate-200 p-6 transform transition-transform duration-300 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}
-        >
-          <button
-            onClick={() => setMenuOpen(false)}
-            className="absolute top-4 right-4 text-slate-700 focus:outline-none"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="w-6 h-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-          <nav className="flex flex-col gap-4">
-            <Link href="/candidate/profile" className="text-slate-700">
-              プロフィール編集
-            </Link>
-            <Link href="/candidate/skill-chat" className="text-slate-700">
-              スキルインタビュー
-            </Link>
-            <button onClick={() => signOut()} className="text-red-600">
-              サインアウト
-            </button>
-          </nav>
-        </aside>
-
-{/* --- メインコンテンツ --- */}
-<main className="flex-1 p-8">
-  <h1 className="text-3xl font-bold text-slate-800 mb-8">
-    こんにちは、<br />{session?.user?.name?.split(' ')[0] || 'ゲスト'}さん
-  </h1>
-
-  {/* ▼▼▼ この部分のレイアウトを変更 ▼▼▼ */}
-  <div className="flex flex-col gap-8">
-
-    {/* AI診断カード */}
-    <div className="bg-blue-600 text-white p-8 rounded-2xl shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-      <div className="flex-1">
-        <SparklesIcon className="h-8 w-8 mb-4 opacity-70" />
-        <h2 className="text-2xl font-bold mb-2">AIスキル診断</h2>
-        <p className="opacity-90">あなたのスキルをAIが分析し、キャリアパスや学習プランを提案します。</p>
-      </div>
-      <div className="flex-shrink-0">
-        <button
-          onClick={handleDiagnosis}
-          className="bg-white text-blue-600 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors w-full sm:w-auto"
-          disabled={isDiagnosing}
-        >
-          {isDiagnosing ? '診断中...' : '今すぐ診断する'}
-        </button>
-      </div>
-    </div>
-
-    {/* 今日の一問カード */}
-    <div className="bg-white p-6 rounded-2xl border border-slate-200">
-      <h2 className="text-lg font-semibold mb-4 text-slate-800">今日の一問</h2>
-      {quizLoading ? (
-        <div className="text-slate-500">読み込み中...</div>
-      ) : quizError ? (
-        <div className="text-red-500">{quizError}</div>
-      ) : quiz ? (
-        <div>
-          <p className="font-semibold text-slate-700 mb-4">Q. {quiz.question}</p>
-
-          <div className="space-y-2 mb-4">
-            {quiz.choices.map((choice, idx) => (
-              <button
-                key={idx}
-                className={`w-full px-4 py-2 rounded-lg border text-left transition-all text-sm
-                  ${selectedChoice
-                    ? (choice === quiz.answer
-                        ? 'bg-green-100 border-green-400 text-green-800 font-semibold'
-                        : (selectedChoice === choice ? 'bg-red-100 border-red-400 text-red-800' : 'bg-slate-50 text-slate-500 border-slate-200'))
-                    : 'bg-white border-slate-300 hover:bg-slate-50'
-                  }`}
-                disabled={!!selectedChoice}
-                onClick={() => {
-                  setSelectedChoice(choice);
-setShowExplanation(true);
-                }}
-              >
-                {choice}
-              </button>
-            ))}
-          </div>
-
-          {showExplanation && (
-            <div className="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200 text-sm">
-              <div className="font-semibold mb-2">
-                {selectedChoice === quiz.answer ? (
-                  <span className="text-green-600">🎉 正解！</span>
-                ) : (
-                  <span className="text-red-600">不正解...</span>
-                )}
-                <span className="ml-2 text-slate-800">答え: {quiz.answer}</span>
+          <div className="flex flex-col gap-8">
+            {/* AI診断カード */}
+            <div className="bg-blue-600 text-white p-8 rounded-2xl shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+              <div className="flex-1">
+                <SparklesIcon className="h-8 w-8 mb-4 opacity-70" />
+                <h2 className="text-2xl font-bold mb-2">AIスキル診断</h2>
+                <p className="opacity-90">あなたのスキルをAIが分析し、キャリアパスや学習プランを提案します。</p>
               </div>
-              <p className="text-slate-600 mb-2">{quiz.explanation}</p>
-              {quiz.foxAdvice && <p className="italic text-orange-700">🦊 {quiz.foxAdvice}</p>}
-
-              {selectedChoice !== quiz.answer && (
+              <div className="flex-shrink-0">
                 <button
-                  className="mt-3 px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600"
-                  onClick={() => { setSelectedChoice(null); setShowExplanation(false); }}
+                  onClick={handleDiagnosis}
+                  className="bg-white text-blue-600 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors w-full sm:w-auto"
+                  disabled={isDiagnosing}
                 >
-                  もう一度挑戦
+                  {isDiagnosing ? '処理中...' : '今すぐ診断する'}
                 </button>
+              </div>
+            </div>
+
+            {/* 学習計画セクション */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200">
+              <h2 className="text-lg font-semibold mb-4 text-slate-800">あなたの学習計画</h2>
+              {roadmap && roadmap.length > 0 ? (
+                <div className="space-y-4">
+                  {roadmap.map(step => (
+                    <LearningPlanCard key={step.stage} step={step} onStatusChange={handleStatusChange} />
+                  ))}
+                </div>
+              ) : roadmapError ? (
+                <p className="text-slate-500">学習計画はまだありません。AI診断を実行して作成しましょう！</p>
+              ) : (
+                <p className="text-slate-500">学習計画を読み込んでいます...</p>
               )}
             </div>
-          )}
-        </div>
-      ) : (
-        <div className="text-slate-500">今日のクイズはありません。</div>
-      )}
-    </div>
 
-    {/* アカウント情報カード */}
-    <div className="bg-white p-6 rounded-2xl border border-slate-200">
-      <h2 className="text-lg font-semibold mb-2 text-slate-800">アカウント情報詳細</h2>
-      {profileData && profileData.basicInfo ? (
-        <div className="mt-4 text-sm text-slate-600 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <p><strong>氏名:</strong> {profileData.basicInfo.fullName || "未登録"}</p>
-          <p><strong>居住地:</strong> {profileData.basicInfo.address.prefecture || "未登録"}</p>
-          <p><strong>希望勤務地:</strong> {profileData.basicInfo.workLocationPreferences?.join(", ") || "未登録"}</p>
-        </div>
-      ) : (
-        <p>基本プロフィール情報が未登録です。</p>
-      )}
-    </div>
+            {/* 今日の一問カード */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200">
+              <h2 className="text-lg font-semibold mb-4 text-slate-800">今日の一問</h2>
+              {quizLoading ? (
+                <div className="text-slate-500">読み込み中...</div>
+              ) : quizError ? (
+                <div className="text-red-500">{quizError}</div>
+              ) : quiz ? (
+                <div>
+                  <p className="font-semibold text-slate-700 mb-4">Q. {quiz.question}</p>
+                  <div className="space-y-2 mb-4">
+                    {quiz.choices.map((choice, idx) => (
+                      <button
+                        key={idx}
+                        className={`w-full px-4 py-2 rounded-lg border text-left transition-all text-sm ${selectedChoice ? (choice === quiz.answer ? 'bg-green-100 border-green-400 text-green-800 font-semibold' : (selectedChoice === choice ? 'bg-red-100 border-red-400 text-red-800' : 'bg-slate-50 text-slate-500 border-slate-200')) : 'bg-white border-slate-300 hover:bg-slate-50'}`}
+                        disabled={!!selectedChoice}
+                        onClick={() => { setSelectedChoice(choice); setShowExplanation(true); }}
+                      >
+                        {choice}
+                      </button>
+                    ))}
+                  </div>
+                  {showExplanation && (
+                    <div className="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200 text-sm">
+                      <div className="font-semibold mb-2">
+                        {selectedChoice === quiz.answer ? (<span className="text-green-600">🎉 正解！</span>) : (<span className="text-red-600">不正解...</span>)}
+                        <span className="ml-2 text-slate-800">答え: {quiz.answer}</span>
+                      </div>
+                      <p className="text-slate-600 mb-2">{quiz.explanation}</p>
+                      {quiz.foxAdvice && <p className="italic text-orange-700">🦊 {quiz.foxAdvice}</p>}
+                      {selectedChoice !== quiz.answer && (
+                        <button
+                          className="mt-3 px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600"
+                          onClick={() => { setSelectedChoice(null); setShowExplanation(false); }}
+                        >
+                          もう一度挑戦
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-slate-500">今日のクイズはありません。</div>
+              )}
+            </div>
 
-    <div className="text-center mt-8">
-      <Link href="/candidate">
-        <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
-          トップに戻る
-        </button>
-      </Link>
-    </div>
+            {/* アカウント情報カード */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200">
+              <h2 className="text-lg font-semibold mb-2 text-slate-800">アカウント情報詳細</h2>
+              {profileData && profileData.basicInfo ? (
+                <div className="mt-4 text-sm text-slate-600 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <p><strong>氏名:</strong> {profileData.basicInfo.fullName || "未登録"}</p>
+                  <p><strong>居住地:</strong> {profileData.basicInfo.address.prefecture || "未登録"}</p>
+                  <p><strong>希望勤務地:</strong> {(profileData.basicInfo.workLocationPreferences || []).join(", ") || "未登録"}</p>
+                </div>
+              ) : (
+                <p>基本プロフィール情報が未登録です。</p>
+              )}
+            </div>
 
-  </div>
-  {/* ▲▲▲ この部分のレイアウトを変更 ▲▲▲ */}
-</main>
+          </div>
+        </main>
+
+        {/* --- モバイル用ボトムナビゲーション --- */}
+        <aside className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-2">
+          <nav className="flex justify-around">
+            <Link href="/candidate/profile" className="flex flex-col items-center text-slate-700 p-2 rounded-lg hover:bg-slate-100">
+              <PencilSquareIcon className="h-6 w-6 text-slate-500" />
+              <span className="text-xs mt-1">プロフィール</span>
+            </Link>
+            <Link href="/candidate/skill-chat" className="flex flex-col items-center text-slate-700 p-2 rounded-lg hover:bg-slate-100">
+              <ChatBubbleLeftRightIcon className="h-6 w-6 text-slate-500" />
+              <span className="text-xs mt-1">インタビュー</span>
+            </Link>
+            <button onClick={() => signOut()} className="flex flex-col items-center text-red-600 p-2 rounded-lg hover:bg-red-50">
+              <ArrowRightOnRectangleIcon className="h-6 w-6" />
+              <span className="text-xs mt-1">サインアウト</span>
+            </button>
+          </nav>
+        </aside>
+
       </div>
     </Layout>
   );

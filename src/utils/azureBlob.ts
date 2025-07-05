@@ -181,3 +181,19 @@ if (!process.env.AZURE_STORAGE_CONNECTION_STRING) {
 } else {
     console.log('AZURE_STORAGE_CONNECTION_STRING:', process.env.AZURE_STORAGE_CONNECTION_STRING);
 }
+/**
+ * 指定したBlobにテキストデータを保存する
+ */
+export async function saveTextToBlob(
+  containerName: string,
+  blobName: string,
+  text: string
+): Promise<void> {
+  const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING!);
+  const containerClient = blobServiceClient.getContainerClient(containerName);
+  await containerClient.createIfNotExists();
+  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+  // テキストをUTF-8のBufferに変換してアップロード
+  await blockBlobClient.upload(text, Buffer.byteLength(text));
+}

@@ -20,3 +20,29 @@ export function buildPromptForBlockStreaming(profile: CandidateProfile): string 
 ${JSON.stringify(profile, null, 2)}
 `;
 }
+
+interface StageDetail {
+  title: string;
+  skills: string[];
+}
+
+/**
+ * 特定の学習ステップの詳細な解説を生成するためのプロンプトを作成する
+ */
+export function buildPromptForStageDetail(step: StageDetail): string {
+  return `あなたは優秀なテクニカルライター兼キャリアコーチです。
+以下の学習ステップについて、学習者が次の一歩を踏み出せるように、具体的で実践的な解説をMarkdown形式で生成してください。
+
+# 指示
+- **推奨アクション**: このステップを達成するための具体的な行動を、番号付きリストで3つ提案してください。
+- **参考リソース**: 学習に役立つ実在するオンラインコース、書籍、技術ブログ記事などを3〜5個、必ずタイトルとクリック可能なURLを含めて、箇条書きリストで挙げてください。
+
+---
+
+## 学習ステップ: ${step.title}
+
+### このステップで習得するスキル
+- ${step.skills.join('\n- ')}
+`;
+}
+
