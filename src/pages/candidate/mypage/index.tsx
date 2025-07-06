@@ -234,7 +234,7 @@ export default function CandidateMyPage() {
         {/* --- メインコンテンツ --- */}
         <main className="flex-1 p-8 pb-24 md:pb-8">
           <h1 className="text-3xl font-bold text-slate-800 mb-8">
-            こんにちは、{session?.user?.name?.split(' ')[0] || 'ゲスト'}さん
+            こんにちは、<br />{session?.user?.name?.split(' ')[0] || 'ゲスト'}さん
           </h1>
 
           <div className="flex flex-col gap-8">
