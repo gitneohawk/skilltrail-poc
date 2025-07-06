@@ -60,40 +60,15 @@ export default function CandidateMyPage() {
 
   const { data: profileData, isLoading: isProfileLoading } = useSWR<CandidateProfile | null>(
     status === "authenticated" ? `/api/candidate/profile` : null,
-    fetcher,
-    { revalidateOnFocus: false }
+    fetcher
   );
 
-  const [roadmap, setRoadmap] = useState<RoadmapStep[] | null>(null);
-  const [roadmapError, setRoadmapError] = useState<any>(null);
-  const [isRoadmapLoading, setIsRoadmapLoading] = useState(true);
-
-  useEffect(() => {
-    if (status === "authenticated") {
-      setIsRoadmapLoading(true);
-      fetch('/api/candidate/learning-plan')
-        .then(res => {
-          if (!res.ok) {
-            if (res.status === 404) return [];
-            throw new Error('Failed to fetch roadmap');
-          }
-          return res.json();
-        })
-        .then(data => {
-          // ▼▼▼【ここを修正】オブジェクトではなく、その中の配列をセットする▼▼▼
-          setRoadmap(data.learningRoadmap || data);
-          // ▲▲▲【ここまでを修正】▲▲▲
-        })
-        .catch(err => {
-          setRoadmapError(err);
-        })
-        .finally(() => {
-          setIsRoadmapLoading(false);
-        });
-    } else if (status === 'unauthenticated') {
-      setIsRoadmapLoading(false);
-    }
-  }, [status]);
+  // ▼▼▼【ここが追加された部分 1/3】▼▼▼
+  const { data: roadmap, error: roadmapError } = useSWR<RoadmapStep[]>(
+    status === "authenticated" ? `/api/candidate/learning-plan` : null,
+    fetcher
+  );
+  // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
   // --- 今日の一問のロジック ---
   const [quiz, setQuiz] = useState<SecurityQuiz | null>(null);
@@ -121,21 +96,22 @@ export default function CandidateMyPage() {
   const handleDiagnosis = async () => {
     setIsDiagnosing(true);
     try {
-      // 既存の学習計画があるか確認
+      // 1. 既存の学習計画があるか、APIを呼び出して確認
       const existingPlanRes = await fetch('/api/candidate/learning-plan');
 
+      // 2. 計画が存在する場合 (200 OK)
       if (existingPlanRes.ok) {
-        // 計画がある場合は、確認ダイアログを表示
         const confirmed = window.confirm(
           "既存の学習計画があります。新しい診断を実行すると、計画が更新され、進捗がリセットされる可能性があります。続行しますか？"
         );
 
+        // 3. ユーザーがキャンセルした場合、処理を中断
         if (!confirmed) {
-          setIsDiagnosing(false); // キャンセルされたのでローディングを解除
+          setIsDiagnosing(false); // ローディング状態を解除
           return;
         }
 
-        // ユーザーがOKを押したら、まず古い詳細データを削除する
+        // 4. ユーザーがOKを押したら、まず古い詳細データを削除するAPIを呼び出す
         const deleteRes = await fetch('/api/candidate/delete-details', {
           method: 'DELETE',
         });
@@ -146,12 +122,12 @@ export default function CandidateMyPage() {
         }
       }
 
-      // 計画がない場合、またはユーザーが確認した場合は診断ページへ
+      // 5. 計画がない場合、またはユーザーが確認した場合は診断ページへ
       router.push('/candidate/diagnosis');
 
     } catch (error) {
+      // API呼び出し自体でエラーが起きた場合
       console.error("Error during pre-diagnosis check:", error);
-      // 事前チェックでエラーが起きても、ユーザーが望むなら診断は実行できるようにする
       const confirmed = window.confirm("事前チェック中にエラーが発生しましたが、診断を続行しますか？");
       if (confirmed) {
         router.push('/candidate/diagnosis');
@@ -159,10 +135,10 @@ export default function CandidateMyPage() {
         setIsDiagnosing(false);
       }
     }
-    // ページ遷移する場合は、ローディング解除は不要
+    // ページ遷移する場合は、ここでローディングを解除する必要はありません
   };
 
-
+  // ▼▼▼【ここが追加された部分 2/3】▼▼▼
   const handleStatusChange = async (stage: number, newStatus: RoadmapStep['status']) => {
     if (!roadmap) return;
 
@@ -185,10 +161,11 @@ export default function CandidateMyPage() {
       alert('進捗の更新に失敗しました。');
     }
   };
+  // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 
   // --- レンダリングロジック ---
-  if (status === 'loading' || (status === 'authenticated' && (isProfileLoading || isRoadmapLoading))) {
+  if (status === 'loading' || (status === 'authenticated' && isProfileLoading)) {
     return <Layout><div>Loading...</div></Layout>;
   }
 
@@ -224,6 +201,7 @@ export default function CandidateMyPage() {
       </Layout>
     );
   }
+
 
   return (
     <Layout>
@@ -278,21 +256,22 @@ export default function CandidateMyPage() {
               </div>
             </div>
 
-            {/* 学習計画セクション */}
+            {/* ▼▼▼【ここが追加された部分 3/3】▼▼▼ */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200">
               <h2 className="text-lg font-semibold mb-4 text-slate-800">あなたの学習計画</h2>
-              {isRoadmapLoading ? (
-                <p className="text-slate-500">学習計画を読み込んでいます...</p>
-              ) : roadmap && roadmap.length > 0 ? (
+              {roadmap && roadmap.length > 0 ? (
                 <div className="space-y-4">
                   {roadmap.map(step => (
                     <LearningPlanCard key={step.stage} step={step} onStatusChange={handleStatusChange} />
                   ))}
                 </div>
-              ) : (
+              ) : roadmapError ? (
                 <p className="text-slate-500">学習計画はまだありません。AI診断を実行して作成しましょう！</p>
+              ) : (
+                <p className="text-slate-500">学習計画を読み込んでいます...</p>
               )}
             </div>
+            {/* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */}
 
             {/* 今日の一問カード */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200">
@@ -300,7 +279,7 @@ export default function CandidateMyPage() {
               {quizLoading ? (
                 <div className="text-slate-500">読み込み中...</div>
               ) : quizError ? (
-                <div className="text-red-500">{quizError}</div>
+                <div className="text-red-600">{quizError}</div>
               ) : quiz ? (
                 <div>
                   <p className="font-semibold text-slate-700 mb-4">Q. {quiz.question}</p>
