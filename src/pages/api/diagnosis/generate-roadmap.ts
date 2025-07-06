@@ -9,8 +9,11 @@ import { authOptions } from '../auth/[...nextauth]';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const learningPlanContainerName = 'learning-plans';
 
+/**
+ * 学習ロードマップのJSONを生成し、Blobに保存するAPI
+ */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
+  if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
@@ -28,34 +31,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Profile not found' });
     }
 
-    const prompt = DiagnosisPrompt.buildPromptForBlockStreaming(profile);
+    const prompt = DiagnosisPrompt.buildPromptForRoadmapJson(profile);
 
-    // ストリーミングせず、一度に結果を取得
     const response = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: "json_object" }, // JSONモードを有効化
     });
 
-    const resultJsonString = response.choices[0].message.content;
-    if (!resultJsonString) {
+    const roadmapJsonString = response.choices[0].message.content;
+    if (!roadmapJsonString) {
       throw new Error('AIからの応答が空でした。');
     }
 
-    const diagnosisResult = JSON.parse(resultJsonString);
+    const roadmapData = JSON.parse(roadmapJsonString);
 
-    // 学習ロードマップ部分を抽出し、Blobに保存
-    if (diagnosisResult.learningRoadmapJson) {
-      const roadmapData = JSON.parse(diagnosisResult.learningRoadmapJson);
-      await saveJsonToBlobWithProvider(learningPlanContainerName, provider, sub, roadmapData);
-      console.log('学習計画をBlobに保存しました。');
-    }
+    // Blobに保存
+    await saveJsonToBlobWithProvider(learningPlanContainerName, provider, sub, roadmapData);
 
-    // 完全なJSONオブジェクトをクライアントに返す
-    res.status(200).json(diagnosisResult);
+    res.status(200).json({ success: true, message: '学習計画が作成されました。' });
 
   } catch (error: any) {
-    console.error('Diagnosis generation error:', error);
-    res.status(500).json({ error: '診断中にサーバーエラーが発生しました。' });
+    console.error('Roadmap generation error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 }

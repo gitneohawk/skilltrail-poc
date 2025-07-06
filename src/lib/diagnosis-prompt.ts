@@ -1,5 +1,44 @@
 import { CandidateProfile } from '@/types/CandidateProfile';
 
+/**
+ * テキスト診断（要約、強みなど）の生成を指示するためのプロンプト
+ */
+export function buildPromptForTextDiagnosis(profile: CandidateProfile): string {
+  return `あなたは熟練したキャリアアドバイザーです。以下の候補者プロフィールを分析し、キャリア診断レポートをMarkdown形式で生成してください。
+以下のセクションのみを、この順番で含めてください:
+- ## 要約
+- ## 強み
+- ## 今後のアドバイス
+- ## スキルギャップ分析
+- ## 実務経験を積む方法
+
+各セクションの見出しの後や、段落と段落の間には、必ず2つの改行（空行）を入れてください。
+
+# 候補者プロフィール
+${JSON.stringify(profile, null, 2)}
+`;
+}
+
+/**
+ * 構造化された学習ロードマップ（JSON）の生成を指示するためのプロンプト
+ */
+export function buildPromptForRoadmapJson(profile: CandidateProfile): string {
+  const roadmapJsonSchema = `[
+    { "stage": 1, "title": "ステップ1のタイトル", "skills": ["習得スキル1", "習得スキル2"], "actions": ["具体的なアクション1"], "resources": ["参考リソース1"], "status": "todo" },
+    { "stage": 2, "title": "ステップ2のタイトル", "skills": ["習得スキル3"], "actions": ["具体的なアクション2"], "resources": ["参考リソース2"], "status": "todo" }
+  ]`;
+
+  return `あなたは熟練したキャリアアドバイザーです。以下の候補者プロフィールに基づき、学習ロードマップのデータだけを生成してください。
+出力は必ず以下のJSONスキーマに厳密に従った、JSON文字列のみとしてください。他の説明文やMarkdownは一切含めないでください。
+
+# JSONスキーマ
+${roadmapJsonSchema}
+
+# 候補者プロフィール
+${JSON.stringify(profile, null, 2)}
+`;
+}
+
 export function buildPromptForBlockStreaming(profile: CandidateProfile): string {
   // learningRoadmapJsonに含めてほしい詳細な情報をプロンプトで指示
   const roadmapJsonSchema = `[

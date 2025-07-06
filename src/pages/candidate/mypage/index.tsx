@@ -17,7 +17,6 @@ const LearningPlanCard: FC<{ step: RoadmapStep; onStatusChange: (stage: number, 
   const isCompleted = step.status === 'completed';
 
   const handleCheckboxClick = (e: React.MouseEvent) => {
-    // チェックボックスのクリックが、カード全体のリンク遷移を妨げないようにする
     e.stopPropagation();
   };
 
@@ -25,10 +24,10 @@ const LearningPlanCard: FC<{ step: RoadmapStep; onStatusChange: (stage: number, 
     <Link href={`/candidate/learning/${step.stage}`} passHref legacyBehavior>
       <a className={`block p-6 rounded-2xl border transition-all cursor-pointer ${isCompleted ? 'bg-green-50 border-green-200 hover:border-green-400' : 'bg-white border-slate-200 hover:border-blue-500 hover:shadow-md'}`}>
         <div className="flex items-start gap-4">
-          <div onClick={handleCheckboxClick} className="flex items-center h-full">
+          <div onClick={handleCheckboxClick} className="flex items-center h-full pt-1">
             <input
               type="checkbox"
-              className="h-6 w-6 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
               checked={isCompleted}
               onChange={(e) => onStatusChange(step.stage, e.target.checked ? 'completed' : 'todo')}
             />
@@ -65,11 +64,36 @@ export default function CandidateMyPage() {
     { revalidateOnFocus: false }
   );
 
-  const { data: roadmap, error: roadmapError } = useSWR<RoadmapStep[]>(
-    status === "authenticated" ? `/api/candidate/learning-plan` : null,
-    fetcher,
-    { revalidateOnFocus: false }
-  );
+  const [roadmap, setRoadmap] = useState<RoadmapStep[] | null>(null);
+  const [roadmapError, setRoadmapError] = useState<any>(null);
+  const [isRoadmapLoading, setIsRoadmapLoading] = useState(true);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      setIsRoadmapLoading(true);
+      fetch('/api/candidate/learning-plan')
+        .then(res => {
+          if (!res.ok) {
+            if (res.status === 404) return [];
+            throw new Error('Failed to fetch roadmap');
+          }
+          return res.json();
+        })
+        .then(data => {
+          // ▼▼▼【ここを修正】オブジェクトではなく、その中の配列をセットする▼▼▼
+          setRoadmap(data.learningRoadmap || data);
+          // ▲▲▲【ここまでを修正】▲▲▲
+        })
+        .catch(err => {
+          setRoadmapError(err);
+        })
+        .finally(() => {
+          setIsRoadmapLoading(false);
+        });
+    } else if (status === 'unauthenticated') {
+      setIsRoadmapLoading(false);
+    }
+  }, [status]);
 
   // --- 今日の一問のロジック ---
   const [quiz, setQuiz] = useState<SecurityQuiz | null>(null);
@@ -97,22 +121,47 @@ export default function CandidateMyPage() {
   const handleDiagnosis = async () => {
     setIsDiagnosing(true);
     try {
+      // 既存の学習計画があるか確認
       const existingPlanRes = await fetch('/api/candidate/learning-plan');
+
       if (existingPlanRes.ok) {
+        // 計画がある場合は、確認ダイアログを表示
         const confirmed = window.confirm(
           "既存の学習計画があります。新しい診断を実行すると、計画が更新され、進捗がリセットされる可能性があります。続行しますか？"
         );
+
         if (!confirmed) {
-          setIsDiagnosing(false);
+          setIsDiagnosing(false); // キャンセルされたのでローディングを解除
           return;
         }
+
+        // ユーザーがOKを押したら、まず古い詳細データを削除する
+        const deleteRes = await fetch('/api/candidate/delete-details', {
+          method: 'DELETE',
+        });
+
+        if (!deleteRes.ok) {
+          // 削除に失敗しても、ユーザーに通知した上で診断は続行させる
+          alert('古い学習計画のクリアに失敗しましたが、新しい診断を続行します。');
+        }
       }
+
+      // 計画がない場合、またはユーザーが確認した場合は診断ページへ
       router.push('/candidate/diagnosis');
+
     } catch (error) {
-      console.error("Error checking for existing plan:", error);
-      router.push('/candidate/diagnosis');
+      console.error("Error during pre-diagnosis check:", error);
+      // 事前チェックでエラーが起きても、ユーザーが望むなら診断は実行できるようにする
+      const confirmed = window.confirm("事前チェック中にエラーが発生しましたが、診断を続行しますか？");
+      if (confirmed) {
+        router.push('/candidate/diagnosis');
+      } else {
+        setIsDiagnosing(false);
+      }
     }
+    // ページ遷移する場合は、ローディング解除は不要
   };
+
 
   const handleStatusChange = async (stage: number, newStatus: RoadmapStep['status']) => {
     if (!roadmap) return;
@@ -139,7 +188,7 @@ export default function CandidateMyPage() {
 
 
   // --- レンダリングロジック ---
-  if (status === 'loading' || (status === 'authenticated' && isProfileLoading)) {
+  if (status === 'loading' || (status === 'authenticated' && (isProfileLoading || isRoadmapLoading))) {
     return <Layout><div>Loading...</div></Layout>;
   }
 
@@ -176,10 +225,9 @@ export default function CandidateMyPage() {
     );
   }
 
-
   return (
     <Layout>
-      <div className="flex">
+      <div className="flex min-h-screen">
         {/* --- サイドバー (PC) --- */}
         <aside className="hidden md:block w-64 flex-shrink-0 p-6 bg-white border-r border-slate-200">
           <div className="flex items-center gap-3 mb-8">
@@ -233,16 +281,16 @@ export default function CandidateMyPage() {
             {/* 学習計画セクション */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200">
               <h2 className="text-lg font-semibold mb-4 text-slate-800">あなたの学習計画</h2>
-              {roadmap && roadmap.length > 0 ? (
+              {isRoadmapLoading ? (
+                <p className="text-slate-500">学習計画を読み込んでいます...</p>
+              ) : roadmap && roadmap.length > 0 ? (
                 <div className="space-y-4">
                   {roadmap.map(step => (
                     <LearningPlanCard key={step.stage} step={step} onStatusChange={handleStatusChange} />
                   ))}
                 </div>
-              ) : roadmapError ? (
-                <p className="text-slate-500">学習計画はまだありません。AI診断を実行して作成しましょう！</p>
               ) : (
-                <p className="text-slate-500">学習計画を読み込んでいます...</p>
+                <p className="text-slate-500">学習計画はまだありません。AI診断を実行して作成しましょう！</p>
               )}
             </div>
 
@@ -306,27 +354,15 @@ export default function CandidateMyPage() {
               )}
             </div>
 
+            <div className="text-center mt-8">
+              <Link href="/candidate">
+                <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                  トップに戻る
+                </button>
+              </Link>
+            </div>
           </div>
         </main>
-
-        {/* --- モバイル用ボトムナビゲーション --- */}
-        <aside className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-2">
-          <nav className="flex justify-around">
-            <Link href="/candidate/profile" className="flex flex-col items-center text-slate-700 p-2 rounded-lg hover:bg-slate-100">
-              <PencilSquareIcon className="h-6 w-6 text-slate-500" />
-              <span className="text-xs mt-1">プロフィール</span>
-            </Link>
-            <Link href="/candidate/skill-chat" className="flex flex-col items-center text-slate-700 p-2 rounded-lg hover:bg-slate-100">
-              <ChatBubbleLeftRightIcon className="h-6 w-6 text-slate-500" />
-              <span className="text-xs mt-1">インタビュー</span>
-            </Link>
-            <button onClick={() => signOut()} className="flex flex-col items-center text-red-600 p-2 rounded-lg hover:bg-red-50">
-              <ArrowRightOnRectangleIcon className="h-6 w-6" />
-              <span className="text-xs mt-1">サインアウト</span>
-            </button>
-          </nav>
-        </aside>
-
       </div>
     </Layout>
   );

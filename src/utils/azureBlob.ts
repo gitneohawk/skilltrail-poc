@@ -197,3 +197,31 @@ export async function saveTextToBlob(
   // テキストをUTF-8のBufferに変換してアップロード
   await blockBlobClient.upload(text, Buffer.byteLength(text));
 }
+
+
+/**
+ * 指定したユーザーの学習計画詳細Blobをすべて削除する
+ * @param containerName コンテナ名
+ * @param userId ユーザーID (sub)
+ */
+export async function deleteUserLearningPlanDetails(
+  containerName: string,
+  userId: string
+): Promise<void> {
+  const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING!);
+  const containerClient = blobServiceClient.getContainerClient(containerName);
+
+  // コンテナが存在しない場合は、何もしない
+  const containerExists = await containerClient.exists();
+  if (!containerExists) {
+    console.log(`Container ${containerName} does not exist. Skipping deletion.`);
+    return;
+  }
+
+  // ユーザーIDをプレフィックスとして、関連するBlobをリストアップ
+  for await (const blob of containerClient.listBlobsFlat({ prefix: `${userId}/` })) {
+    await containerClient.deleteBlob(blob.name);
+    console.log(`Deleted blob: ${blob.name}`);
+  }
+}
+
