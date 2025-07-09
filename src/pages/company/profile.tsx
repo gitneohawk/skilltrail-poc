@@ -6,39 +6,23 @@ import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import type { CompanyProfile } from '@/types/CompanyProfile';
 
+// フォームで管理するデータの型
+type ContactFormData = {
+  name: string;
+  email: string;
+  phone?: string | null;
+};
+
+type ProfileFormData = Partial<Omit<CompanyProfile, 'capitalStock' | 'contact'>> & {
+  capitalStock?: string;
+  contact?: ContactFormData;
+};
+
 // gBizINFOからの検索結果の型
 type GbizSearchResult = {
   corporateNumber: string;
   name: string;
   location: string;
-};
-
-// フォームで管理するデータの型を明確に定義
-type ProfileFormData = {
-  id?: string;
-  corporateNumber?: string;
-  name?: string;
-  description?: string;
-  industry?: string;
-  yearFounded?: number;
-  companySize?: string;
-  website?: string;
-  headquarters?: string; // 常に文字列として扱う
-  capitalStock?: string; // フォームでは文字列として扱う
-  mission?: string;
-  cultureAndValues?: string;
-  techStack?: string[];
-  employeeBenefits?: string[];
-  gallery?: any; // Json型はanyで受けるのが簡単
-  securityTeamSize?: string;
-  hasCiso?: boolean;
-  hasCsirt?: boolean;
-  isCsirtMember?: boolean;
-  securityCertifications?: string[];
-  securityAreas?: string[];
-  conferenceParticipation?: string;
-  certificationSupport?: boolean;
-  internalContacts?: any;
 };
 
 // ヘルパーコンポーネント
@@ -69,7 +53,9 @@ const CompanyProfilePage = () => {
 
   const [companyNameInput, setCompanyNameInput] = useState('');
   const [searchResults, setSearchResults] = useState<GbizSearchResult[]>([]);
-  const [profile, setProfile] = useState<ProfileFormData>({});
+  const [profile, setProfile] = useState<ProfileFormData>({
+    contact: { name: '', email: '' } // contactの初期値を設定
+  });
 
   // 既存プロフィールの読み込み
   useEffect(() => {
@@ -79,12 +65,12 @@ const CompanyProfilePage = () => {
         const response = await fetch('/api/company/profile', { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
-          // 本社所在地がオブジェクトの場合、文字列に変換
-          const headquartersString = typeof data.headquarters === 'object' && data.headquarters !== null
-            ? `${data.headquarters.country || ''} ${data.headquarters.region || ''} ${data.headquarters.city || ''}`.trim()
-            : data.headquarters;
-
-          setProfile({ ...data, headquarters: headquartersString, capitalStock: data.capitalStock?.toString() });
+          setProfile({
+            ...data,
+            capitalStock: data.capitalStock?.toString(),
+            // contactがない場合は初期値を設定
+            contact: data.contact || { name: '', email: '' }
+          });
           setIsNewProfile(false);
           setMode('edit');
         } else {
@@ -166,13 +152,24 @@ const CompanyProfilePage = () => {
     let finalValue: any = value;
     if (isCheckbox) {
       finalValue = checked;
-    } else if (name === 'yearFounded' && value !== '') {
-      finalValue = parseInt(value, 10);
+    } else if (name === 'yearFounded') {
+      finalValue = value === '' ? null : parseInt(value, 10);
     } else if (name === 'capitalStock') {
       finalValue = value.replace(/[^0-9]/g, '');
     }
 
     setProfile(p => ({ ...p, [name]: finalValue }));
+  };
+
+    const handleContactChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setProfile(p => ({
+      ...p,
+      contact: {
+        ...p.contact!,
+        [name]: value,
+      }
+    }));
   };
 
   const handleArrayChange = (e: ChangeEvent<HTMLInputElement>, fieldName: keyof ProfileFormData) => {
@@ -251,6 +248,25 @@ const CompanyProfilePage = () => {
               </FormRow>
               <FormRow label="従業員規模"><input name="companySize" type="text" value={profile.companySize || ''} onChange={handleChange} className="w-full border rounded p-2"/></FormRow>
               <FormRow label="公式サイト"><input name="website" type="url" value={profile.website || ''} onChange={handleChange} className="w-full border rounded p-2"/></FormRow>
+              <FormRow label="ロゴURL">
+                <input name="logoUrl" type="url" value={profile.logoUrl || ''} onChange={handleChange} className="w-full border rounded p-2" placeholder="https://example.com/logo.png"/>
+                {profile.logoUrl && <img src={profile.logoUrl} alt="ロゴプレビュー" className="mt-2 h-16 w-16 object-contain rounded-md border p-1" />}
+              </FormRow>
+              <FormRow label="ヘッダー画像URL" description="公開企業ページの上部に表示される背景画像です。推奨サイズ: 1200x400px">
+                <input name="headerImageUrl" type="url" value={profile.headerImageUrl || ''} onChange={handleChange} className="w-full border rounded p-2" placeholder="https://example.com/header.jpg"/>
+                {profile.headerImageUrl && <img src={profile.headerImageUrl} alt="ヘッダー画像プレビュー" className="mt-2 h-24 w-full object-cover rounded-md border p-1" />}
+              </FormRow>
+            </FormSection>
+                       <FormSection title="通知先担当者情報">
+              <FormRow label="担当者名">
+                <input name="name" type="text" value={profile.contact?.name || ''} onChange={handleContactChange} className="w-full border rounded p-2"/>
+              </FormRow>
+              <FormRow label="担当者メールアドレス">
+                <input name="email" type="email" value={profile.contact?.email || ''} onChange={handleContactChange} className="w-full border rounded p-2"/>
+              </FormRow>
+              <FormRow label="担当者電話番号">
+                <input name="phone" type="tel" value={profile.contact?.phone || ''} onChange={handleContactChange} className="w-full border rounded p-2"/>
+              </FormRow>
             </FormSection>
 
             <FormSection title="候補者へのアピール情報">

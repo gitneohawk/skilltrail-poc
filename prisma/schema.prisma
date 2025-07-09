@@ -45,6 +45,7 @@ model Company {
   tagline       String?
   website       String?
   logoUrl       String?
+  headerImageUrl String?
 
   // 会社情報
   industry      String?
@@ -71,11 +72,14 @@ model Company {
   certificationSupport    Boolean?
 
   // 内部情報
-  internalContacts Json?
+　contact         Contact? // この会社に紐づく担当者情報
 
   // ユーザーとの関連
   users User[] @relation("CompanyToUser")
   invitations     Invitation[] @relation("CompanyToInvitation") // 招待へのリレーションを追加
+
+　// 問い合わせ対応
+　inquiries Inquiry[] @relation("CompanyToInquiry")
 }
 
 // --- NextAuth.js Adapter Models ---
@@ -145,4 +149,33 @@ model Application {
   companyName String
   status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
   createdAt   DateTime @default(now())
+}
+model Inquiry {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // 問い合わせ元の情報
+  fromName  String
+  fromEmail String
+  message   String   @db.Text
+
+  // どの会社への問い合わせか
+  company   Company  @relation("CompanyToInquiry", fields: [companyId], references: [corporateNumber])
+  companyId String
+
+  // 対応状況を管理するためのステータス
+  status    String   @default("NEW") // NEW, OPENED, CLOSED
+}
+
+// ▼▼▼ このモデルを新しく追加 ▼▼▼
+model Contact {
+  id        String   @id @default(cuid())
+
+  name      String
+  email     String   @unique // 担当者のメールアドレスはユニーク
+  phone     String?
+
+  // どの会社に所属しているか
+  company   Company  @relation(fields: [companyId], references: [corporateNumber])
+  companyId String   @unique // 1つの会社に1人の担当者 (1対1関係)
 }

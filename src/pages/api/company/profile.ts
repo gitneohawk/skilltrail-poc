@@ -16,14 +16,21 @@ export default async function handler(
   }
   const userId = session.user.id;
 
-  // --- GETリクエストの処理 ---
+  // --- GETリクエストの処理 (既存プロフィールの取得) ---
   if (req.method === 'GET') {
-    // (GET処理は変更なし)
     try {
       const userWithCompany = await prisma.user.findUnique({
         where: { id: userId },
-        include: { company: true },
+        include: {
+          company: {
+            // 会社の情報と一緒に、関連する担当者情報も取得
+            include: {
+              contact: true,
+            }
+          }
+        },
       });
+
       if (userWithCompany?.company) {
         return res.status(200).json(userWithCompany.company);
       } else {
@@ -36,16 +43,14 @@ export default async function handler(
 
   // --- POSTリクエストの処理 (新規作成) ---
   if (req.method === 'POST') {
-    const profileData = req.body;
-    if (!profileData.corporateNumber) {
-      return res.status(400).json({ error: 'Corporate number is required.' });
+    const { contact, ...profileData } = req.body;
+
+    if (!profileData.corporateNumber || !contact?.email) {
+      return res.status(400).json({ error: 'Corporate number and contact email are required.' });
     }
+
     try {
       const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const existingUser = await tx.user.findUnique({ where: { id: userId } });
-        if (existingUser?.companyId) {
-          throw new Error('User is already associated with a company.');
-        }
         const newCompany = await tx.company.create({
           data: {
             corporateNumber: profileData.corporateNumber,
@@ -55,6 +60,8 @@ export default async function handler(
             yearFounded: profileData.yearFounded,
             companySize: profileData.companySize,
             website: profileData.website,
+            logoUrl: profileData.logoUrl,
+            headerImageUrl: profileData.headerImageUrl,
             headquarters: profileData.headquarters,
             capitalStock: profileData.capitalStock ? Number(profileData.capitalStock) : null,
             mission: profileData.mission,
@@ -67,14 +74,24 @@ export default async function handler(
             isCsirtMember: profileData.isCsirtMember,
             securityCertifications: profileData.securityCertifications,
             certificationSupport: profileData.certificationSupport,
+            contact: {
+              create: {
+                name: contact.name,
+                email: contact.email,
+                phone: contact.phone,
+              }
+            }
           },
         });
+
         await tx.user.update({
           where: { id: userId },
           data: { companyId: newCompany.corporateNumber },
         });
+
         return { newCompany };
       });
+
       return res.status(201).json(result.newCompany);
     } catch (error: any) {
       console.error('Error creating company profile:', error);
@@ -87,13 +104,14 @@ export default async function handler(
 
   // --- PUTリクエストの処理 (更新) ---
   if (req.method === 'PUT') {
-    const profileData = req.body;
+    const { contact, ...profileData } = req.body;
     try {
       const user = await prisma.user.findUnique({ where: { id: userId } });
       const companyId = user?.companyId;
       if (!companyId) {
         return res.status(403).json({ error: 'User is not associated with any company.' });
       }
+
       const updatedCompany = await prisma.company.update({
         where: { corporateNumber: companyId },
         data: {
@@ -103,6 +121,8 @@ export default async function handler(
           yearFounded: profileData.yearFounded,
           companySize: profileData.companySize,
           website: profileData.website,
+          logoUrl: profileData.logoUrl,
+          headerImageUrl: profileData.headerImageUrl,
           headquarters: profileData.headquarters,
           capitalStock: profileData.capitalStock ? Number(profileData.capitalStock) : null,
           mission: profileData.mission,
@@ -115,6 +135,20 @@ export default async function handler(
           isCsirtMember: profileData.isCsirtMember,
           securityCertifications: profileData.securityCertifications,
           certificationSupport: profileData.certificationSupport,
+          contact: {
+            upsert: {
+              create: {
+                name: contact.name,
+                email: contact.email,
+                phone: contact.phone,
+              },
+              update: {
+                name: contact.name,
+                email: contact.email,
+                phone: contact.phone,
+              }
+            }
+          }
         },
       });
       return res.status(200).json(updatedCompany);
