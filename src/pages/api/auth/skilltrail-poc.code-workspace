@@ -1,20 +1,7 @@
 {
-	"folders": [
-		{
-			"path": "../../../.."
-		},
-		{
-			"name": "career-profiles",
-			"uri": "azurestorageblob:/career-profiles?storageAccountId=/subscriptions/c36def41-63aa-4f26-8641-94dff3d3e194/resourceGroups/skilltrail-dev/providers/Microsoft.Storage/storageAccounts/skilltrailstorage"
-		},
-		{
-			"name": "skill-interviews",
-			"uri": "azurestorageblob:/skill-interviews?storageAccountId=/subscriptions/c36def41-63aa-4f26-8641-94dff3d3e194/resourceGroups/skilltrail-dev/providers/Microsoft.Storage/storageAccounts/skilltrailstorage"
-		},
-		{
-			"name": "learning-plans",
-			"uri": "azurestorageblob:/learning-plans?storageAccountId=/subscriptions/c36def41-63aa-4f26-8641-94dff3d3e194/resourceGroups/skilltrail-dev/providers/Microsoft.Storage/storageAccounts/skilltrailstorage"
-		}
-	],
-	"settings": {}
+    "folders": [
+        {
+            "path": "../../../.."
+        }
+    ]
 }

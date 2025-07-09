@@ -225,3 +225,26 @@ export async function deleteUserLearningPlanDetails(
   }
 }
 
+/**
+ * Blob StorageからJSONデータを取得
+ */
+export async function getJsonFromBlob(
+  containerName: string,
+  provider: string,
+  userId: string
+): Promise<unknown | null> {
+  const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING!);
+  const containerClient = blobServiceClient.getContainerClient(containerName);
+  const blobName = `${provider}-${userId}.json`;
+  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+  try {
+    const downloadBlockBlobResponse = await blockBlobClient.download(0);
+    const downloadedData = await streamToString(downloadBlockBlobResponse.readableStreamBody!);
+    return JSON.parse(downloadedData);
+  } catch (error) {
+    console.error('Error retrieving blob:', error);
+    return null;
+  }
+}
+

@@ -1,8 +1,9 @@
 export type CompanyProfile = {
-  companyId: string;
-  companyName: string;
+  id: string; // APIから返されるID
+  name: string; // companyNameから変更
   industry: string;
-  companyDescription: string;
+  description: string; // companyDescriptionから変更
+  tagline?: string;
   headquarters: {
     country: string;
     region: string;
@@ -13,10 +14,24 @@ export type CompanyProfile = {
     region: string;
     city: string;
   }[];
-  companySize: string;
-  website: string;
-  logoUrl: string;
-  registeredDate: string; // ISO8601
+  companySize?: string;
+  companyType?: string;
+  yearFounded?: number;
+  website?: string;
+  logoUrl?: string;
+  mission?: string;
+  cultureAndValues?: string;
+  techStack?: string[];
+  employeeBenefits?: string[];
+  gallery?: any;
+  securityTeamSize?: string;
+  hasCiso?: boolean;
+  hasCsirt?: boolean;
+  isCsirtMember?: boolean;
+  securityCertifications?: string[];
+  securityAreas?: string[];
+  conferenceParticipation?: string;
+  certificationSupport?: boolean;
   internalContacts: {
     primaryContactName: string;
     primaryContactEmail: string;

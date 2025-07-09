@@ -1,0 +1,148 @@
+// prisma/schema.prisma
+
+// 役割を定義するEnum
+enum Role {
+  ADMIN  // 管理者
+  MEMBER // 一般メンバー
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ユーザーモデル
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role      Role     @default(MEMBER)
+
+  // 企業との関連付け
+  company   Company? @relation("CompanyToUser", fields: [companyId], references: [corporateNumber])
+  companyId String?  // company.corporateNumberを参照するための外部キー
+
+  // NextAuth必須の関連付け
+  accounts Account[]
+  sessions Session[]
+}
+
+// 企業モデル
+model Company {
+  corporateNumber String   @id // 法人番号を主キーとして使用
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // 基本情報
+  name          String
+  description   String?  @db.Text
+  tagline       String?
+  website       String?
+  logoUrl       String?
+
+  // 会社情報
+  industry      String?
+  companySize   String?
+  yearFounded   Int?
+  headquarters  String?
+  capitalStock  BigInt?
+
+  // アピール情報
+  mission          String?  @db.Text
+  cultureAndValues String?  @db.Text
+  techStack        String[]
+  employeeBenefits String[]
+  gallery          Json?
+
+  // セキュリティ体制
+  securityTeamSize        String?
+  hasCiso                 Boolean?
+  hasCsirt                Boolean?
+  isCsirtMember           Boolean?
+  securityCertifications  String[]
+  securityAreas           String[]
+  conferenceParticipation String?
+  certificationSupport    Boolean?
+
+  // 内部情報
+  internalContacts Json?
+
+  // ユーザーとの関連
+  users User[] @relation("CompanyToUser")
+  invitations     Invitation[] @relation("CompanyToInvitation") // 招待へのリレーションを追加
+}
+
+// --- NextAuth.js Adapter Models ---
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+// ▼▼▼ ステップ1で使用 ▼▼▼
+// 運営が承認したメールアドレスを管理するモデル
+model ApprovedEmail {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+
+// ▼▼▼ ステップ2で使用 ▼▼▼
+// 管理者がメンバーを招待するためのモデル
+model Invitation {
+  id         String   @id @default(cuid())
+  email      String
+  token      String   @unique
+  expiresAt  DateTime
+
+  // どの会社からの招待か
+  company    Company  @relation("CompanyToInvitation", fields: [companyId], references: [corporateNumber])
+  companyId  String
+
+  // 招待時に指定された役割
+  role       Role     @default(MEMBER)
+}
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Application {
+  id          String   @id @default(cuid())
+  email       String
+  companyName String
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt   DateTime @default(now())
+}
