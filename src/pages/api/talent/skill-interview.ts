@@ -1,0 +1,147 @@
+// /pages/api/talent/skill-interview.ts (エラー修正版)
+
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import prisma from '@/lib/prisma';
+import OpenAI from 'openai';
+import { ChatCompletionMessageParam } from 'openai/resources/index.mjs';
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  const session = await getServerSession(req, res, authOptions);
+  if (!session?.user?.id) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const userId = session.user.id;
+
+  // --- 会話履歴の取得 ---
+  if (req.method === 'GET') {
+    try {
+      const interview = await prisma.skillInterview.findFirst({
+        where: {
+          talentProfile: { userId },
+          status: 'IN_PROGRESS',
+        },
+        include: {
+          messages: {
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      return res.status(200).json(interview?.messages ?? []);
+    } catch (error) {
+      console.error('Failed to get interview history:', error);
+      return res.status(500).json({ error: 'Failed to get history' });
+    }
+  }
+
+  // --- 新しいメッセージの投稿とAIの応答 ---
+  if (req.method === 'POST') {
+    const { message } = req.body;
+    if (typeof message !== 'string' || !message.trim()) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    try {
+      const interview = await prisma.$transaction(async (tx) => {
+        let currentInterview = await tx.skillInterview.findFirst({
+          where: {
+            talentProfile: { userId },
+            status: 'IN_PROGRESS',
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (!currentInterview) {
+          const profile = await tx.talentProfile.findUnique({ where: { userId } });
+          if (!profile) throw new Error('Profile not found');
+          currentInterview = await tx.skillInterview.create({
+            data: {
+              talentProfileId: profile.id,
+            },
+          });
+        }
+
+        await tx.skillInterviewMessage.create({
+          data: {
+            interviewId: currentInterview.id,
+            role: 'user',
+            content: message,
+          },
+        });
+
+        return currentInterview;
+      });
+
+      const allMessages = await prisma.skillInterviewMessage.findMany({
+        where: { interviewId: interview.id },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      // ★ 修正点: `role` の型をOpenAIライブラリが期待する型に明示的に合わせる
+      const formattedHistory: ChatCompletionMessageParam[] = allMessages.map(m => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }));
+
+      const systemPrompt = `あなたは優秀なIT・セキュリティ業界専門のキャリアコンサルタントです。ユーザーのスキルや経験を深掘りするためのインタビューを行っています。以下の会話履歴に基づき、次の質問を生成してください。会話が5〜8往復程度になったら、インタビューを締めくくる言葉を返してください。`;
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4-turbo',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...formattedHistory
+        ],
+      });
+
+      const nextQuestion = response.choices[0].message.content || 'エラーが発生しました。';
+
+      const assistantMessage = await prisma.skillInterviewMessage.create({
+        data: {
+          interviewId: interview.id,
+          role: 'assistant',
+          content: nextQuestion,
+        },
+      });
+
+      return res.status(201).json(assistantMessage);
+
+    } catch (error) {
+      console.error('Failed to process interview message:', error);
+      return res.status(500).json({ error: 'Failed to process message' });
+    }
+  }
+
+  // --- インタビューのリセット ---
+  if (req.method === 'DELETE') {
+    try {
+      const latestInterview = await prisma.skillInterview.findFirst({
+        where: {
+          talentProfile: { userId },
+          status: 'IN_PROGRESS',
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (latestInterview) {
+        await prisma.skillInterview.update({
+          where: { id: latestInterview.id },
+          data: { status: 'ARCHIVED' },
+        });
+      }
+      return res.status(200).json({ success: true, message: 'Interview reset successfully.' });
+    } catch (error) {
+      console.error('Failed to reset interview:', error);
+      return res.status(500).json({ error: 'Failed to reset interview' });
+    }
+  }
+
+  res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
+  return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
+}

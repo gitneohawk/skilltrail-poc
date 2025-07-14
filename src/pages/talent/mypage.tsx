@@ -1,0 +1,259 @@
+import { useEffect, useState, FC } from 'react';
+import useSWR from 'swr';
+import { useRouter } from 'next/router';
+import { useSession, signIn, signOut } from "next-auth/react";
+import Link from "next/link";
+import Layout from '@/components/Layout';
+import type { TalentProfile, AnalysisResult, LearningRoadmapStep } from '@prisma/client';
+import type { SecurityQuiz } from '@/utils/quiz';
+import {
+  UserCircleIcon,
+  PencilSquareIcon,
+  ArrowRightOnRectangleIcon,
+  BuildingOffice2Icon,
+  SparklesIcon,
+  DocumentTextIcon,
+  QuestionMarkCircleIcon,
+  CheckCircleIcon,
+  ChatBubbleLeftRightIcon
+} from '@heroicons/react/24/outline';
+
+// APIから受け取る企業の型定義
+type CompanyForList = {
+  corporateNumber: string;
+  name: string;
+  logoUrl: string | null;
+  tagline: string | null;
+  industry: string | null;
+};
+
+// AnalysisResultにroadmapStepsを含んだ型
+type AnalysisResultWithSteps = AnalysisResult & {
+  roadmapSteps: LearningRoadmapStep[];
+};
+
+const fetcher = (url: string) => fetch(url).then(res => {
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error('データの取得に失敗しました。');
+  return res.json();
+});
+
+// --- メインコンポーネント ---
+export default function TalentMyPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [isDiagnosing, setIsDiagnosing] = useState(false);
+
+  // --- データ取得 ---
+  const { data: profile, isLoading: isProfileLoading } = useSWR<TalentProfile | null>(
+    status === "authenticated" ? `/api/talent/profile` : null,
+    fetcher
+  );
+
+  const { data: companies, isLoading: isCompaniesLoading } = useSWR<CompanyForList[]>(
+    '/api/companies/list',
+    (url: string) => fetch(url).then(res => res.json())
+  );
+
+  const { data: latestAnalysis, isLoading: isAnalysisLoading } = useSWR<AnalysisResultWithSteps | null>(
+    status === "authenticated" ? `/api/talent/diagnosis/latest` : null,
+    fetcher
+  );
+
+  const { data: interviewStatus, isLoading: isStatusLoading } = useSWR(
+    status === "authenticated" ? `/api/talent/skill-interview/status` : null,
+    fetcher
+  );
+
+  // Quiz機能のロジック
+  const [quiz, setQuiz] = useState<SecurityQuiz | null>(null);
+  const [quizLoading, setQuizLoading] = useState(true);
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/quiz/daily').then(res => res.json()).then(data => setQuiz(data))
+      .catch(err => console.error("Failed to fetch quiz", err))
+      .finally(() => setQuizLoading(false));
+  }, []);
+
+  const handleDiagnoseClick = async () => {
+    if (!profile) {
+      alert('先にプロフィールを登録してください。');
+      router.push('/talent/profile');
+      return;
+    }
+    setIsDiagnosing(true);
+    try {
+      const response = await fetch('/api/talent/diagnosis/generate', { method: 'POST' });
+      if (!response.ok) throw new Error('診断の開始に失敗しました。');
+      const newAnalysis: AnalysisResult = await response.json();
+      router.push(`/talent/diagnosis/${newAnalysis.id}`);
+    } catch (error) {
+      console.error(error);
+      alert('エラーが発生しました。もう一度お試しください。');
+    } finally {
+      setIsDiagnosing(false);
+    }
+  };
+
+  const isLoading = status === 'loading' || isProfileLoading || isCompaniesLoading || isAnalysisLoading || isStatusLoading;
+
+  if (isLoading) {
+    return <Layout><p className="text-center p-8">Loading...</p></Layout>;
+  }
+
+  if (status !== 'authenticated') {
+    return (
+      <Layout><div className="p-8 text-center">
+        <h1 className="text-2xl font-bold mb-4">マイページ</h1>
+        <p className="mb-6 text-gray-600">全ての機能を利用するにはサインインが必要です。</p>
+        <button onClick={() => signIn("azure-ad")} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700">サインイン</button>
+      </div></Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="flex min-h-screen bg-slate-50">
+        <aside className="hidden md:block w-72 flex-shrink-0 p-6 bg-white border-r border-slate-200">
+          <div className="flex items-center gap-4 mb-8">
+            <UserCircleIcon className="h-12 w-12 text-slate-400" />
+            <div>
+              <p className="font-semibold text-slate-800">{session?.user?.name || "Unknown User"}</p>
+              <p className="text-sm text-slate-500 break-all">{session?.user?.email}</p>
+            </div>
+          </div>
+          <nav className="flex flex-col gap-2">
+            <Link href="/talent/profile" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-100">
+              <PencilSquareIcon className="h-5 w-5 text-slate-500" />
+              プロフィール編集
+            </Link>
+            <button onClick={() => signOut()} className="flex items-center gap-3 px-3 py-2 text-red-600 rounded-md hover:bg-red-50 mt-8">
+              <ArrowRightOnRectangleIcon className="h-5 w-5" />
+              サインアウト
+            </button>
+          </nav>
+        </aside>
+
+        <main className="flex-1 p-4 sm:p-8">
+          <h1 className="text-3xl font-bold text-slate-800 mb-8">
+            こんにちは、{profile?.fullName || session?.user?.name?.split(' ')[0] || 'ゲスト'}さん
+          </h1>
+          <div className="max-w-3xl mx-auto space-y-8">
+
+            <div className="bg-blue-600 text-white p-8 rounded-2xl shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+              <div className="flex-1">
+                <SparklesIcon className="h-8 w-8 mb-4 opacity-70" />
+                <h2 className="text-2xl font-bold mb-2">AIスキル診断</h2>
+                <p className="opacity-90">あなたのスキルをAIが分析し、キャリアパスや学習プランを提案します。</p>
+              </div>
+              <div className="flex-shrink-0">
+                <button onClick={handleDiagnoseClick} disabled={isDiagnosing}
+                  className="bg-white text-blue-600 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors w-full sm:w-auto disabled:bg-slate-200 disabled:text-slate-500">
+                  {isDiagnosing ? '診断中...' : (latestAnalysis ? '再診断する' : '今すぐ診断する')}
+                </button>
+              </div>
+            </div>
+            {/* AIスキルインタビューカード */}
+<div className="bg-purple-600 text-white p-8 rounded-2xl shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+  <div className="flex-1">
+    <ChatBubbleLeftRightIcon className="h-8 w-8 mb-4 opacity-70" />
+    <h2 className="text-2xl font-bold mb-2">AIスキルインタビュー</h2>
+    <p className="opacity-90">AIとの対話を通じて、あなたの潜在的なスキルや経験を深掘りします。</p>
+  </div>
+  <div className="flex-shrink-0">
+    <Link href="/talent/skill-chat"
+      className="bg-white text-purple-600 font-semibold px-6 py-3 rounded-lg hover:bg-purple-50 transition-colors w-full sm:w-auto"
+    >
+      {interviewStatus?.hasInterviewInProgress ? 'インタビューを再開する' : 'インタビューを始める'}
+    </Link>
+  </div>
+</div>
+
+            <div className="bg-white p-6 rounded-2xl border">
+              <div className="flex items-center gap-3 mb-4">
+                <DocumentTextIcon className="h-6 w-6 text-slate-500" />
+                <h2 className="text-lg font-semibold text-slate-800">あなたの学習計画</h2>
+              </div>
+              {latestAnalysis && latestAnalysis.roadmapSteps.length > 0 ? (
+                <ul className="space-y-3">
+                  {latestAnalysis.roadmapSteps.map((step) => (
+                    <li key={step.id}>
+                      <Link href={`/talent/learning/${step.id}`}
+                        className="flex items-center gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors group text-left">
+                        {step.isCompleted ? (
+                          <CheckCircleIcon className="h-7 w-7 text-green-500 flex-shrink-0" />
+                        ) : (
+                          <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold text-sm">
+                            {step.stepNumber}
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="font-semibold text-slate-800">{step.title}</p>
+                          <p className="text-sm text-slate-500">詳細を確認する</p>
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-slate-500 text-center py-4">
+                  AIスキル診断を実行すると、ここに学習計画が表示されます。
+                </p>
+              )}
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border">
+              <div className="flex items-center gap-3 mb-4">
+                <QuestionMarkCircleIcon className="h-6 w-6 text-slate-500" />
+                <h2 className="text-lg font-semibold text-slate-800">今日の一問</h2>
+              </div>
+              {quizLoading ? (<p className="text-slate-500">読み込み中...</p>)
+                : quiz ? (
+                  <div>
+                    <p className="font-semibold text-slate-700 mb-4">Q. {quiz.question}</p>
+                    <div className="space-y-2 mb-4">
+                      {quiz.choices.map((choice, idx) => (
+                        <button key={idx} onClick={() => { setSelectedChoice(choice); setShowExplanation(true); }} disabled={!!selectedChoice}
+                          className={`w-full px-4 py-2 rounded-lg border text-left transition-all text-sm ${selectedChoice ? (choice === quiz.answer ? 'bg-green-100 border-green-400 text-green-800 font-semibold' : (selectedChoice === choice ? 'bg-red-100 border-red-400 text-red-800' : 'bg-slate-50 text-slate-500 border-slate-200')) : 'bg-white border-slate-300 hover:bg-slate-50'}`}>
+                          {choice}
+                        </button>
+                      ))}
+                    </div>
+                    {showExplanation && (
+                      <div className="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200 text-sm">
+                        <p className="font-semibold mb-2">{selectedChoice === quiz.answer ? '🎉 正解！' : '不正解...'}</p>
+                        <p className="text-slate-600 mb-2">{quiz.explanation}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (<p className="text-slate-500">今日のクイズはありません。</p>)}
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border">
+              <div className="flex items-center gap-2 mb-4">
+                <BuildingOffice2Icon className="h-6 w-6 text-slate-500" />
+                <h2 className="text-lg font-semibold text-slate-800">注目の企業</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {(companies || []).map((company) => (
+                  <div key={company.corporateNumber} onClick={() => router.push(`/companies/${company.corporateNumber}`)}
+                    className="p-4 border rounded-lg flex items-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors">
+                    <img src={company.logoUrl || `https://placehold.co/40x40/e2e8f0/334155?text=${company.name.charAt(0)}`}
+                      alt={`${company.name}のロゴ`} className="h-10 w-10 rounded-full object-contain bg-white border" />
+                    <div>
+                      <p className="font-semibold text-sm text-slate-800">{company.name}</p>
+                      <p className="text-xs text-slate-500">{company.industry}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </main>
+      </div>
+    </Layout>
+  );
+}

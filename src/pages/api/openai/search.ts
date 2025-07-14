@@ -1,4 +1,4 @@
-// pages/api/company/gbiz-search.ts
+// pages/api/companies/gbiz-search.ts
 
 import { NextApiRequest, NextApiResponse } from 'next';
 

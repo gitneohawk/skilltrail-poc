@@ -1,11 +1,5 @@
 // prisma/schema.prisma
 
-// 役割を定義するEnum
-enum Role {
-  ADMIN  // 管理者
-  MEMBER // 一般メンバー
-}
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,74 +9,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ユーザーモデル
+// -----------------------------------------------
+// 共通・認証関連モデル
+// -----------------------------------------------
+
+enum Role {
+  ADMIN
+  MEMBER
+  TALENT // Talent（候補者・学生）ロールを追加
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  role      Role     @default(MEMBER)
+  role          Role      @default(TALENT) // デフォルトはTALENT
 
-  // 企業との関連付け
+  // 企業担当者の場合
   company   Company? @relation("CompanyToUser", fields: [companyId], references: [corporateNumber])
-  companyId String?  // company.corporateNumberを参照するための外部キー
+  companyId String?
 
-  // NextAuth必須の関連付け
+  // 人材（Talent）の場合
+  talentProfile TalentProfile?
+
   accounts Account[]
   sessions Session[]
 }
-
-// 企業モデル
-model Company {
-  corporateNumber String   @id // 法人番号を主キーとして使用
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // 基本情報
-  name          String
-  description   String?  @db.Text
-  tagline       String?
-  website       String?
-  logoUrl       String?
-  headerImageUrl String?
-
-  // 会社情報
-  industry      String?
-  companySize   String?
-  yearFounded   Int?
-  headquarters  String?
-  capitalStock  BigInt?
-
-  // アピール情報
-  mission          String?  @db.Text
-  cultureAndValues String?  @db.Text
-  techStack        String[]
-  employeeBenefits String[]
-  gallery          Json?
-
-  // セキュリティ体制
-  securityTeamSize        String?
-  hasCiso                 Boolean?
-  hasCsirt                Boolean?
-  isCsirtMember           Boolean?
-  securityCertifications  String[]
-  securityAreas           String[]
-  conferenceParticipation String?
-  certificationSupport    Boolean?
-
-  // 内部情報
-　contact         Contact? // この会社に紐づく担当者情報
-
-  // ユーザーとの関連
-  users User[] @relation("CompanyToUser")
-  invitations     Invitation[] @relation("CompanyToInvitation") // 招待へのリレーションを追加
-
-　// 問い合わせ対応
-　inquiries Inquiry[] @relation("CompanyToInquiry")
-}
-
-// --- NextAuth.js Adapter Models ---
 
 model Account {
   id                String  @id @default(cuid())
@@ -97,36 +51,11 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
 
-// ▼▼▼ ステップ1で使用 ▼▼▼
-// 運営が承認したメールアドレスを管理するモデル
-model ApprovedEmail {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  createdAt DateTime @default(now())
-}
-
-
-// ▼▼▼ ステップ2で使用 ▼▼▼
-// 管理者がメンバーを招待するためのモデル
-model Invitation {
-  id         String   @id @default(cuid())
-  email      String
-  token      String   @unique
-  expiresAt  DateTime
-
-  // どの会社からの招待か
-  company    Company  @relation("CompanyToInvitation", fields: [companyId], references: [corporateNumber])
-  companyId  String
-
-  // 招待時に指定された役割
-  role       Role     @default(MEMBER)
-}
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
@@ -143,39 +72,302 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// -----------------------------------------------
+// 企業関連モデル
+// -----------------------------------------------
+
+enum SponsorshipTier {
+  NONE
+  BRONZE
+  SILVER
+  GOLD
+}
+
+model Company {
+  corporateNumber String @id
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  name                 String
+  description          String?   @db.Text
+  tagline              String?
+  website              String?
+  logoUrl              String?
+  headerImageUrl       String?
+  headerImageOffsetY   Int?      @default(50)
+  industry             String?
+  companySize          String?
+  yearFounded          Int?
+  headquarters         String?
+  capitalStock         BigInt?
+  mission              String?   @db.Text
+  cultureAndValues     String?   @db.Text
+  techStack            String[]
+  employeeBenefits     String[]
+  gallery              Json?
+  securityTeamSize     String?
+  hasCiso              Boolean?
+  hasCsirt             Boolean?
+  isCsirtMember        Boolean?
+  securityCertifications String[]
+  securityAreas        String[]
+  conferenceParticipation String?
+  certificationSupport    Boolean?
+  sponsorshipTier      SponsorshipTier @default(NONE)
+
+  users       User[]       @relation("CompanyToUser")
+  contact     Contact?
+  invitations Invitation[] @relation("CompanyToInvitation")
+  inquiries   Inquiry[]    @relation("CompanyToInquiry")
+  jobs        Job[]
+}
+
+model Contact {
+  id        String  @id @default(cuid())
+  name      String
+  email     String  @unique
+  phone     String?
+  company   Company @relation(fields: [companyId], references: [corporateNumber])
+  companyId String  @unique
+}
+
 model Application {
   id          String   @id @default(cuid())
   email       String
   companyName String
-  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  status      String   @default("PENDING")
   createdAt   DateTime @default(now())
 }
+
+model ApprovedEmail {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Invitation {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  company   Company  @relation("CompanyToInvitation", fields: [companyId], references: [corporateNumber])
+  companyId String
+  role      Role     @default(MEMBER)
+}
+
 model Inquiry {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-
-  // 問い合わせ元の情報
   fromName  String
   fromEmail String
   message   String   @db.Text
-
-  // どの会社への問い合わせか
   company   Company  @relation("CompanyToInquiry", fields: [companyId], references: [corporateNumber])
   companyId String
-
-  // 対応状況を管理するためのステータス
-  status    String   @default("NEW") // NEW, OPENED, CLOSED
+  status    String   @default("NEW")
 }
 
-// ▼▼▼ このモデルを新しく追加 ▼▼▼
-model Contact {
+// -----------------------------------------------
+// Talent（候補者・学生）関連モデル
+// -----------------------------------------------
+
+enum WorkPreference {
+  ONSITE
+  HYBRID
+  REMOTE
+}
+
+enum TalentType {
+  STUDENT
+  PROFESSIONAL
+}
+
+model TalentProfile {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  talentType      TalentType @default(PROFESSIONAL)
+  fullName        String
+  age             Int?
+  gender          String?
+  postalCode      String?
+  prefecture      String?
+  city            String?
+  addressDetail   String?
+  phone           String?
+  workLocationPreferences String[]
+  schoolName      String?
+  graduationYear  Int?
+  wantsInternship Boolean? // ★ この行を追加
+  desiredJobTitles String[]
+  otherDesiredJobTitle String?
+  workPreference  WorkPreference?
+  hybridDaysOnsite Int?
+  careerSummary   String?  @db.Text
+  isPublic        Boolean  @default(false)
+  allowScouting   Boolean  @default(true)
+  certificationsOther String?
+
+  user            User               @relation(fields: [userId], references: [id])
+  userId          String             @unique
+  workHistory     WorkExperience[]
+  skills          TalentSkill[]
+  certifications  TalentCertification[]
+  analysisResults AnalysisResult[] // 過去の診断結果を保持
+  skillInterviews SkillInterview[]
+
+}
+
+model WorkExperience {
+  id              String        @id @default(cuid())
+  companyName     String
+  role            String
+  startDate       DateTime
+  endDate         DateTime?
+  description     String?       @db.Text
+  talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id])
+  talentProfileId String
+}
+
+model Skill {
+  id      Int      @id @default(autoincrement())
+  name    String   @unique
+  talents TalentSkill[]
+}
+
+model TalentSkill {
+  talent          TalentProfile @relation(fields: [talentProfileId], references: [id])
+  talentProfileId String
+  skill           Skill         @relation(fields: [skillId], references: [id])
+  skillId         Int
+  level           Int?
+
+  @@id([talentProfileId, skillId])
+}
+
+model Certification {
+  id      Int      @id @default(autoincrement())
+  name    String   @unique
+  talents TalentCertification[]
+}
+
+model TalentCertification {
+  talent          TalentProfile   @relation(fields: [talentProfileId], references: [id])
+  talentProfileId String
+  certification   Certification   @relation(fields: [certificationId], references: [id])
+  certificationId Int
+  acquiredAt      DateTime?
+
+  @@id([talentProfileId, certificationId])
+}
+
+// --- ここからAI診断関連モデルを追加 ---
+
+model AnalysisResult {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+
+  // AIによる分析テキスト
+  summary           String   @db.Text
+  strengths         String   @db.Text
+  advice            String   @db.Text
+  skillGapAnalysis  String   @db.Text
+  experienceMethods String   @db.Text
+
+  // 関連
+  talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id])
+  talentProfileId String
+
+  roadmapSteps LearningRoadmapStep[]
+}
+
+model LearningRoadmapStep {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  stepNumber     Int
+  title          String
+  isCompleted    Boolean  @default(false)
+  details        Json // 推奨アクションや参考リソースなどを柔軟に格納
+  fullContent    String?  @db.Text // ★ この行を追加: 詳細コンテンツのキャッシュ用
+
+  // 関連
+  analysisResult   AnalysisResult @relation(fields: [analysisResultId], references: [id])
+  analysisResultId String
+}
+
+// -----------------------------------------------
+// 求人関連モデル
+// -----------------------------------------------
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Job {
+  id              String    @id @default(cuid())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  title           String
+  description     String    @db.Text
+  status          JobStatus @default(DRAFT)
+  employmentType  String?
+  location        String?
+  salaryRange     String?
+  requiredSkills  String[]
+  preferredSkills String[]
+  company         Company   @relation(fields: [companyId], references: [corporateNumber])
+  companyId       String
+}
+
+// -----------------------------------------------
+// スキルインタビュー関連モデル
+// -----------------------------------------------
+enum InterviewStatus {
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+// ★ 新しいStatusを追加
+enum ExtractionStatus {
+  NOT_STARTED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model SkillInterview {
   id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  status    InterviewStatus @default(IN_PROGRESS)
 
-  name      String
-  email     String   @unique // 担当者のメールアドレスはユニーク
-  phone     String?
+  extractionStatus ExtractionStatus @default(NOT_STARTED)
+  extractionError  String?
 
-  // どの会社に所属しているか
-  company   Company  @relation(fields: [companyId], references: [corporateNumber])
-  companyId String   @unique // 1つの会社に1人の担当者 (1対1関係)
+  talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id])
+  talentProfileId String
+
+  messages  SkillInterviewMessage[]
+　aiExtractedSkills AiExtractedSkill[]
+}
+
+model SkillInterviewMessage {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  role      String   // "user" または "assistant"
+  content   String   @db.Text
+
+  interview   SkillInterview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewId String
+}
+
+model AiExtractedSkill {
+  id        String   @id @default(cuid())
+  skillName String
+  level     Int?
+  category  String   // "プログラミング言語", "役割", "ソフトスキル" など、AIが判断したカテゴリ
+  source    String   @default("AI_INTERVIEW")
+
+  interview   SkillInterview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewId String
 }

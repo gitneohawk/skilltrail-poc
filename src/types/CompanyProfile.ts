@@ -1,5 +1,14 @@
 // types/CompanyProfile.ts
 
+// 担当者情報の型定義
+export type ContactProfile = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+};
+
+// 企業プロフィールの型定義
 export type CompanyProfile = {
   // --- データベースの主キーや自動生成されるフィールド ---
   corporateNumber: string;
@@ -28,6 +37,7 @@ export type CompanyProfile = {
   website?: string | null;
   logoUrl?: string | null;
   headerImageUrl?: string | null;
+  headerImageOffsetY?: number | null; // ヘッダー画像のオフセット位置
   mission?: string | null;
   cultureAndValues?: string | null;
   techStack?: string[];
@@ -41,9 +51,5 @@ export type CompanyProfile = {
   securityAreas?: string[];
   conferenceParticipation?: string | null;
   certificationSupport?: boolean | null;
-  internalContacts?: { // このオブジェクト構造は維持
-    primaryContactName: string;
-    primaryContactEmail: string;
-    primaryContactPhone: string;
-  } | null;
+  contact: ContactProfile | null;
 };

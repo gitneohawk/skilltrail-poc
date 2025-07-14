@@ -1,3 +1,5 @@
+// pages/api/candidate/profile/index.ts
+
 import { NextApiRequest, NextApiResponse } from 'next';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { getServerSession } from 'next-auth/next';
@@ -6,16 +8,18 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
 
-  if (!session || !session.user) {
+  if (!session || !session.user?.id) { // 'user'だけでなく'user.id'の存在も確認
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  const provider = 'azure'; // getDefaultProviderを削除し、固定値に変更
-  const sub = session.user.sub || 'unknown';
+  const provider = 'azure';
+  // ▼▼▼ session.user.sub を session.user.id に変更 ▼▼▼
+  const userId = session.user.id;
 
   const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
   if (!connectionString) {
-    throw new Error('Azure Storage Connection String is not configured on the server.');
+    console.error('Azure Storage Connection String is not configured.');
+    return res.status(500).json({ message: 'Server configuration error.' });
   }
 
   const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
@@ -24,7 +28,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   switch (req.method) {
     case 'GET':
       try {
-        const blobName = `${provider}-${sub}.json`; // 修正: provider/sub.json -> provider-sub.json
+        // ▼▼▼ ファイル名に新しいuserIdを使用 ▼▼▼
+        const blobName = `${provider}-${userId}.json`;
         const blockBlobClient = containerClient.getBlockBlobClient(blobName);
         const downloadBlockBlobResponse = await blockBlobClient.download(0);
         const profileData = JSON.parse(await streamToString(downloadBlockBlobResponse.readableStreamBody));
@@ -33,18 +38,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (error.statusCode === 404) {
           return res.status(404).json({ message: 'Profile not found' });
         }
-        console.error('API Error:', error);
+        console.error('API Error (GET):', error);
         return res.status(500).json({ message: 'Internal Server Error' });
       }
 
     case 'POST':
       try {
-        const blobName = `${provider}-${sub}.json`; // 修正: provider/sub.json -> provider-sub.json
+        // ▼▼▼ ファイル名に新しいuserIdを使用 ▼▼▼
+        const blobName = `${provider}-${userId}.json`;
         const blockBlobClient = containerClient.getBlockBlobClient(blobName);
         await blockBlobClient.upload(JSON.stringify(req.body), JSON.stringify(req.body).length);
         return res.status(200).json({ message: 'Profile updated successfully' });
       } catch (error) {
-        console.error('Error updating profile:', error);
+        console.error('Error updating profile (POST):', error);
         return res.status(500).json({ error: 'Failed to update profile' });
       }
 
