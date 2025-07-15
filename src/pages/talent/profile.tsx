@@ -9,6 +9,7 @@ import type { TalentProfile, TalentType } from '@prisma/client'; // ★ TalentTy
 import { SKILL_CANDIDATES } from '@/types/Skills';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid';
 import { TalentProfileWithRelations } from '../api/talent/profile';
+import { FormRow, MultiSelectButtons } from '@/components/forms';
 
 // --- 定数データ ---
 const jobTitles: string[] = ['SOCアナリスト','CSIRTエンジニア','セキュリティコンサルタント','セキュリティアーキテクト','脆弱性診断エンジニア','GRC担当','セキュリティエンジニア（インフラ系）','セキュリティエンジニア（アプリ系）'];
@@ -19,9 +20,6 @@ type ProfileFormData = Partial<Omit<TalentProfile, 'id' | 'createdAt' | 'updated
 
 // --- ヘルパーコンポーネント ---
 const SectionHeader: React.FC<{ title: string; isOpen: boolean; onClick: () => void }> = ({ title, isOpen, onClick }) => ( <button type="button" className="w-full bg-slate-100 p-4 rounded-lg cursor-pointer flex justify-between items-center text-left" onClick={onClick}> <h2 className="text-lg font-semibold text-slate-800">{title}</h2> {isOpen ? <ChevronUpIcon className="h-6 w-6 text-slate-500" /> : <ChevronDownIcon className="h-6 w-6 text-slate-500" />} </button> );
-const MultiSelectButtons: React.FC<{ options: string[]; selected: string[]; onChange: (newSelection: string[]) => void; }> = ({ options, selected, onChange }) => ( <div className="flex flex-wrap gap-2"> {options.map(option => { const isSelected = selected.includes(option); return ( <button key={option} type="button" className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 hover:bg-slate-100'}`} onClick={() => { const newSelection = isSelected ? selected.filter(s => s !== option) : [...selected, option]; onChange(newSelection); }} > {option} </button> ); })} </div> );
-const FormRow: React.FC<{ label: string; required?: boolean; children: React.ReactNode }> = ({ label, required, children }) => ( <div> <label className="block text-sm font-medium text-slate-700 mb-1"> {label} {required && <span className="text-red-500">*</span>} </label> {children} </div> );
-
 
 // --- メインコンポーネント ---
 const TalentProfilePage = () => {

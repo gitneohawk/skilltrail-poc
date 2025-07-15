@@ -34,7 +34,8 @@ export default async function handler(
       if (userWithCompany?.company) {
         return res.status(200).json(userWithCompany.company);
       } else {
-        return res.status(404).json({ error: 'Company profile not found.' });
+        // プロフィールがまだない場合はnullを返す
+        return res.status(200).json(null);
       }
     } catch (error) {
       return res.status(500).json({ error: 'Internal Server Error' });
@@ -50,88 +51,22 @@ export default async function handler(
     }
 
     try {
-      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const existingUser = await tx.user.findUnique({ where: { id: userId } });
-        if (existingUser?.companyId) {
-          throw new Error('User is already associated with a company.');
-        }
+      const result = await prisma.$transaction(async (tx) => {
 
-        const newCompany = await tx.company.create({
-          data: {
+        // 会社のデータ（存在すれば更新、なければ作成）
+        const companyUpsertData = {
             corporateNumber: profileData.corporateNumber,
-            name: profileData.name,
-            description: profileData.description,
-            industry: profileData.industry,
-            yearFounded: profileData.yearFounded,
-            companySize: profileData.companySize,
-            website: profileData.website,
-            logoUrl: profileData.logoUrl,
-            headerImageUrl: profileData.headerImageUrl,
-            headerImageOffsetY: profileData.headerImageOffsetY, // 追加
-            headquarters: profileData.headquarters,
-            capitalStock: profileData.capitalStock ? Number(profileData.capitalStock) : null,
-            mission: profileData.mission,
-            cultureAndValues: profileData.cultureAndValues,
-            techStack: profileData.techStack,
-            employeeBenefits: profileData.employeeBenefits,
-            securityTeamSize: profileData.securityTeamSize,
-            hasCiso: profileData.hasCiso,
-            hasCsirt: profileData.hasCsirt,
-            isCsirtMember: profileData.isCsirtMember,
-            securityCertifications: profileData.securityCertifications,
-            certificationSupport: profileData.certificationSupport,
-            contact: {
-              create: {
-                name: contact.name,
-                email: contact.email,
-                phone: contact.phone,
-              }
-            }
-          },
-        });
-
-        await tx.user.update({
-          where: { id: userId },
-          data: { companyId: newCompany.corporateNumber },
-        });
-
-        return { newCompany };
-      });
-
-      return res.status(201).json(result.newCompany);
-    } catch (error: any) {
-      console.error('Error creating company profile:', error);
-      if (error.code === 'P2002') {
-         return res.status(409).json({ error: 'This company profile already exists.' });
-      }
-      return res.status(500).json({ error: error.message || 'Internal Server Error' });
-    }
-  }
-
-  // --- PUTリクエストの処理 (更新) ---
-  if (req.method === 'PUT') {
-    const { contact, ...profileData } = req.body;
-    try {
-      const user = await prisma.user.findUnique({ where: { id: userId } });
-      const companyId = user?.companyId;
-      if (!companyId) {
-        return res.status(403).json({ error: 'User is not associated with any company.' });
-      }
-
-      const updatedCompany = await prisma.company.update({
-        where: { corporateNumber: companyId },
-        data: {
           name: profileData.name,
           description: profileData.description,
           industry: profileData.industry,
-          yearFounded: profileData.yearFounded,
+          yearFounded: profileData.yearFounded ? Number(profileData.yearFounded) : null,
           companySize: profileData.companySize,
           website: profileData.website,
           logoUrl: profileData.logoUrl,
           headerImageUrl: profileData.headerImageUrl,
-          headerImageOffsetY: profileData.headerImageOffsetY, // 追加
+          headerImageOffsetY: profileData.headerImageOffsetY,
           headquarters: profileData.headquarters,
-          capitalStock: profileData.capitalStock ? Number(profileData.capitalStock) : null,
+          capitalStock: profileData.capitalStock ? BigInt(profileData.capitalStock) : null,
           mission: profileData.mission,
           cultureAndValues: profileData.cultureAndValues,
           techStack: profileData.techStack,
@@ -142,9 +77,19 @@ export default async function handler(
           isCsirtMember: profileData.isCsirtMember,
           securityCertifications: profileData.securityCertifications,
           certificationSupport: profileData.certificationSupport,
-          contact: {
-            upsert: {
+        };
+
+        const upsertedCompany = await tx.company.upsert({
+          where: { corporateNumber: profileData.corporateNumber },
+          create: companyUpsertData,
+          update: companyUpsertData,
+        });
+
+        // 担当者データ（存在すれば更新、なければ作成）
+        await tx.contact.upsert({
+            where: { companyId: upsertedCompany.corporateNumber },
               create: {
+                companyId: upsertedCompany.corporateNumber,
                 name: contact.name,
                 email: contact.email,
                 phone: contact.phone,
@@ -154,17 +99,28 @@ export default async function handler(
                 email: contact.email,
                 phone: contact.phone,
               }
-            }
-          }
-        },
+        })
+
+        // ユーザーを会社に紐付ける
+        await tx.user.update({
+          where: { id: userId },
+          data: { companyId: upsertedCompany.corporateNumber },
       });
-      return res.status(200).json(updatedCompany);
+
+        return upsertedCompany;
+      });
+
+      return res.status(200).json(result);
     } catch (error: any) {
-      console.error('Error updating company profile:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      console.error('Error creating or updating company profile:', error);
+      if (error.code === 'P2002') {
+         return res.status(409).json({ error: 'This company profile already exists.' });
+      }
+      return res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
   }
 
-  res.setHeader('Allow', ['GET', 'POST', 'PUT']);
+  // PUTは不要になったので、許可するメソッドから削除
+  res.setHeader('Allow', ['GET', 'POST']);
   return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
 }

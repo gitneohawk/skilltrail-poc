@@ -1,36 +1,31 @@
-// next-auth.d.ts
-
+import { DefaultSession, DefaultUser } from "next-auth";
+import { AdapterUser } from "next-auth/adapters"; // AdapterUserをインポート
 import { Role } from "@prisma/client";
-import NextAuth, { DefaultSession, DefaultUser } from "next-auth";
-import { AdapterUser } from "next-auth/adapters";
 
-// NextAuthの組み込み型を拡張
+// next-authモジュールの型定義を拡張
 declare module "next-auth" {
   /**
-   * `session`コールバックから返されるSessionオブジェクトの型。
-   */
-  interface Session {
-    user: {
-      id: string;
-      role: Role; // データベースのRole Enum型
-    } & DefaultSession["user"]; // デフォルトのプロパティ(name, email, image)を継承
-  }
-
-  /**
-   * データベースから取得されるUserオブジェクトの型。
+   * `session.user`の型を拡張
    */
   interface User extends DefaultUser {
+    id: string;
     role: Role;
+    companyId?: string | null;
+  }
+
+  interface Session extends DefaultSession {
+    user: User;
   }
 }
 
-// ▼▼▼ Adapterが使用するUserの型も拡張する ▼▼▼
+// ★ 追加: next-auth/adaptersモジュールの型定義を拡張
 declare module "next-auth/adapters" {
   /**
-   * PrismaAdapterが内部的に使用するAdapterUser型にも
-   * roleプロパティを追加します。
+   * `session`コールバックに渡されるuserオブジェクトの型を拡張
    */
-  interface AdapterUser extends User {
+  interface AdapterUser extends DefaultUser {
+    id: string;
     role: Role;
+    companyId?: string | null;
   }
 }

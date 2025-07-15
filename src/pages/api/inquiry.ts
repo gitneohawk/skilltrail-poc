@@ -69,7 +69,7 @@ export default async function handler(
         <p style="white-space: pre-wrap; padding: 1em; background-color: #f5f5f5; border-radius: 4px;">${message}</p>
         <hr>
         <p>マイページにログインして、内容をご確認の上、ご対応ください。</p>
-        <a href="https://skilltrail.jp/company/mypage">マイページへログイン</a>
+        <a href="https://skilltrail.jp/companies/mypage">マイページへログイン</a>
       `,
     };
 

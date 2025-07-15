@@ -32,7 +32,16 @@ async function main() {
   await prisma.session.deleteMany();
   await prisma.user.deleteMany();
 
+
+
   console.log('Cleaned up existing data.');
+
+  await prisma.approvedEmail.create({
+    data: {
+      email: 'neohawk@evoluzio.com', // あなたの企業用テストアカウントのメアドに変更
+    },
+  });
+  console.log('Added an email to the whitelist.');
 
   // --- 企業ユーザーと企業の作成 ---
   const companyUser = await prisma.user.create({
@@ -106,7 +115,8 @@ async function main() {
       status: JobStatus.PUBLISHED,
       employmentType: '正社員',
       location: '東京都（ハイブリッド勤務可）',
-      salaryRange: '900万円〜1500万円',
+      salaryMin: 9000000, // ★ 変更
+      salaryMax: 15000000, // ★ 変更
       requiredSkills: ['AWS', 'Terraform', 'セキュリティ設計'],
       preferredSkills: ['CISSP', 'コンテナセキュリティ'],
       companyId: company1.corporateNumber,

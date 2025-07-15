@@ -15,7 +15,8 @@ import {
   DocumentTextIcon,
   QuestionMarkCircleIcon,
   CheckCircleIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  BriefcaseIcon
 } from '@heroicons/react/24/outline';
 
 // APIから受け取る企業の型定義
@@ -170,6 +171,23 @@ export default function TalentMyPage() {
     </Link>
   </div>
 </div>
+{/* 求人検索カード */}
+<Link href="/jobs" className="block group">
+  <div className="bg-white p-8 rounded-2xl shadow-sm border hover:shadow-lg transition-all duration-300">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+      <div className="flex-1">
+        <BriefcaseIcon className="h-8 w-8 mb-4 text-teal-600" />
+        <h2 className="text-2xl font-bold mb-2 text-slate-800">求人を探す</h2>
+        <p className="text-slate-600">あなたのスキルにマッチする企業からのオファーを見つけましょう。</p>
+      </div>
+      <div className="flex-shrink-0">
+        <div className="bg-teal-600 text-white font-semibold px-6 py-3 rounded-lg group-hover:bg-teal-700 transition-colors">
+          一覧を見る
+        </div>
+      </div>
+    </div>
+  </div>
+</Link>
 
             <div className="bg-white p-6 rounded-2xl border">
               <div className="flex items-center gap-3 mb-4">

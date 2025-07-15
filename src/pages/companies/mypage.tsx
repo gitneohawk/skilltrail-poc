@@ -1,16 +1,19 @@
-// pages/company/mypage.tsx
+// pages/companies/mypage.tsx
 
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import useSWR from 'swr'; // ★ 追加
 import Layout from '@/components/Layout';
 import type { CompanyProfile } from '@/types/CompanyProfile';
+import type { Job } from '@prisma/client'; // ★ 追加
 import {
   BuildingOffice2Icon,
   PencilSquareIcon,
   UserPlusIcon,
   DocumentTextIcon,
-  UserCircleIcon // 担当者アイコンを追加
+  UserCircleIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 
 // 表示用の行コンポーネント
@@ -47,41 +50,36 @@ const formatHeadquarters = (hq: any): string => {
     }
     return '未設定';
 };
+const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(res => res.json());
 
 
 const CompanyMypage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
-  // TODO: 将来的にAPIから求人情報を取得する
-  const [jobs, setJobs] = useState([
-    { id: 1, title: 'シニアセキュリティエンジニア (SOC)', status: '公開中' },
-    { id: 2, title: 'プロダクトセキュリティ専門家', status: '下書き' },
-  ]);
+  // ★ 変更: ハードコードされたjobsを削除し、SWRでAPIから取得
+  const { data: jobs, isLoading: isJobsLoading } = useSWR<Job[]>(
+    status === 'authenticated' ? '/api/companies/jobs' : null,
+    fetcher
+  );
 
   useEffect(() => {
     if (status === 'authenticated') {
-      const fetchProfile = async () => {
-        setIsLoading(true);
-        const response = await fetch('/api/companies/profile', { credentials: 'include' });
-        if (response.ok) {
-          const data = await response.json();
-          setProfile(data);
-        } else {
-          setProfile(null);
-        }
-        setIsLoading(false);
-      };
-      fetchProfile();
+      setIsProfileLoading(true);
+      fetch('/api/companies/profile', { credentials: 'include' }).then(res => res.ok ? res.json() : null)
+        .then(data => setProfile(data))
+        .finally(() => setIsProfileLoading(false));
     }
     if (status === 'unauthenticated') {
-      router.push('/company');
+      // ★ 変更: パスを/companiesに
+      router.push('/companies');
     }
   }, [status, router]);
 
-  if (status === 'loading' || isLoading) {
+  const isLoading = status === 'loading' || isProfileLoading || isJobsLoading;
+  if (isLoading) {
     return <Layout><p className="text-center p-8">Loading...</p></Layout>;
   }
 
@@ -98,7 +96,8 @@ const CompanyMypage = () => {
               icon={BuildingOffice2Icon}
               action={
                 <button
-                  onClick={() => router.push('/company/profile')}
+                  // ★ 変更: パスを/companiesに
+                  onClick={() => router.push('/companies/profile')}
                   className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-semibold"
                 >
                   <PencilSquareIcon className="h-4 w-4" />
@@ -119,7 +118,8 @@ const CompanyMypage = () => {
               icon={UserCircleIcon}
               action={
                 <button
-                  onClick={() => router.push('/company/profile')}
+                  // ★ 変更: パスを/companiesに
+                  onClick={() => router.push('/companies/profile')}
                   className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-semibold"
                 >
                   <PencilSquareIcon className="h-4 w-4" />
@@ -134,13 +134,29 @@ const CompanyMypage = () => {
               </dl>
             </DashboardSection>
 
+            <DashboardSection
+              title="タレント検索"
+              icon={MagnifyingGlassIcon}
+              action={
+                <button
+                  onClick={() => router.push('/companies/search')}
+                  className="flex items-center gap-2 text-sm text-white bg-blue-600 hover:bg-blue-700 font-semibold px-3 py-1.5 rounded-md"
+                >
+                  検索ページへ
+                </button>
+              }
+            >
+              <p className="text-sm text-slate-500">スキルや経験を元に、登録しているタレントを検索できます。</p>
+            </DashboardSection>
+
             {/* 求人情報セクション */}
             <DashboardSection
               title="求人情報"
               icon={DocumentTextIcon}
               action={
                 <button
-                  onClick={() => router.push('/company/jobs/new')}
+                  // ★ 変更: パスを/companiesに
+                  onClick={() => router.push('/companies/jobs/new')}
                   className="flex items-center gap-2 text-sm text-white bg-blue-600 hover:bg-blue-700 font-semibold px-3 py-1.5 rounded-md"
                 >
                   <PencilSquareIcon className="h-4 w-4" />
@@ -149,6 +165,8 @@ const CompanyMypage = () => {
               }
             >
               <div className="flow-root">
+                {/* ★ 変更: APIから取得したjobsをmapする */}
+                {(jobs && jobs.length > 0) ? (
                 <ul role="list" className="divide-y divide-slate-200">
                   {jobs.map((job) => (
                     <li key={job.id} className="py-4 flex justify-between items-center gap-4">
@@ -156,13 +174,14 @@ const CompanyMypage = () => {
                         <p className="text-sm font-medium text-slate-900 truncate">{job.title}</p>
                         <p className="text-sm text-slate-500">
                           ステータス:
-                          <span className={job.status === '公開中' ? 'text-green-600 font-semibold' : 'text-amber-600 font-semibold'}>
-                            {job.status}
+                            <span className={job.status === 'PUBLISHED' ? 'text-green-600 font-semibold' : 'text-amber-600 font-semibold'}>
+                              {job.status === 'PUBLISHED' ? '公開中' : '下書き'}
                           </span>
                         </p>
                       </div>
                       <button
-                        onClick={() => router.push(`/company/jobs/${job.id}`)}
+                        // ★ 変更: パスを/companiesに
+                        onClick={() => router.push(`/companies/jobs/${job.id}`)}
                         className="text-sm text-blue-600 hover:text-blue-800 font-semibold"
                       >
                         編集
@@ -170,6 +189,9 @@ const CompanyMypage = () => {
                     </li>
                   ))}
                 </ul>
+                ) : (
+                  <p className="text-center text-sm text-slate-500 py-4">まだ求人はありません。</p>
+                )}
               </div>
             </DashboardSection>
 
@@ -195,7 +217,8 @@ const CompanyMypage = () => {
               まずは、候補者にアピールするための企業プロフィールを登録しましょう。
             </p>
             <button
-              onClick={() => router.push('/company/profile')}
+              // ★ 変更: パスを/companiesに
+              onClick={() => router.push('/companies/profile')}
               className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               プロフィールを登録する

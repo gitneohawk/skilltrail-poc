@@ -55,6 +55,7 @@ export const authOptions: NextAuthOptions = {
       // next-auth.d.tsで型が拡張されているため、正しく型推論される
       session.user.id = user.id;
       session.user.role = user.role;
+      session.user.companyId = user.companyId; // ★ この行を追加
       return session;
     },
   },

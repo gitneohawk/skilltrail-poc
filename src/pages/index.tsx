@@ -18,12 +18,12 @@ export default function Home() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-6 mb-8">
-          <Link href="/candidate" className="bg-white text-blue-800 font-semibold py-4 px-8 rounded-lg shadow-lg hover:bg-blue-100 transition">
+          <Link href="/talent" className="bg-white text-blue-800 font-semibold py-4 px-8 rounded-lg shadow-lg hover:bg-blue-100 transition">
             個人ユーザの方はこちら
           </Link>
-          <button disabled className="bg-gray-300 text-gray-600 font-semibold py-4 px-8 rounded-lg shadow-lg cursor-not-allowed">
+          <Link href="/companies" className="bg-white text-blue-800 font-semibold py-4 px-8 rounded-lg shadow-lg hover:bg-blue-100 transition">
             企業ユーザの方はこちら
-          </button>
+          </Link>
         </div>
 
         <div className="flex gap-4 text-sm">

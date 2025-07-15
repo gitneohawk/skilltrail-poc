@@ -1,4 +1,4 @@
-// pages/company/profile.tsx
+// pages/companies/profile.tsx
 
 import { useState, useEffect, ChangeEvent, FormEvent, useRef } from 'react';
 import { useSession } from 'next-auth/react';
@@ -233,7 +233,7 @@ const CompanyProfilePage = () => {
             throw new Error(errData.error || '保存に失敗しました。');
         }
         alert('プロフィールが保存されました');
-        router.push('/company/mypage');
+        router.push('/companies/mypage');
     } catch (err: any) {
         setError(err.message);
     } finally {

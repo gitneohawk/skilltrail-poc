@@ -1,4 +1,4 @@
-// pages/company/index.tsx
+// pages/companies/index.tsx
 
 import { useEffect } from 'react';
 import Layout from '@/components/Layout';
@@ -13,7 +13,7 @@ const CompanyIndexPage = () => {
   // 認証状態を監視し、ログイン済みならマイページにリダイレクト
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/company/mypage');
+      router.push('/companies/mypage');
     }
   }, [status, router]);
 
@@ -57,7 +57,7 @@ const CompanyIndexPage = () => {
                 </div>
                 <div className="mt-6">
                   <button
-                    onClick={() => router.push('/company/apply')}
+                    onClick={() => router.push('/companies/apply')}
                     className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 w-full"
                   >
                     新規利用を申請する

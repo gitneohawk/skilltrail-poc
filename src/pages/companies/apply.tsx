@@ -1,4 +1,4 @@
-// pages/company/apply.tsx
+// pages/companies/apply.tsx
 
 import { useState, FormEvent } from 'react';
 import Layout from '@/components/Layout';

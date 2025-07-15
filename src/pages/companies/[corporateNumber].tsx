@@ -1,4 +1,4 @@
-// pages/company/[corporateNumber].tsx
+// pages/companies/[corporateNumber].tsx
 
 import { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/router';

@@ -312,7 +312,8 @@ model Job {
   status          JobStatus @default(DRAFT)
   employmentType  String?
   location        String?
-  salaryRange     String?
+  salaryMin       Int?     // ★ 変更: salaryRange -> salaryMin (数値)
+  salaryMax       Int?     // ★ 追加: salaryMax (数値)
   requiredSkills  String[]
   preferredSkills String[]
   company         Company   @relation(fields: [companyId], references: [corporateNumber])
