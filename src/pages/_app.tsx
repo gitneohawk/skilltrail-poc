@@ -1,4 +1,3 @@
-
 import type { AppProps } from 'next/app';
 import { SessionProvider } from "next-auth/react";
 import '../styles/globals.css';
@@ -9,7 +8,6 @@ export default function MyApp({ Component, pageProps: { session, ...pageProps } 
 
   useEffect(() => {
     // アプリケーションの初回マウント時に、安全な方法でApp Insightsを初期化
-    console.log('App Insights Connection String:', process.env.NEXT_PUBLIC_APPLICATIONINSIGHTS_CONNECTION_STRING);
     getAppInsights();
   }, []);
 

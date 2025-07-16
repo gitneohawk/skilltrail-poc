@@ -68,8 +68,17 @@ export default function NewJobPage() {
             <textarea name="description" value={formData.description} onChange={handleChange} required rows={8} className="w-full px-3 py-2 border rounded-md" />
           </FormRow>
           <FormRow label="雇用形態">
-            <input name="employmentType" value={formData.employmentType} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" />
-          </FormRow>
+  <select
+    name="employmentType"
+    value={formData.employmentType}
+    onChange={handleChange}
+    className="w-full px-3 py-2 border rounded-md bg-white"
+  >
+    <option value="FULL_TIME">正社員</option>
+    <option value="INTERNSHIP">インターンシップ</option>
+    <option value="CONTRACT">契約社員</option>
+  </select>
+</FormRow>
           <FormRow label="勤務地">
             <input name="location" value={formData.location} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" />
           </FormRow>

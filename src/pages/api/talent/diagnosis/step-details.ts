@@ -46,12 +46,10 @@ export default async function handler(
 
     // 2. キャッシュ（fullContent）を確認
     if (step.fullContent) {
-      console.log(`Step ${stepId} のキャッシュを返します。`);
       return res.status(200).json({ content: step.fullContent });
     }
 
     // 3. キャッシュがなければオンデマンドで生成
-    console.log(`Step ${stepId} のキャッシュがないため、オンデマンドで生成します。`);
     const details = typeof step.details === 'string' ? JSON.parse(step.details) : step.details;
 
     const prompt = `

@@ -24,13 +24,16 @@ export default async function handler(
 
     // 検索条件を構築
     const whereClause: TalentProfileWhereInput = {
-      isPublic: true, // 公開プロフィールのみを対象
+      isPublic: true,
       // 指定されたスキルをすべて持つユーザーを検索
       AND: skillList.map(skillName => ({
         skills: {
           some: {
             skill: {
-              name: skillName,
+              name: {
+                equals: skillName,
+                mode: 'insensitive', // ★ 大文字・小文字を区別しないモードを追加
+              },
             },
           },
         },

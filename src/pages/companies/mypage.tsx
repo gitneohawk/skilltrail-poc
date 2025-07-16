@@ -7,6 +7,8 @@ import useSWR from 'swr'; // ★ 追加
 import Layout from '@/components/Layout';
 import type { CompanyProfile } from '@/types/CompanyProfile';
 import type { Job } from '@prisma/client'; // ★ 追加
+import Link from 'next/link';
+
 import {
   BuildingOffice2Icon,
   PencilSquareIcon,
@@ -179,13 +181,14 @@ const CompanyMypage = () => {
                           </span>
                         </p>
                       </div>
-                      <button
-                        // ★ 変更: パスを/companiesに
-                        onClick={() => router.push(`/companies/jobs/${job.id}`)}
-                        className="text-sm text-blue-600 hover:text-blue-800 font-semibold"
-                      >
-                        編集
-                      </button>
+                      <div className="flex items-center gap-4">
+                        <Link href={`/companies/jobs/${job.id}/applicants`} className="text-sm text-green-600 hover:text-green-800 font-semibold">
+                          応募者を見る
+                        </Link>
+                        <Link href={`/companies/jobs/${job.id}`} className="text-sm text-blue-600 hover:text-blue-800 font-semibold">
+                          編集
+                        </Link>
+                      </div>
                     </li>
                   ))}
                 </ul>

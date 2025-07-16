@@ -1,13 +1,20 @@
 // prisma/seed.ts (完成版)
 
-import { PrismaClient, Role, SponsorshipTier, TalentType, WorkPreference, JobStatus } from '@prisma/client';
+import { PrismaClient, Role, SponsorshipTier, TalentType, WorkPreference, JobStatus, JobType } from '@prisma/client';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { SKILL_CANDIDATES } from '../src/types/Skills'; // ★ スキル候補をインポート
 
 // .env.localファイルから環境変数を読み込む
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 const prisma = new PrismaClient();
+
+// ★ 資格のマスターデータを定義
+const CERTIFICATION_CANDIDATES: string[] = [
+  'CISSP','CISA','CISM','CEH','CompTIA Security+','CompTIA CySA+','AWS Certified Security','Microsoft SC-100','Microsoft SC-200','Azure Security Engineer'
+];
+
 
 async function main() {
   console.log('Seeding started...');
@@ -31,11 +38,27 @@ async function main() {
   await prisma.account.deleteMany();
   await prisma.session.deleteMany();
   await prisma.user.deleteMany();
-
-
+  await prisma.skill.deleteMany(); // ★ スキルマスターも削除
+  await prisma.certification.deleteMany(); // ★ 資格マスターも削除
 
   console.log('Cleaned up existing data.');
 
+  // --- ★ マスターデータの投入 ---
+  console.log('Seeding master data...');
+  // スキルマスターの投入
+  await prisma.skill.createMany({
+    data: SKILL_CANDIDATES.map(name => ({ name })),
+    skipDuplicates: true,
+  });
+  // 資格マスターの投入
+  await prisma.certification.createMany({
+    data: CERTIFICATION_CANDIDATES.map(name => ({ name })),
+    skipDuplicates: true,
+  });
+  console.log('Master data seeded.');
+
+
+  // --- 承認済みメールアドレスの登録 ---
   await prisma.approvedEmail.create({
     data: {
       email: 'neohawk@evoluzio.com', // あなたの企業用テストアカウントのメアドに変更
@@ -113,7 +136,7 @@ async function main() {
       title: 'クラウドセキュリティエンジニア (AWS)',
       description: 'AWS環境におけるセキュリティ設計、構築、運用を担当していただきます。CSPMツールの導入やセキュリティ監視基盤の構築が主な業務です。',
       status: JobStatus.PUBLISHED,
-      employmentType: '正社員',
+      employmentType: JobType.FULL_TIME,
       location: '東京都（ハイブリッド勤務可）',
       salaryMin: 9000000, // ★ 変更
       salaryMax: 15000000, // ★ 変更

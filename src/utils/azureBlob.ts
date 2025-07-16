@@ -178,9 +178,8 @@ export async function loadSkillChatFromBlob<T>(
 if (!process.env.AZURE_STORAGE_CONNECTION_STRING) {
     console.error('AZURE_STORAGE_CONNECTION_STRING is not configured. Please check your environment variables.');
     throw new Error('AZURE_STORAGE_CONNECTION_STRING is not configured.');
-} else {
-    console.log('AZURE_STORAGE_CONNECTION_STRING:', process.env.AZURE_STORAGE_CONNECTION_STRING);
 }
+
 /**
  * 指定したBlobにテキストデータを保存する
  */

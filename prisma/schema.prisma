@@ -131,14 +131,6 @@ model Contact {
   companyId String  @unique
 }
 
-model Application {
-  id          String   @id @default(cuid())
-  email       String
-  companyName String
-  status      String   @default("PENDING")
-  createdAt   DateTime @default(now())
-}
-
 model ApprovedEmail {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -200,6 +192,7 @@ model TalentProfile {
   wantsInternship Boolean? // ★ この行を追加
   desiredJobTitles String[]
   otherDesiredJobTitle String?
+  needsCareerSuggestion Boolean?
   workPreference  WorkPreference?
   hybridDaysOnsite Int?
   careerSummary   String?  @db.Text
@@ -209,6 +202,7 @@ model TalentProfile {
 
   user            User               @relation(fields: [userId], references: [id])
   userId          String             @unique
+  applications    Application[]
   workHistory     WorkExperience[]
   skills          TalentSkill[]
   certifications  TalentCertification[]
@@ -262,16 +256,26 @@ model TalentCertification {
 
 // --- ここからAI診断関連モデルを追加 ---
 
+enum DiagnosisStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model AnalysisResult {
   id                String   @id @default(cuid())
   createdAt         DateTime @default(now())
 
+  diagnosisStatus   DiagnosisStatus @default(PENDING)
+
+
   // AIによる分析テキスト
-  summary           String   @db.Text
-  strengths         String   @db.Text
-  advice            String   @db.Text
-  skillGapAnalysis  String   @db.Text
-  experienceMethods String   @db.Text
+  summary           String?   @db.Text // ★ Null許容に変更
+  strengths         String?   @db.Text // ★ Null許容に変更
+  advice            String?   @db.Text // ★ Null許容に変更
+  skillGapAnalysis  String?   @db.Text // ★ Null許容に変更
+  experienceMethods String?   @db.Text // ★ Null許容に変更
 
   // 関連
   talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id])
@@ -297,6 +301,12 @@ model LearningRoadmapStep {
 // -----------------------------------------------
 // 求人関連モデル
 // -----------------------------------------------
+enum JobType {
+  FULL_TIME
+  INTERNSHIP
+  CONTRACT
+}
+
 enum JobStatus {
   DRAFT
   PUBLISHED
@@ -310,7 +320,7 @@ model Job {
   title           String
   description     String    @db.Text
   status          JobStatus @default(DRAFT)
-  employmentType  String?
+  employmentType  JobType?  // ★ String? から JobType? に変更
   location        String?
   salaryMin       Int?     // ★ 変更: salaryRange -> salaryMin (数値)
   salaryMax       Int?     // ★ 追加: salaryMax (数値)
@@ -318,6 +328,21 @@ model Job {
   preferredSkills String[]
   company         Company   @relation(fields: [companyId], references: [corporateNumber])
   companyId       String
+  applications    Application[]
+}
+
+model Application {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  status    String   @default("NEW") // 例: NEW, VIEWED, REJECTED, APPROVED
+
+  // 関連
+  job       Job           @relation(fields: [jobId], references: [id])
+  jobId     String
+  talent    TalentProfile @relation(fields: [talentId], references: [id])
+  talentId  String
+
+  @@unique([jobId, talentId]) // 同じ求人に複数回応募できないようにする
 }
 
 // -----------------------------------------------

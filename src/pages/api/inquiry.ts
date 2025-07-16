@@ -75,8 +75,6 @@ export default async function handler(
 
     await transporter.sendMail(mailOptions);
 
-    console.log(`[Inquiry Sent] Notified ${companyContactEmail} for company ${companyId}`);
-
     res.status(200).json({ message: 'Inquiry sent successfully.' });
 
   } catch (error) {

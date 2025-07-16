@@ -85,8 +85,18 @@ export default function EditJobPage() {
           <FormRow label="求人タイトル" required><input name="title" value={formData.title} onChange={handleChange} required className="w-full px-3 py-2 border rounded-md" /></FormRow>
           <FormRow label="求人詳細" required><textarea name="description" value={formData.description} onChange={handleChange} required rows={8} className="w-full px-3 py-2 border rounded-md" /></FormRow>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormRow label="雇用形態"><input name="employmentType" value={formData.employmentType} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" /></FormRow>
-            <FormRow label="ステータス"><select name="status" value={formData.status} onChange={handleChange} className="w-full px-3 py-2 border rounded-md bg-white"><option value="DRAFT">下書き</option><option value="PUBLISHED">公開中</option></select></FormRow>
+<FormRow label="雇用形態">
+  <select
+    name="employmentType"
+    value={formData.employmentType}
+    onChange={handleChange}
+    className="w-full px-3 py-2 border rounded-md bg-white"
+  >
+    <option value="FULL_TIME">正社員</option>
+    <option value="INTERNSHIP">インターンシップ</option>
+    <option value="CONTRACT">契約社員</option>
+  </select>
+</FormRow>            <FormRow label="ステータス"><select name="status" value={formData.status} onChange={handleChange} className="w-full px-3 py-2 border rounded-md bg-white"><option value="DRAFT">下書き</option><option value="PUBLISHED">公開中</option></select></FormRow>
           </div>
           <FormRow label="勤務地"><input name="location" value={formData.location} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" /></FormRow>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

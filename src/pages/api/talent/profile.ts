@@ -1,13 +1,9 @@
-// pages/api/talent/profile.ts
-
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { authOptions } from '../auth/[...nextauth]';
 import prisma from '@/lib/prisma';
 import { TalentProfile } from '@prisma/client';
 
-// フロントエンドに返すプロフィールの型定義
-// 関連データを含めるため拡張
 export type TalentProfileWithRelations = TalentProfile & {
   skills: { skill: { id: number; name: string } }[];
   certifications: { certification: { id: number; name: string } }[];
@@ -23,47 +19,37 @@ export default async function handler(
   }
   const userId = session.user.id;
 
-  // --- GETリクエストの処理 (自分のプロフィールと関連データを取得) ---
+  // --- GETリクエストの処理 ---
   if (req.method === 'GET') {
     try {
       const talentProfile = await prisma.talentProfile.findUnique({
         where: { userId: userId },
-        // ★ 変更点: 関連するスキルと資格を一緒に取得する
         include: {
-          skills: {
-            select: {
-              skill: { select: { id: true, name: true } },
-            },
-          },
-          certifications: {
-            select: {
-              certification: { select: { id: true, name: true } },
-            },
-          },
+          skills: { select: { skill: { select: { id: true, name: true } } } },
+          certifications: { select: { certification: { select: { id: true, name: true } } } },
         },
       });
-
-      if (talentProfile) {
-        return res.status(200).json(talentProfile);
-      } else {
-        // プロフィールがまだない場合はnullを返す（フロントでハンドリングしやすくするため）
-        return res.status(200).json(null);
-      }
+      return res.status(200).json(talentProfile ?? null);
     } catch (error) {
       console.error('Failed to fetch talent profile:', error);
       return res.status(500).json({ error: 'Internal Server Error' });
     }
   }
 
-  // --- POSTリクエストの処理 (プロフィールの新規作成または更新) ---
+  // --- POSTリクエストの処理 ---
   if (req.method === 'POST') {
-    // ★ 変更点: スキルと資格の配列を受け取る
-    const { skills, certifications, ...profileData } = req.body;
+    const { skills, certifications, ...restOfBody } = req.body;
+
+    const {
+      id,
+      userId: bodyUserId,
+      createdAt,
+      updatedAt,
+      ...profileData
+    } = restOfBody;
 
     try {
-      // ★ 変更点: 全てのDB操作をトランザクション内で実行
       const updatedProfile = await prisma.$transaction(async (tx) => {
-        // Step 1: プロフィール本体の作成または更新
         const profile = await tx.talentProfile.upsert({
           where: { userId: userId },
           update: profileData,
@@ -74,54 +60,55 @@ export default async function handler(
         });
         const profileId = profile.id;
 
-        // Step 2: スキルの更新（Sync方式）
         if (Array.isArray(skills)) {
-          // 既存のスキル関連を全て削除
           await tx.talentSkill.deleteMany({
             where: { talentProfileId: profileId },
           });
-
-          // フロントから来たスキル名に対応するIDをDBから取得
-          const skillRecords = await tx.skill.findMany({
-            where: { name: { in: skills } },
-            select: { id: true },
-          });
-
-          // 新しいスキル関連を作成
-          if (skillRecords.length > 0) {
-            await tx.talentSkill.createMany({
-              data: skillRecords.map((skill) => ({
-                talentProfileId: profileId,
-                skillId: skill.id,
-              })),
+          if (skills.length > 0) {
+            const skillRecords = await tx.skill.findMany({
+              where: {
+                name: {
+                  in: skills,
+                  mode: 'insensitive',
+                },
+              },
+              select: { id: true },
             });
+            if (skillRecords.length > 0) {
+              await tx.talentSkill.createMany({
+                data: skillRecords.map((skill) => ({
+                  talentProfileId: profileId,
+                  skillId: skill.id,
+                })),
+              });
+            }
           }
         }
 
-        // Step 3: 資格の更新（Sync方式）
         if (Array.isArray(certifications)) {
-          // 既存の資格関連を全て削除
           await tx.talentCertification.deleteMany({
             where: { talentProfileId: profileId },
           });
-
-          // フロントから来た資格名に対応するIDをDBから取得
-          const certRecords = await tx.certification.findMany({
-            where: { name: { in: certifications } },
-            select: { id: true },
-          });
-
-          // 新しい資格関連を作成
-          if (certRecords.length > 0) {
-            await tx.talentCertification.createMany({
-              data: certRecords.map((cert) => ({
-                talentProfileId: profileId,
-                certificationId: cert.id,
-              })),
+          if (certifications.length > 0) {
+            const certRecords = await tx.certification.findMany({
+              where: {
+                name: {
+                  in: certifications,
+                  mode: 'insensitive',
+                },
+              },
+              select: { id: true },
             });
+            if (certRecords.length > 0) {
+              await tx.talentCertification.createMany({
+                data: certRecords.map((cert) => ({
+                  talentProfileId: profileId,
+                  certificationId: cert.id,
+                })),
+              });
+            }
           }
         }
-
         return profile;
       });
 

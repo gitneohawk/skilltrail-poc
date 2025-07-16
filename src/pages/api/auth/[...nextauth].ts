@@ -38,8 +38,6 @@ export const authOptions: NextAuthOptions = {
         await prisma.approvedEmail.delete({
           where: { email: user.email },
         });
-
-        console.log(`[ADMIN CREATED] User ${user.email} has been granted ADMIN role.`);
       }
     },
   },

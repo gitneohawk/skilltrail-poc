@@ -21,7 +21,29 @@ type ProfileFormData = Partial<Omit<TalentProfile, 'id' | 'createdAt' | 'updated
 // --- ヘルパーコンポーネント ---
 const SectionHeader: React.FC<{ title: string; isOpen: boolean; onClick: () => void }> = ({ title, isOpen, onClick }) => ( <button type="button" className="w-full bg-slate-100 p-4 rounded-lg cursor-pointer flex justify-between items-center text-left" onClick={onClick}> <h2 className="text-lg font-semibold text-slate-800">{title}</h2> {isOpen ? <ChevronUpIcon className="h-6 w-6 text-slate-500" /> : <ChevronDownIcon className="h-6 w-6 text-slate-500" />} </button> );
 
-// --- メインコンポーネント ---
+// ★ 追加: トグルスイッチコンポーネント
+const ToggleSwitch: React.FC<{
+  label: string;
+  description: string;
+  enabled: boolean;
+  onChange: (enabled: boolean) => void;
+}> = ({ label, description, enabled, onChange }) => (
+  <div className="flex items-center justify-between">
+    <div>
+      <h3 className="text-sm font-medium text-slate-800">{label}</h3>
+      <p className="text-xs text-slate-500">{description}</p>
+    </div>
+    <button
+      type="button"
+      className={`${enabled ? 'bg-blue-600' : 'bg-slate-200'} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+      onClick={() => onChange(!enabled)}
+    >
+      <span className={`${enabled ? 'translate-x-5' : 'translate-x-0'} inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`} />
+    </button>
+  </div>
+);
+
+
 const TalentProfilePage = () => {
   const { data: session, status: authStatus } = useSession();
   const router = useRouter();
@@ -73,6 +95,10 @@ const TalentProfilePage = () => {
 
   const searchAddress = async () => { /* ... */ };
 
+  const handleToggleChange = (fieldName: 'isPublic' | 'allowScouting', enabled: boolean) => {
+    setProfile(p => ({ ...p, [fieldName]: enabled }));
+  };
+
 const handleSubmit = async (e: FormEvent) => {
   e.preventDefault();
   setIsSubmitting(true);
@@ -96,6 +122,11 @@ const handleSubmit = async (e: FormEvent) => {
     if (payload.talentType !== 'STUDENT') {
       payload.schoolName = null;
       payload.graduationYear = null;
+      payload.wantsInternship = null;
+    }
+    if (payload.needsCareerSuggestion) {
+      payload.desiredJobTitles = [];
+      payload.otherDesiredJobTitle = null;
     }
 
     const response = await fetch('/api/talent/profile', {
@@ -192,6 +223,19 @@ const handleSubmit = async (e: FormEvent) => {
             {openSection === 'career' && (
                <div className="p-6 border rounded-b-lg bg-white space-y-4 shadow-sm">
                   <FormRow label="希望職種"><MultiSelectButtons options={jobTitles} selected={profile.desiredJobTitles || []} onChange={sel => setProfile(p => ({ ...p, desiredJobTitles: sel }))} /></FormRow>
+                  <div className="pt-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        id="needsCareerSuggestion"
+                        name="needsCareerSuggestion"
+                        type="checkbox"
+                        checked={profile.needsCareerSuggestion ?? false}
+                        onChange={handleChange}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-slate-700">希望キャリアは未定（AIからの提案を希望）</span>
+                    </label>
+                  </div>
                   <FormRow label="その他希望職種"><input name="otherDesiredJobTitle" type="text" className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" value={profile.otherDesiredJobTitle || ''} onChange={handleChange} /></FormRow>
                </div>
             )}
@@ -208,6 +252,25 @@ const handleSubmit = async (e: FormEvent) => {
                      <MultiSelectButtons options={certificationsList} selected={selectedCerts} onChange={sel => handleMultiSelectChange(setSelectedCerts, sel)} />
                    </FormRow>
                    <FormRow label="その他保有資格"><input name="certificationsOther" type="text" className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" value={profile.certificationsOther || ''} onChange={handleChange} /></FormRow>
+                </div>
+             )}
+          </div>
+                    <div className="space-y-1">
+             <SectionHeader title="4. 公開設定" isOpen={openSection === 'settings'} onClick={() => setOpenSection(openSection === 'settings' ? '' : 'settings')} />
+             {openSection === 'settings' && (
+                <div className="p-6 border rounded-b-lg bg-white space-y-6 shadow-sm">
+                   <ToggleSwitch
+                     label="プロフィールを公開する"
+                     description="公開すると、企業があなたの匿名プロフィールを閲覧できるようになります。"
+                     enabled={profile.isPublic ?? false}
+                     onChange={(enabled) => handleToggleChange('isPublic', enabled)}
+                   />
+                   <ToggleSwitch
+                     label="スカウトを受け付ける"
+                     description="企業からのスカウトメッセージの受信を許可します。"
+                     enabled={profile.allowScouting ?? false}
+                     onChange={(enabled) => handleToggleChange('allowScouting', enabled)}
+                   />
                 </div>
              )}
           </div>

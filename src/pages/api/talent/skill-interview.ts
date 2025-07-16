@@ -90,7 +90,20 @@ export default async function handler(
         content: m.content,
       }));
 
-      const systemPrompt = `あなたは優秀なIT・セキュリティ業界専門のキャリアコンサルタントです。ユーザーのスキルや経験を深掘りするためのインタビューを行っています。以下の会話履歴に基づき、次の質問を生成してください。会話が5〜8往復程度になったら、インタビューを締めくくる言葉を返してください。`;
+      // ★ 変更点: プロンプトを修正し、JSONでisFinishedフラグを要求
+      const systemPrompt = `
+        あなたは優秀なIT・セキュリティ業界専門のキャリアコンサルタントです。
+        ユーザーのスキルや経験を深掘りするためのインタビューを行っています。
+        以下の会話履歴に基づき、次の質問を生成してください。
+        会話が5〜8往復程度になり、十分に情報を引き出せたと判断した場合は、インタビューを締めくくる言葉を返してください。
+
+        # 出力形式
+        以下のキーを持つJSONオブジェクトを厳密に生成してください。
+        {
+          "nextQuestion": "ユーザーへの次の質問、または最後の締めくくりの言葉（文字列）",
+          "isFinished": "インタビューをここで終了すべきかどうかの真偽値（boolean）"
+        }
+      `;
 
       const response = await openai.chat.completions.create({
         model: 'gpt-4-turbo',
@@ -98,10 +111,18 @@ export default async function handler(
           { role: 'system', content: systemPrompt },
           ...formattedHistory
         ],
+        response_format: { type: 'json_object' },
       });
 
-      const nextQuestion = response.choices[0].message.content || 'エラーが発生しました。';
+      const resultJsonString = response.choices[0].message.content;
+      if (!resultJsonString) throw new Error('AIからの応答が空でした。');
 
+      // ★ 変更点: AIの応答からnextQuestionとisFinishedをパース
+      const aiResponse = JSON.parse(resultJsonString);
+      const nextQuestion = aiResponse.nextQuestion || 'エラーが発生しました。';
+      const isFinished = aiResponse.isFinished === true;
+
+      // AIの応答を保存
       const assistantMessage = await prisma.skillInterviewMessage.create({
         data: {
           interviewId: interview.id,
@@ -110,6 +131,17 @@ export default async function handler(
         },
       });
 
+      // ★ 変更点: isFinishedフラグがtrueなら、自動でスキル抽出処理を開始
+      if (isFinished) {
+        // fire-and-forgetで抽出APIを呼び出す
+        fetch(`${process.env.NEXTAUTH_URL}/api/talent/skill-interview/extract/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ interviewId: interview.id }),
+        });
+      }
+
+      // AIの自然言語応答をフロントエンドに返す
       return res.status(201).json(assistantMessage);
 
     } catch (error) {

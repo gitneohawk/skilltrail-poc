@@ -138,12 +138,14 @@ const PublicCompanyPage = () => {
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
              <div className="bg-white p-2 rounded-full shadow-lg">
                 {profile.logoUrl ? (
+<div className="absolute -bottom-16 left-1/2 -translate-x-1/2 h-32 w-32 rounded-2xl bg-white border-4 border-white shadow-lg p-2 flex items-center justify-center">
                     <img
-                        src={profile.logoUrl}
+                        src={profile.logoUrl || `https://placehold.co/128x128/e2e8f0/334155?text=Logo`}
                         alt={`${profile.name}のロゴ`}
-                        className="h-32 w-32 rounded-full object-contain border-4 border-white"
+                        className="max-h-full max-w-full object-contain"
                         onError={(e) => { (e.target as HTMLImageElement).src = `https://placehold.co/128x128/e2e8f0/334155?text=Logo`; }}
                     />
+                </div>
                 ) : (
                     <div className="h-32 w-32 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 border-4 border-white">
                         <span>Logo</span>

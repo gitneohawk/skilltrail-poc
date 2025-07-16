@@ -1,11 +1,13 @@
 import { useEffect, useState, FC } from 'react';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { useRouter } from 'next/router';
 import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
 import Layout from '@/components/Layout';
-import type { TalentProfile, AnalysisResult, LearningRoadmapStep } from '@prisma/client';
+import type { Job, Company, Application, TalentProfile, AnalysisResult, LearningRoadmapStep } from '@prisma/client';
 import type { SecurityQuiz } from '@/utils/quiz';
+import { format } from 'date-fns';
+import { Spinner } from '@/components/Spinner';
 import {
   UserCircleIcon,
   PencilSquareIcon,
@@ -16,8 +18,15 @@ import {
   QuestionMarkCircleIcon,
   CheckCircleIcon,
   ChatBubbleLeftRightIcon,
-  BriefcaseIcon
+  BriefcaseIcon,
+  ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline';
+
+type ApplicationWithJob = Application & {
+  job: Job & {
+    company: { name: string; logoUrl: string | null };
+  };
+};
 
 // APIから受け取る企業の型定義
 type CompanyForList = {
@@ -61,10 +70,14 @@ export default function TalentMyPage() {
     fetcher
   );
 
-  const { data: interviewStatus, isLoading: isStatusLoading } = useSWR(
-    status === "authenticated" ? `/api/talent/skill-interview/status` : null,
+    // 応募履歴を取得するSWRフック
+  const { data: applications, isLoading: isApplicationsLoading } = useSWR<ApplicationWithJob[]>(
+    status === "authenticated" ? '/api/talent/applications' : null,
     fetcher
+
   );
+
+  const { mutate } = useSWRConfig(); // useSWRConfigからmutateを取得
 
   // Quiz機能のロジック
   const [quiz, setQuiz] = useState<SecurityQuiz | null>(null);
@@ -78,30 +91,63 @@ export default function TalentMyPage() {
       .finally(() => setQuizLoading(false));
   }, []);
 
+  const handleCancelApplication = async (applicationId: string) => {
+    if (!window.confirm('この応募を取り消しますか？')) return;
+
+    try {
+      const response = await fetch('/api/talent/applications', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ applicationId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('応募の取り消しに失敗しました。');
+      }
+
+      // 成功したら、リストを再取得して表示を更新
+      mutate('/api/talent/applications');
+      alert('応募を取り消しました。');
+
+    } catch (error) {
+      alert((error as Error).message);
+    }
+  };
+
   const handleDiagnoseClick = async () => {
     if (!profile) {
       alert('先にプロフィールを登録してください。');
       router.push('/talent/profile');
       return;
     }
+
     setIsDiagnosing(true);
     try {
-      const response = await fetch('/api/talent/diagnosis/generate', { method: 'POST' });
-      if (!response.ok) throw new Error('診断の開始に失敗しました。');
-      const newAnalysis: AnalysisResult = await response.json();
-      router.push(`/talent/diagnosis/${newAnalysis.id}`);
+      // ★ 変更点: 新しいstart APIを呼び出す
+      const response = await fetch('/api/talent/diagnosis/start', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('診断の開始に失敗しました。');
+      }
+
+      const { analysisId } = await response.json();
+
+      // ★ 変更点: すぐに結果ページに遷移する
+      router.push(`/talent/diagnosis/${analysisId}`);
+
     } catch (error) {
       console.error(error);
       alert('エラーが発生しました。もう一度お試しください。');
-    } finally {
       setIsDiagnosing(false);
     }
   };
 
-  const isLoading = status === 'loading' || isProfileLoading || isCompaniesLoading || isAnalysisLoading || isStatusLoading;
+  const isLoading = status === 'loading' || isProfileLoading || isCompaniesLoading || isAnalysisLoading || isApplicationsLoading;
 
   if (isLoading) {
-    return <Layout><p className="text-center p-8">Loading...</p></Layout>;
+    return <Layout><Spinner /></Layout>;
   }
 
   if (status !== 'authenticated') {
@@ -167,10 +213,56 @@ export default function TalentMyPage() {
     <Link href="/talent/skill-chat"
       className="bg-white text-purple-600 font-semibold px-6 py-3 rounded-lg hover:bg-purple-50 transition-colors w-full sm:w-auto"
     >
-      {interviewStatus?.hasInterviewInProgress ? 'インタビューを再開する' : 'インタビューを始める'}
+      インタビューを開始 / 再開する
     </Link>
   </div>
 </div>
+                {/* 応募状況カード */}
+            <div className="bg-white p-6 rounded-2xl border">
+              <div className="flex items-center gap-3 mb-4">
+                  <ClipboardDocumentListIcon className="h-6 w-6 text-slate-500" />
+                  <h2 className="text-lg font-semibold text-slate-800">応募状況</h2>
+              </div>
+
+              {(applications && applications.length > 0) ? (
+                <ul role="list" className="divide-y divide-slate-200">
+                  {applications.map((app) => (
+                    <li key={app.id} className="py-4 flex justify-between items-center gap-4">
+                      <div className="flex items-center gap-4 flex-grow">
+                        <div className="h-10 w-10 rounded-full bg-white border p-1 flex items-center justify-center flex-shrink-0">
+  <img
+    src={app.job.company.logoUrl || `https://placehold.co/40x40/e2e8f0/334155?text=${app.job.company.name.charAt(0)}`}
+    alt={`${app.job.company.name}のロゴ`}
+    className="max-h-full max-w-full object-contain"
+  />
+</div>
+                        <div className="flex-grow">
+                          <p className="text-sm font-medium text-slate-900 truncate">{app.job.title}</p>
+                          <p className="text-sm text-slate-500">{app.job.company.name}</p>
+                          <p className="text-xs text-slate-400 mt-1">{format(new Date(app.createdAt), 'yyyy/MM/dd')}に応募</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 flex-shrink-0">
+                        <span className="text-sm font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded-md">
+                          {app.status}
+                        </span>
+                        <button
+                          onClick={() => handleCancelApplication(app.id)}
+                          className="text-xs text-red-600 hover:underline"
+                        >
+                          取り消す
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-center text-sm text-slate-500 py-4">
+                  現在応募中の求人はありません。
+                </p>
+              )}
+            </div>
+
 {/* 求人検索カード */}
 <Link href="/jobs" className="block group">
   <div className="bg-white p-8 rounded-2xl shadow-sm border hover:shadow-lg transition-all duration-300">
@@ -258,8 +350,13 @@ export default function TalentMyPage() {
                 {(companies || []).map((company) => (
                   <div key={company.corporateNumber} onClick={() => router.push(`/companies/${company.corporateNumber}`)}
                     className="p-4 border rounded-lg flex items-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors">
-                    <img src={company.logoUrl || `https://placehold.co/40x40/e2e8f0/334155?text=${company.name.charAt(0)}`}
-                      alt={`${company.name}のロゴ`} className="h-10 w-10 rounded-full object-contain bg-white border" />
+<div className="h-10 w-10 rounded-full bg-white border p-1 flex items-center justify-center flex-shrink-0">
+  <img
+    src={company.logoUrl || `https://placehold.co/40x40/e2e8f0/334155?text=${company.name.charAt(0)}`}
+    alt={`${company.name}のロゴ`}
+    className="max-h-full max-w-full object-contain"
+  />
+</div>
                     <div>
                       <p className="font-semibold text-sm text-slate-800">{company.name}</p>
                       <p className="text-xs text-slate-500">{company.industry}</p>

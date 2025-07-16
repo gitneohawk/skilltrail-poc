@@ -48,7 +48,6 @@ export default async function handler(
   try {
     // gBizINFO APIへのリクエストURLを作成
     const searchUrl = `${GBIZ_API_URL}?name=${encodeURIComponent(companyName)}`;
-    console.log('Request URL:', searchUrl);
 
     const gbizResponse = await fetch(searchUrl, {
       method: 'GET',
@@ -64,7 +63,6 @@ export default async function handler(
     }
 
     const responseData = await gbizResponse.json();
-    console.log('gBizINFO API Response:', responseData);
 
     const hojinInfos: HojinInfo[] = responseData['hojin-infos'];
 

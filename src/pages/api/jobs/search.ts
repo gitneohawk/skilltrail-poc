@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
+import { JobType } from '@prisma/client'; // ★ JobTypeをインポート
+
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,10 +12,14 @@ export default async function handler(
   }
 
   try {
+        const { jobType } = req.query; // ★ jobTypeクエリを受け取る
+
     // 1. 公開中の全求人を取得
     const allPublishedJobs = await prisma.job.findMany({
       where: {
         status: 'PUBLISHED',
+        // ★ jobTypeによる絞り込み条件を追加
+        employmentType: jobType ? (jobType as JobType) : undefined,
       },
       include: {
         company: { // 会社情報も一緒に取得
