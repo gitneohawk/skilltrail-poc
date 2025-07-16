@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { Prisma, TalentProfileWhereInput } from '@prisma/client'; // ★ Prismaの型を直接インポート
+import { Prisma } from '@prisma/client'; // Prismaの型を直接使用
 
 export default async function handler(
   req: NextApiRequest,
@@ -23,7 +23,7 @@ export default async function handler(
     const skillList = typeof skills === 'string' && skills ? skills.split(',') : [];
 
     // 検索条件を構築
-    const whereClause: TalentProfileWhereInput = {
+    const whereClause: Prisma.TalentProfileWhereInput = {
       isPublic: true,
       // 指定されたスキルをすべて持つユーザーを検索
       AND: skillList.map(skillName => ({
