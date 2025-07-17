@@ -54,28 +54,40 @@ export default function TalentMyPage() {
   const router = useRouter();
   const [isDiagnosing, setIsDiagnosing] = useState(false);
 
-  // --- データ取得 ---
-  const { data: profile, isLoading: isProfileLoading } = useSWR<TalentProfile | null>(
+  // --- 修正後のデータ取得 ---
+
+  // 1. まずプロフィール情報だけを取得する
+  const { data: profile, isLoading: isProfileLoading, error: profileError } = useSWR<TalentProfile | null>(
     status === "authenticated" ? `/api/talent/profile` : null,
     fetcher
   );
 
-  const { data: companies, isLoading: isCompaniesLoading } = useSWR<CompanyForList[]>(
-    '/api/companies/list',
-    (url: string) => fetch(url).then(res => res.json())
+  // 2. プロフィールが存在する場合にのみ、他のデータを取得する
+  const { data: applications, isLoading: isApplicationsLoading } = useSWR<ApplicationWithJob[]>(
+    profile ? '/api/talent/applications' : null, // profileが存在する場合のみfetch
+    fetcher
   );
 
   const { data: latestAnalysis, isLoading: isAnalysisLoading } = useSWR<AnalysisResultWithSteps | null>(
-    status === "authenticated" ? `/api/talent/diagnosis/latest` : null,
+    profile ? `/api/talent/diagnosis/latest` : null, // profileが存在する場合のみfetch
     fetcher
   );
 
-    // 応募履歴を取得するSWRフック
-  const { data: applications, isLoading: isApplicationsLoading } = useSWR<ApplicationWithJob[]>(
-    status === "authenticated" ? '/api/talent/applications' : null,
+  // (会社リストはプロフィール有無に関係ないので、そのままでもOK)
+  const { data: companies, isLoading: isCompaniesLoading } = useSWR<CompanyForList[]>(
+    '/api/companies/list',
     fetcher
 
   );
+
+  // 3. プロフィール取得が完了し、プロフィールが存在しない場合にリダイレクトするロジック
+   useEffect(() => {
+    // ローディング中でなく、セッションがあり、プロフィールデータがnull（またはエラーで取得できなかった）場合
+    if (!isProfileLoading && status === "authenticated" && !profile) {
+      // 403エラーの場合も!profileになるので、これでハンドリングできる
+      router.push('/profile/edit');
+    }
+  }, [profile, isProfileLoading, status, router]);
 
   const { mutate } = useSWRConfig(); // useSWRConfigからmutateを取得
 
