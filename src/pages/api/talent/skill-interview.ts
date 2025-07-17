@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import prisma from '@/lib/prisma';
 import OpenAI from 'openai';
-import { ChatCompletionMessageParam } from 'openai/resources/index.mjs';
 
 export default async function handler(
   req: NextApiRequest,
@@ -20,7 +19,6 @@ export default async function handler(
   // --- 会話履歴の取得 ---
   if (req.method === 'GET') {
     try {
-
       const interview = await prisma.skillInterview.findFirst({
         where: {
           talentProfile: { userId },
@@ -34,7 +32,6 @@ export default async function handler(
         orderBy: { createdAt: 'desc' },
       });
       return res.status(200).json(interview?.messages ?? []);
-            return res.status(200).json([]); // GETは空配列を返すようにする
     } catch (error) {
       return res.status(500).json({ error: 'Failed to get history' });
     }
@@ -48,11 +45,22 @@ export default async function handler(
     }
 
     try {
+      // ★ 変更点: 最新のopenaiライブラリを使ったAzureクライアントの初期化
+      const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+      const azureApiKey = process.env.AZURE_OPENAI_KEY;
+      const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT_NAME;
+      const apiVersion = "2024-02-01";
 
-      if (!process.env.OPENAI_API_KEY) {
-        throw new Error("OpenAI API Key is not configured. Please set OPENAI_API_KEY environment variable.");
+      if (!endpoint || !azureApiKey || !deploymentName) {
+        throw new Error("Azure OpenAI Service is not configured. Please set environment variables.");
       }
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const client = new OpenAI({
+        apiKey: azureApiKey,
+        baseURL: `${endpoint}openai/deployments/${deploymentName}`,
+        defaultQuery: { "api-version": apiVersion },
+        defaultHeaders: { "api-key": azureApiKey },
+      });
 
       const interview = await prisma.$transaction(async (tx) => {
         let currentInterview = await tx.skillInterview.findFirst({
@@ -89,7 +97,8 @@ export default async function handler(
         orderBy: { createdAt: 'asc' },
       });
 
-      const formattedHistory: ChatCompletionMessageParam[] = allMessages.map(m => ({
+      // ★ 変更点: 型をOpenAIの公式型に変更
+      const formattedHistory: OpenAI.Chat.ChatCompletionMessageParam[] = allMessages.map(m => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
       }));
@@ -108,8 +117,9 @@ export default async function handler(
         }
       `;
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4-turbo',
+      // ★ 変更点: 最新のopenaiライブラリのAPI呼び出し
+      const response = await client.chat.completions.create({
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: systemPrompt },
           ...formattedHistory

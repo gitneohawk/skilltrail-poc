@@ -1,14 +1,14 @@
 // src/pages/api/auth/[...nextauth].ts
 
-import NextAuth, { type NextAuthOptions } from "next-auth";
+import NextAuth from 'next-auth';
+import type { NextAuthOptions } from 'next-auth';
 import AzureADProvider from "next-auth/providers/azure-ad";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/prisma";
-// import { Role } from "@prisma/client"; // Roleの直接インポートを回避
-import { Adapter } from "next-auth/adapters"; // Adapterの型をインポート
+import { Adapter } from "next-auth/adapters";
+import { NextApiRequest, NextApiResponse } from 'next';
 
 export const authOptions: NextAuthOptions = {
-  // PrismaAdapterをAdapter型として明示的にキャストする
   adapter: PrismaAdapter(prisma) as Adapter,
   providers: [
     AzureADProvider({
@@ -29,7 +29,6 @@ export const authOptions: NextAuthOptions = {
       });
 
       if (approvedEmail) {
-        // Role Enumの代わりに、文字列リテラルを直接使用する
         await prisma.user.update({
           where: { id: user.id },
           data: { role: 'ADMIN' },
@@ -50,13 +49,19 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async session({ session, user }) {
-      // next-auth.d.tsで型が拡張されているため、正しく型推論される
       session.user.id = user.id;
       session.user.role = user.role;
-      session.user.companyId = user.companyId; // ★ この行を追加
+      session.user.companyId = user.companyId;
       return session;
     },
   },
 };
 
-export default NextAuth(authOptions);
+export default (req: NextApiRequest, res: NextApiResponse) => {
+  // Azure SWAが提供するヘッダーから、正しいホスト名を取得します。
+  const host = req.headers['x-forwarded-host'];
+  if (host) {
+    process.env.NEXTAUTH_URL = `https://${host}`;
+  }
+  return NextAuth(req, res, authOptions);
+}
