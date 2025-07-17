@@ -67,7 +67,8 @@ const CompanyProfilePage = () => {
   useEffect(() => {
     if (status === 'authenticated') {
       const fetchExistingProfile = async () => {
-        setIsLoading(true);
+        // ★★★ 修正点1: try...catchを追加 ★★★
+        try {
         const response = await fetch('/api/companies/profile', { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
@@ -78,9 +79,16 @@ const CompanyProfilePage = () => {
           });
           setMode('edit');
         } else {
+            // 新規ユーザーの場合はここに来る
+            setMode('search');
+          }
+        } catch (err) {
+          // ネットワークエラーなどでfetch自体が失敗した場合
+          console.error("Failed to fetch company profile:", err);
+          setError("プロファイルの読み込みに失敗しました。ネットワーク接続を確認してください。");
+          // エラーが発生しても、検索モードに移行させる
           setMode('search');
         }
-        setIsLoading(false);
       };
       fetchExistingProfile();
     }
@@ -218,12 +226,13 @@ const CompanyProfilePage = () => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    // ▼▼▼ profile.updatedAtの有無で、新規(POST)か更新(PUT)かを判断する ▼▼▼
+
+    // ★★★ 修正点2: methodを動的に設定 ★★★
     const method = profile.updatedAt ? 'PUT' : 'POST';
 
     try {
         const response = await fetch('/api/companies/profile', {
-      　　　　method: 'POST',
+            method: method, // POST or PUT
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify(profile)
