@@ -97,11 +97,16 @@ export default async function handler(
         orderBy: { createdAt: 'asc' },
       });
 
-      // ★ 変更点: 型をOpenAIの公式型に変更
-      const formattedHistory: OpenAI.Chat.ChatCompletionMessageParam[] = allMessages.map(m => ({
+      const fullHistory: OpenAI.Chat.ChatCompletionMessageParam[] = allMessages.map(m => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
       }));
+
+      // ★★★ ここからが修正点 ★★★
+      // 常に最新10件のメッセージ（ユーザーとAIの5往復分）だけを履歴として使う
+      const CONVERSATION_HISTORY_LIMIT = 10;
+      const recentHistory = fullHistory.slice(-CONVERSATION_HISTORY_LIMIT);
+      // ★★★ ここまでが修正点 ★★★
 
       const systemPrompt = `
         あなたは優秀なIT・セキュリティ業界専門のキャリアコンサルタントです。
@@ -117,12 +122,12 @@ export default async function handler(
         }
       `;
 
-      // ★ 変更点: 最新のopenaiライブラリのAPI呼び出し
       const response = await client.chat.completions.create({
         model: 'gpt-4o',
         messages: [
           { role: 'system', content: systemPrompt },
-          ...formattedHistory
+          // ★★★ 修正点: 全履歴ではなく、最新の履歴だけを渡す ★★★
+          ...recentHistory
         ],
         response_format: { type: 'json_object' },
       });
