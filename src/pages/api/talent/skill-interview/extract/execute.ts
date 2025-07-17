@@ -4,7 +4,21 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+const azureApiKey = process.env.AZURE_OPENAI_KEY;
+const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT_NAME;
+const apiVersion = "2024-02-01";
+
+if (!endpoint || !azureApiKey || !deploymentName) {
+  throw new Error("Azure OpenAI Service is not configured. Please set environment variables.");
+}
+
+const openai = new OpenAI({
+  apiKey: azureApiKey,
+  baseURL: `${endpoint}openai/deployments/${deploymentName}`,
+  defaultQuery: { "api-version": apiVersion },
+  defaultHeaders: { "api-key": azureApiKey },
+});
 
 type AiSkill = { skillName: string; level: number; category: string; };
 
