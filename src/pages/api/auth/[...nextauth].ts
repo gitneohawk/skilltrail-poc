@@ -57,10 +57,11 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  const hostname = process.env.AZURE_STATIC_WEB_APPS_HOSTNAME;
-  if (hostname) {
-    process.env.NEXTAUTH_URL = `https://${hostname}`;
+export default (req: NextApiRequest, res: NextApiResponse) => {
+  // Azure SWAが提供するヘッダーから、正しいホスト名を取得します。
+  const host = req.headers['x-forwarded-host'];
+  if (host) {
+    process.env.NEXTAUTH_URL = `https://${host}`;
   }
   return NextAuth(req, res, authOptions);
 }
