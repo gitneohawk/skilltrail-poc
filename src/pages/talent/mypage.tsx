@@ -85,7 +85,7 @@ export default function TalentMyPage() {
     // ローディング中でなく、セッションがあり、プロフィールデータがnull（またはエラーで取得できなかった）場合
     if (!isProfileLoading && status === "authenticated" && !profile) {
       // 403エラーの場合も!profileになるので、これでハンドリングできる
-      router.push('/profile/edit');
+      router.push('/profile');
     }
   }, [profile, isProfileLoading, status, router]);
 
