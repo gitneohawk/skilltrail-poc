@@ -159,8 +159,17 @@ export default async function handler(
       　　　applicationinsights.defaultClient.trackException({ exception: error as Error });
     　　}
       console.error('Failed to process interview message:', error);
-      return res.status(500).json({ error: 'Failed to process message' });
+  const err = error as Error;
+  return res.status(500).json({
+    message: 'An error occurred during the skill interview.',
+    // エラーオブジェクト全体を返すと情報が多すぎる場合があるため、
+    // 主要なプロパティを抽出して返す
+    error_details: {
+      name: err.name,
+      message: err.message,
+      stack: err.stack, // スタックトレース
     }
+  });    }
   }
 
   // --- インタビューのリセット ---
