@@ -79,7 +79,7 @@ export default function TalentMyPage() {
 
   const { mutate } = useSWRConfig(); // useSWRConfigからmutateを取得
 
-  // Quiz機能のロジック
+  // --- Quiz機能のロジック（blob→PostgreSQL移行未対応のため一時停止） ---
   const [quiz, setQuiz] = useState<SecurityQuiz | null>(null);
   const [quizLoading, setQuizLoading] = useState(true);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
@@ -314,6 +314,8 @@ export default function TalentMyPage() {
               )}
             </div>
 
+            {/* 今日の一問カード（blob→PostgreSQL移行未対応のため一時停止） */}
+            {/*
             <div className="bg-white p-6 rounded-2xl border">
               <div className="flex items-center gap-3 mb-4">
                 <QuestionMarkCircleIcon className="h-6 w-6 text-slate-500" />
@@ -340,6 +342,7 @@ export default function TalentMyPage() {
                   </div>
                 ) : (<p className="text-slate-500">今日のクイズはありません。</p>)}
             </div>
+            */}
 
             <div className="bg-white p-6 rounded-2xl border">
               <div className="flex items-center gap-2 mb-4">
