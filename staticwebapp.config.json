@@ -1,8 +1,18 @@
 {
   "routes": [
     {
+      "route": "/api/auth/*",
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
       "route": "/api/*",
       "allowedRoles": ["authenticated"]
     }
-  ]
+  ],
+  "responseOverrides": {
+    "401": {
+      "redirect": "/api/auth/signin",
+      "statusCode": 302
+    }
+  }
 }
