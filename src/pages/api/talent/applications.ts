@@ -8,6 +8,11 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const session = await getServerSession(req, res, authOptions);
+  if (!session) {
+    // ログインしていない場合は、401 Unauthorized エラーを返す
+    return res.status(401).json({ message: 'You must be logged in.' });
+  }
+
   if (!session?.user?.id) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
