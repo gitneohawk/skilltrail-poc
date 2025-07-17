@@ -1,45 +1,8 @@
 {
-  "responseOverrides": {
-    "401": {
-      "redirect": "/api/auth/signin",
-      "statusCode": 302
-    },
-    "404": {
-      "rewrite": "/404.html"
-    }
-  },
   "routes": [
-    {
-      "route": "/talent/mypage",
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/talent/*",
-      "allowedRoles": ["authenticated"]
-    },
     {
       "route": "/api/*",
       "allowedRoles": ["authenticated"]
     }
-  ],
-  "auth": {
-    "identityProviders": {
-      "azureActiveDirectory": {
-        "userDetails": {
-          "rolesSource": "/.auth/me/roles"
-        }
-      }
-    }
-  },
-  "navigationFallback": {
-    "rewrite": "/index.html",
-    "exclude": ["/images/*.{png,jpg,gif}", "/css/*"]
-  },
-  "globalHeaders": {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
-  },
-  "platform": {
-    "apiRuntime": "node:18"
-  }
+  ]
 }
