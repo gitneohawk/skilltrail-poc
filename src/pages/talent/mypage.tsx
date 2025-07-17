@@ -5,7 +5,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
 import Layout from '@/components/Layout';
 import type { Job, Company, Application, TalentProfile, AnalysisResult, LearningRoadmapStep } from '@prisma/client';
-import type { SecurityQuiz } from '@/utils/quiz';
+// import type { SecurityQuiz } from '@/utils/quiz';
 import { format } from 'date-fns';
 import { Spinner } from '@/components/Spinner';
 import {
@@ -80,16 +80,16 @@ export default function TalentMyPage() {
   const { mutate } = useSWRConfig(); // useSWRConfigからmutateを取得
 
   // --- Quiz機能のロジック（blob→PostgreSQL移行未対応のため一時停止） ---
-  const [quiz, setQuiz] = useState<SecurityQuiz | null>(null);
-  const [quizLoading, setQuizLoading] = useState(true);
-  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
-  const [showExplanation, setShowExplanation] = useState(false);
+  // const [quiz, setQuiz] = useState<SecurityQuiz | null>(null);
+  // const [quizLoading, setQuizLoading] = useState(true);
+  // const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  // const [showExplanation, setShowExplanation] = useState(false);
 
-  useEffect(() => {
-    fetch('/api/quiz/daily').then(res => res.json()).then(data => setQuiz(data))
-      .catch(err => console.error("Failed to fetch quiz", err))
-      .finally(() => setQuizLoading(false));
-  }, []);
+  // useEffect(() => {
+  //   fetch('/api/quiz/daily').then(res => res.json()).then(data => setQuiz(data))
+  //     .catch(err => console.error("Failed to fetch quiz", err))
+  //     .finally(() => setQuizLoading(false));
+  // }, []);
 
   const handleCancelApplication = async (applicationId: string) => {
     if (!window.confirm('この応募を取り消しますか？')) return;
