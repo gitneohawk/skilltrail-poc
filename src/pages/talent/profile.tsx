@@ -93,7 +93,29 @@ const TalentProfilePage = () => {
     setProfile(p => ({...p, talentType: type}))
   }
 
-  const searchAddress = async () => { /* ... */ };
+  const searchAddress = async () => {
+    if (!profile.postalCode || profile.postalCode.length < 7) {
+      alert('郵便番号（7桁）を入力してください');
+      return;
+    }
+    try {
+      const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${profile.postalCode}`);
+      const data = await res.json();
+      if (data.status === 200 && data.results && data.results.length > 0) {
+        const result = data.results[0];
+        setProfile(p => ({
+          ...p,
+          prefecture: result.address1 || '',
+          city: result.address2 || '',
+          addressDetail: result.address3 || ''
+        }));
+      } else {
+        alert('該当する住所が見つかりませんでした');
+      }
+    } catch (err) {
+      alert('住所検索に失敗しました');
+    }
+  };
 
   const handleToggleChange = (fieldName: 'isPublic' | 'allowScouting', enabled: boolean) => {
     setProfile(p => ({ ...p, [fieldName]: enabled }));
