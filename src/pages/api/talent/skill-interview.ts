@@ -1,4 +1,5 @@
 // /pages/api/talent/skill-interview.ts (エラー修正版)
+console.log("ULTRA_DEBUG: API file started loading."); // ★★★ この行をファイルの先頭に追加 ★★★
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
