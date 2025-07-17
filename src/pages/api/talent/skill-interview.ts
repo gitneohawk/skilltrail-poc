@@ -7,7 +7,7 @@ import prisma from '@/lib/prisma';
 import OpenAI from 'openai';
 import { ChatCompletionMessageParam } from 'openai/resources/index.mjs';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export default async function handler(
   req: NextApiRequest,
@@ -49,6 +49,13 @@ export default async function handler(
     }
 
     try {
+      console.log("DEBUG: /api/talent/skill-interview API called."); // API呼び出しの開始ログ
+      if (!process.env.OPENAI_API_KEY) {
+        console.error("DEBUG: OPENAI_API_KEY is not set in environment variables!");
+        // 環境変数がない場合は、より具体的なエラーをスローして捕捉させる
+        throw new Error("OpenAI API Key is not configured. Please set OPENAI_API_KEY environment variable.");
+      }
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const interview = await prisma.$transaction(async (tx) => {
         let currentInterview = await tx.skillInterview.findFirst({
           where: {
