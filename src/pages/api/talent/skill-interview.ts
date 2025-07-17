@@ -3,13 +3,24 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import prisma from '@/lib/prisma';
 import OpenAI from 'openai';
-import { ChatCompletionMessageParam } from 'openai/resources/index.mjs'; // 同上
+import { ChatCompletionMessageParam } from 'openai/resources/index.mjs';
+import applicationinsights from 'applicationinsights';
+
+  if (process.env.APPLICATIONINSIGHTS_CONNECTION_STRING) {
+  applicationinsights.setup(process.env.APPLICATIONINSIGHTS_CONNECTION_STRING)
+    .setAutoCollectRequests(true)
+    .setAutoCollectPerformance(true, true)
+    .setAutoCollectExceptions(true)
+    .setAutoCollectDependencies(true)
+    .setAutoCollectConsole(true, true)
+    .setUseDiskRetryCaching(true)
+    .start();
+}
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  console.log("DEBUG: Handler function entered.");
 
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.id) {
@@ -54,6 +65,7 @@ export default async function handler(
         throw new Error("OpenAI API Key is not configured. Please set OPENAI_API_KEY environment variable.");
       }
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
       const interview = await prisma.$transaction(async (tx) => {
         let currentInterview = await tx.skillInterview.findFirst({
           where: {
@@ -143,6 +155,9 @@ export default async function handler(
       return res.status(201).json(assistantMessage);
 
     } catch (error) {
+      　　if (applicationinsights.defaultClient) {
+      　　　applicationinsights.defaultClient.trackException({ exception: error as Error });
+    　　}
       console.error('Failed to process interview message:', error);
       return res.status(500).json({ error: 'Failed to process message' });
     }

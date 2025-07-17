@@ -20,6 +20,7 @@
     "@microsoft/applicationinsights-react-js": "^19.3.6",
     "@microsoft/applicationinsights-web": "^3.3.9",
     "@prisma/client": "^6.11.1",
+    "applicationinsights": "^3.7.0",
     "axios": "^1.10.0",
     "date-fns": "^4.1.0",
     "i18next": "^25.2.1",
