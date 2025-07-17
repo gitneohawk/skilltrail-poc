@@ -4,18 +4,6 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import prisma from '@/lib/prisma';
 import OpenAI from 'openai';
 import { ChatCompletionMessageParam } from 'openai/resources/index.mjs';
-import applicationinsights from 'applicationinsights';
-
-  if (process.env.APPLICATIONINSIGHTS_CONNECTION_STRING) {
-  applicationinsights.setup(process.env.APPLICATIONINSIGHTS_CONNECTION_STRING)
-    .setAutoCollectRequests(true)
-    .setAutoCollectPerformance(true, true)
-    .setAutoCollectExceptions(true)
-    .setAutoCollectDependencies(true)
-    .setAutoCollectConsole(true, true)
-    .setUseDiskRetryCaching(true)
-    .start();
-}
 
 export default async function handler(
   req: NextApiRequest,
@@ -155,9 +143,6 @@ export default async function handler(
       return res.status(201).json(assistantMessage);
 
     } catch (error) {
-      　　if (applicationinsights.defaultClient) {
-      　　　applicationinsights.defaultClient.trackException({ exception: error as Error });
-    　　}
       console.error('Failed to process interview message:', error);
   const err = error as Error;
   return res.status(500).json({
