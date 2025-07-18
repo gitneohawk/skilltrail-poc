@@ -78,7 +78,7 @@ export default async function handler(
 
       # 出力要件
       - 上記の情報を元に、学習の目的、具体的な手順、注意点を詳しく解説してください。
-      - 最終的なアウトプットは、見出し、リスト、強調などを含む、単一のMarkdownドキュメントとしてください。
+      - 最終的なアウトプットは、見出し、リスト、強調などを含むドキュメントとしてください。
     `;
 
     const response = await openai.chat.completions.create({
