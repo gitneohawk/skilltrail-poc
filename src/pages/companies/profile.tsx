@@ -78,17 +78,20 @@ const CompanyProfilePage = () => {
             contact: data.contact || { name: '', email: '' }
           });
           setMode('edit');
+        } else if (response.status === 404) {
+          // 新規ユーザー: エラーはセットせず、検索モードへ
+          setMode('search');
         } else {
-            // 新規ユーザーの場合はここに来る
-            setMode('search');
-          }
-        } catch (err) {
-          // ネットワークエラーなどでfetch自体が失敗した場合
-          console.error("Failed to fetch company profile:", err);
+          // その他のエラー（サーバーエラー等）のみエラー表示
           setError("プロファイルの読み込みに失敗しました。ネットワーク接続を確認してください。");
-          // エラーが発生しても、検索モードに移行させる
           setMode('search');
         }
+      } catch (err) {
+        // ネットワークエラーなどでfetch自体が失敗した場合
+        console.error("Failed to fetch company profile:", err);
+        setError("プロファイルの読み込みに失敗しました。ネットワーク接続を確認してください。");
+        setMode('search');
+      }
       };
       fetchExistingProfile();
     }

@@ -42,8 +42,8 @@ export default async function handler(
     }
   }
 
-  // --- POSTリクエストの処理 (新規作成) ---
-  if (req.method === 'POST') {
+  // --- POST/PUTリクエストの処理 (新規作成・編集) ---
+  if (req.method === 'POST' || req.method === 'PUT') {
     const { contact, ...profileData } = req.body;
 
     if (!profileData.corporateNumber || !contact?.email) {
@@ -120,7 +120,7 @@ export default async function handler(
     }
   }
 
-  // PUTは不要になったので、許可するメソッドから削除
-  res.setHeader('Allow', ['GET', 'POST']);
+  // PUTも許可
+  res.setHeader('Allow', ['GET', 'POST', 'PUT']);
   return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
 }
