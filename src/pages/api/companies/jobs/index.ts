@@ -22,6 +22,7 @@ export default async function handler(
       });
       return res.status(200).json(jobs);
     } catch (error) {
+      console.error('Failed to fetch jobs:', error);
       return res.status(500).json({ error: 'Failed to fetch jobs.' });
     }
   }
@@ -32,7 +33,7 @@ export default async function handler(
     try {
       const newJob = await prisma.job.create({
         data: {
-          companyId, // ログインしている企業に紐付ける
+          // companyId,  <-- この行を削除
           title: data.title,
           description: data.description,
           status: data.status || 'DRAFT',
@@ -42,11 +43,18 @@ export default async function handler(
           salaryMax: data.salaryMax ? parseInt(data.salaryMax, 10) : null,
           requiredSkills: data.requiredSkills || [],
           preferredSkills: data.preferredSkills || [],
+          // companyリレーションを使って既存のCompanyに接続する
+          company: {
+            connect: {
+              corporateNumber: companyId, // セッションから取得したcompanyIdを使う
+            },
+          },
         },
       });
       return res.status(201).json(newJob);
     } catch (error) {
-      console.error('Failed to create job:', error);
+      // AzureのLog streamで確認するための、より詳細なログ
+      console.error('Failed to create job. Prisma error:', error);
       return res.status(500).json({ error: 'Failed to create job.' });
     }
   }
