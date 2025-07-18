@@ -19,7 +19,7 @@ export default function NewJobPage() {
   const [formData, setFormData] = useState<JobFormData>({
     title: '',
     description: '',
-    employmentType: '正社員',
+    employmentType: 'FULL_TIME', // デフォルトを正社員に設定
     location: '',
     salaryMin: '',
     salaryMax: '',
@@ -84,10 +84,10 @@ export default function NewJobPage() {
           </FormRow>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormRow label="下限年収（円）">
-              <input name="salaryMin" type="number" value={formData.salaryMin} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" placeholder="例: 6000000" />
+              <input name="salaryMin" type="text" value={formData.salaryMin} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" placeholder="例: 6000000" />
             </FormRow>
             <FormRow label="上限年収（円）">
-              <input name="salaryMax" type="number" value={formData.salaryMax} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" placeholder="例: 9000000" />
+              <input name="salaryMax" type="text" value={formData.salaryMax} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" placeholder="例: 9000000" />
             </FormRow>
           </div>
            <FormRow label="必須スキル">
