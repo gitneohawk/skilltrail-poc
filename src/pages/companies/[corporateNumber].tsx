@@ -56,12 +56,6 @@ const PublicCompanyPage = () => {
   const [inquiryMessage, setInquiryMessage] = useState('');
   const [inquiryStatus, setInquiryStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
-  // TODO: 将来的にAPIから求人情報を取得する
-  const [jobs, setJobs] = useState([
-    { id: 1, title: 'シニアセキュリティエンジニア (SOC)', location: '東京' },
-    { id: 2, title: 'プロダクトセキュリティ専門家', location: 'フルリモート' },
-  ]);
-
   useEffect(() => {
     if (corporateNumber) {
       const fetchCompanyProfile = async () => {
@@ -195,15 +189,20 @@ const PublicCompanyPage = () => {
 
           <PageSection title="募集中のポジション" icon={BriefcaseIcon}>
             <div className="space-y-4">
-              {jobs.map(job => (
-                <div key={job.id} className="p-4 border rounded-lg flex justify-between items-center hover:bg-slate-50 transition-colors">
-                  <div>
-                    <p className="font-semibold text-blue-700">{job.title}</p>
-                    <p className="text-sm text-slate-600">{job.location}</p>
+              {/* ★★★ profile.jobs を参照するように修正 ★★★ */}
+              {profile.jobs && profile.jobs.length > 0 ? (
+                profile.jobs.map(job => (
+                  <div key={job.id} className="p-4 border rounded-lg flex justify-between items-center hover:bg-slate-50 transition-colors">
+                    <div>
+                      <p className="font-semibold text-blue-700">{job.title}</p>
+                      <p className="text-sm text-slate-600">{job.location}</p>
+                    </div>
+                    <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">詳細を見る</button>
                   </div>
-                  <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">詳細を見る</button>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p>現在、募集中のポジションはありません。</p>
+              )}
             </div>
           </PageSection>
 

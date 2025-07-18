@@ -26,6 +26,10 @@ export default async function handler(
       where: {
         corporateNumber: corporateNumber,
       },
+      include: {
+        contact: true, // 担当者情報
+        jobs: true,    // 求人情報
+      },
     });
 
     // データが見つかった場合

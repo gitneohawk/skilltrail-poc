@@ -1,5 +1,15 @@
 // types/CompanyProfile.ts
 
+// ★★★ 1. 求人情報の型定義を追加 ★★★
+export type JobProfile = {
+  id: string;
+  title: string;
+  location: string;
+  // 必要に応じて他のプロパティも追加
+  employmentType?: string;
+  status?: string;
+};
+
 // 担当者情報の型定義
 export type ContactProfile = {
   id: string;
@@ -52,4 +62,7 @@ export type CompanyProfile = {
   conferenceParticipation?: string | null;
   certificationSupport?: boolean | null;
   contact: ContactProfile | null;
+
+  // ★★★ 2. jobsプロパティを追加 ★★★
+  jobs?: JobProfile[];
 };

@@ -41,7 +41,12 @@ export default async function handler(
         fromName,
         fromEmail,
         message,
-        companyId, // companyIdは問い合わせ先の法人番号
+        // companyリレーションを使って既存のCompanyに接続する
+        company: {
+          connect: {
+            corporateNumber: companyId,
+          },
+        },
       },
     });
 
