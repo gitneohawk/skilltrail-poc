@@ -41,11 +41,11 @@ export const authOptions: NextAuthOptions = {
     },
   },
 
-  session: {
-    strategy: 'jwt',
-    // ★★★ 例えば、セッションの有効期限を30日に設定 ★★★
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
+  // session: {
+  //   strategy: 'jwt',
+  //   // ★★★ 例えば、セッションの有効期限を30日に設定 ★★★
+  //   maxAge: 30 * 24 * 60 * 60, // 30 days
+  // },
 
   callbacks: {
     async signIn({ account }) {
