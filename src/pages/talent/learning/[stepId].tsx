@@ -7,20 +7,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/solid';
+import { apiClient } from '../../../lib/apiClient';
 
 // SWR用のデータ取得関数
-const fetcher = (url: string) => fetch(url).then(res => {
-  if (!res.ok) {
-    const error = new Error('An error occurred while fetching the data.');
-    // Attach extra info to the error object.
-    // @ts-ignore
-    error.info = res.json();
-    // @ts-ignore
-    error.status = res.status;
-    throw error;
-  }
-  return res.json();
-});
+const fetcher = (url: string) => apiClient(url);
 
 // APIからのレスポンスの型
 interface StepDetailResponse {

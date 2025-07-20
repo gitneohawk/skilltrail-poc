@@ -5,8 +5,9 @@ import Layout from '@/components/Layout';
 import { SKILL_CANDIDATES } from '@/types/Skills';
 import type { Job } from '@prisma/client';
 import { FormRow, MultiSelectButtons } from '@/components/forms';
+import { apiClient } from '../../../lib/apiClient';
 
-const fetcher = (url: string) => fetch(url).then(res => { if (!res.ok) throw new Error('Not found'); return res.json(); });
+const fetcher = (url: string) => apiClient(url);
 
 export default function EditJobPage() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function EditJobPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/companies/jobs/${id}`, {
+      const response = await apiClient(`/api/companies/jobs/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -63,7 +64,7 @@ export default function EditJobPage() {
     if (!window.confirm('本当にこの求人を削除しますか？')) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/companies/jobs/${id}`, { method: 'DELETE' });
+      const response = await apiClient(`/api/companies/jobs/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('求人の削除に失敗しました。');
       alert('求人を削除しました。');
       router.push('/companies/mypage');

@@ -8,8 +8,9 @@ import {
 } from '@heroicons/react/24/solid';
 import { useState, FC } from 'react';
 import Link from 'next/link';
+import { apiClient } from '../../lib/apiClient';
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => apiClient(url);
 
 // 統計表示用カードコンポーネント
 const StatCard: FC<{ title: string; value: number | undefined; icon: React.ElementType }> = ({ title, value, icon: Icon }) => (
@@ -35,7 +36,7 @@ const AddEmailForm: FC = () => {
     if (!email.trim()) return;
     setIsLoading(true);
     try {
-      const res = await fetch('/api/admin/approved-emails', {
+      const res = await apiClient('/api/admin/approved-emails', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -84,7 +85,7 @@ export default function AdminDashboard() {
   const handleDeleteEmail = async (id: string) => {
     if (!window.confirm('このメールアドレスを削除しますか？')) return;
     try {
-      await fetch('/api/admin/approved-emails', {
+      await apiClient('/api/admin/approved-emails', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),

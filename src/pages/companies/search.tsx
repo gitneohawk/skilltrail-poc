@@ -4,6 +4,7 @@ import Layout from '@/components/Layout';
 import { SKILL_CANDIDATES } from '@/types/Skills';
 import { MultiSelectButtons } from '@/components/forms'; // 以前作成した共通コンポーネント
 import { UserIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { apiClient } from '../../lib/apiClient';
 
 // APIから返ってくるTalentの型
 type AnonymizedTalent = {
@@ -14,7 +15,7 @@ type AnonymizedTalent = {
   certifications: { certification: { name: string } }[];
 };
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => apiClient(url);
 
 // タレントカードコンポーネント
 const TalentCard: React.FC<{ talent: AnonymizedTalent }> = ({ talent }) => (

@@ -9,11 +9,9 @@ import type { AnalysisResult, LearningRoadmapStep } from '@prisma/client';
 import { FC } from 'react';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/solid';
+import { apiClient } from '../../../lib/apiClient';
 
-const fetcher = (url: string) => fetch(url).then(res => {
-  if (!res.ok) throw new Error('Failed to fetch');
-  return res.json();
-});
+const fetcher = (url: string) => apiClient(url);
 
 type AnalysisResultWithSteps = AnalysisResult & {
   roadmapSteps: LearningRoadmapStep[];

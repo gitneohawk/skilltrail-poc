@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import Layout from '@/components/Layout';
+import { apiClient } from '../../lib/apiClient';
 
 const ApplyPage = () => {
   const [email, setEmail] = useState('');
@@ -17,7 +18,7 @@ const ApplyPage = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/companies/apply', {
+      const response = await apiClient('/api/companies/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, companyName }),

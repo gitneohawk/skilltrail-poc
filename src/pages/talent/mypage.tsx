@@ -20,6 +20,7 @@ import {
   BriefcaseIcon,
   ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline';
+import { apiClient } from '../../lib/apiClient';
 
 type ApplicationWithJob = Application & {
   job: Job & {
@@ -41,11 +42,7 @@ type AnalysisResultWithSteps = AnalysisResult & {
   roadmapSteps: LearningRoadmapStep[];
 };
 
-const fetcher = (url: string) => fetch(url).then(res => {
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error('データの取得に失敗しました。');
-  return res.json();
-});
+const fetcher = (url: string) => apiClient(url);
 
 // スマートフォン専用の下部ナビゲーション
 const MobileNav: FC = () => (
@@ -121,7 +118,7 @@ export default function TalentMyPage() {
     if (!window.confirm('この応募を取り消しますか？')) return;
 
     try {
-      const response = await fetch('/api/talent/applications', {
+      const response = await apiClient('/api/talent/applications', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ applicationId }),
@@ -150,7 +147,7 @@ export default function TalentMyPage() {
     setIsDiagnosing(true);
     try {
       // ★ 変更点: 新しいstart APIを呼び出す
-      const response = await fetch('/api/talent/diagnosis/start', {
+      const response = await apiClient('/api/talent/diagnosis/start', {
         method: 'POST',
       });
 

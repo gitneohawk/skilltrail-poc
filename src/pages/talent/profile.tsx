@@ -10,6 +10,7 @@ import { SKILL_CANDIDATES } from '@/types/Skills';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid';
 import { TalentProfileWithRelations } from '../api/talent/profile';
 import { FormRow, MultiSelectButtons } from '@/components/forms';
+import { apiClient } from '../../lib/apiClient';
 
 // --- 定数データ ---
 const jobTitles: string[] = ['SOCアナリスト','CSIRTエンジニア','セキュリティコンサルタント','セキュリティアーキテクト','脆弱性診断エンジニア','GRC担当','セキュリティエンジニア（インフラ系）','セキュリティエンジニア（アプリ系）'];
@@ -56,7 +57,7 @@ const TalentProfilePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const fetcher = (url: string) => fetch(url).then(res => res.ok ? res.json() : null);
+  const fetcher = (url: string) => apiClient(url);
   const { data: initialData, isLoading: isDataLoading } = useSWR<TalentProfileWithRelations | null>(
     authStatus === "authenticated" ? `/api/talent/profile` : null,
     fetcher
@@ -151,7 +152,7 @@ const handleSubmit = async (e: FormEvent) => {
       payload.otherDesiredJobTitle = null;
     }
 
-    const response = await fetch('/api/talent/profile', {
+    const response = await apiClient('/api/talent/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
