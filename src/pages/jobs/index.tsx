@@ -14,7 +14,7 @@ type SearchApiResponse = {
   skillCounts: { [key: string]: number };
 };
 
-const fetcher = (url: string) => apiClient(url);
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 const SkillOpportunityCard: React.FC<{
   skillCounts: { [key: string]: number };
