@@ -6,6 +6,14 @@ import { authOptions } from '../auth/[...nextauth]';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 
+// ★★★ ここに修正を追加 ★★★
+// JSON.stringifyがBigIntを扱えるようにするための拡張（おまじない）
+// これにより、APIがレスポンスを返す際にBigIntでエラーになるのを防ぎます。
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+// ★★★ ここまで ★★★
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
