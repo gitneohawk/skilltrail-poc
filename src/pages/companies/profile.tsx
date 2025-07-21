@@ -58,6 +58,12 @@ const CompanyProfilePage = () => {
     headerImageOffsetY: 50,
   });
 
+  // ▼▼▼ 追加: ロゴアップロード用のstateとref ▼▼▼
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+  // ▲▲▲ 追加ここまで ▲▲▲
+
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -156,6 +162,52 @@ const CompanyProfilePage = () => {
     }
   };
 
+  // ▼▼▼ 追加: ロゴ画像アップロード関数 ▼▼▼
+  const handleLogoFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 選択された画像をすぐにプレビュー表示
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    setIsUploadingLogo(true);
+    setError(null);
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await fetch('/api/upload-logo', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'ロゴのアップロードに失敗しました。');
+      }
+
+      const { imageUrl } = await response.json();
+
+      // アップロード成功後、返ってきたURLをprofileのstateにセット
+      setProfile(p => ({ ...p, logoUrl: imageUrl }));
+      setLogoPreview(imageUrl);
+
+    } catch (err: any) {
+      setError(err.message);
+      setLogoPreview(null);
+      if (logoFileInputRef.current) {
+        logoFileInputRef.current.value = '';
+      }
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+  // ▲▲▲ 追加ここまで ▲▲▲
   // フォーム入力ハンドラ
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -297,8 +349,32 @@ const CompanyProfilePage = () => {
               </FormRow>
               <FormRow label="従業員規模"><input name="companySize" type="text" value={profile.companySize || ''} onChange={handleChange} className="w-full border rounded p-2"/></FormRow>
               <FormRow label="公式サイト"><input name="website" type="url" value={profile.website || ''} onChange={handleChange} className="w-full border rounded p-2"/></FormRow>
-              <FormRow label="ロゴURL"><input name="logoUrl" type="url" value={profile.logoUrl || ''} onChange={handleChange} className="w-full border rounded p-2" /></FormRow>
-             <FormRow label="ヘッダー画像URL" description="公開企業ページの上部に表示される背景画像です。推奨サイズ: 1200x400px">
+              {/* ▼▼▼ ここからロゴアップロードUIに変更 ▼▼▼ */}
+              <FormRow label="ロゴ画像">
+  <div className="flex items-center gap-4">
+    <div className="h-24 w-24 flex-shrink-0 rounded-lg bg-slate-100 border flex items-center justify-center overflow-hidden">
+      {(logoPreview || profile.logoUrl) ? (
+        <img src={logoPreview || profile.logoUrl || undefined} alt="ロゴプレビュー" className="h-full w-full object-contain" />
+      ) : (
+        <span className="text-xs text-slate-500">プレビュー</span>
+      )}
+    </div>
+    <div className="flex-grow">
+      <input
+        type="file"
+        accept="image/png, image/jpeg, image/gif"
+        onChange={handleLogoFileChange}
+        ref={logoFileInputRef}
+        disabled={isUploadingLogo}
+        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+      />
+      {isUploadingLogo && <p className="text-sm text-slate-500 mt-2">アップロード中...</p>}
+      <p className="text-xs text-slate-500 mt-1">PNG, JPG, GIF形式のファイルをアップロードしてください。(2MBまで)</p>
+    </div>
+  </div>
+</FormRow>
+              {/* ▲▲▲ ここまでロゴアップロードUI ▲▲▲ */}
+              <FormRow label="ヘッダー画像URL" description="公開企業ページの上部に表示される背景画像です。推奨サイズ: 1200x400px">
                 <input name="headerImageUrl" type="url" value={profile.headerImageUrl || ''} onChange={handleChange} className="w-full border rounded p-2" />
               </FormRow>
               {profile.headerImageUrl && (
@@ -356,7 +432,7 @@ const CompanyProfilePage = () => {
             </FormSection>
 
             <div className="flex justify-end pt-8">
-                <button type="submit" disabled={isLoading} className="px-6 py-2 bg-green-600 text-white rounded-md shadow-sm disabled:opacity-50">
+                <button type="submit" disabled={isLoading || isUploadingLogo} className="px-6 py-2 bg-green-600 text-white rounded-md shadow-sm disabled:opacity-50">
                     {isLoading ? '保存中...' : 'プロフィールを保存'}
                 </button>
             </div>
