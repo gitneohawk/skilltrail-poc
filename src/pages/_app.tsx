@@ -1,8 +1,10 @@
+// src/pages/_app.tsx
+
 import type { AppProps } from 'next/app';
 import { SessionProvider } from "next-auth/react";
 import '../styles/globals.css';
 import { useEffect } from 'react';
-import { getAppInsights } from '@/lib/app-insights'; // 更新した関数をインポート
+import { getAppInsights } from '@/lib/app-insights';
 
 export default function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
 
