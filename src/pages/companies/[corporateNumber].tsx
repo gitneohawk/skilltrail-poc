@@ -3,6 +3,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
+import Link from 'next/link';
 import type { CompanyProfile } from '@/types/CompanyProfile';
 import {
   BuildingOffice2Icon,
@@ -197,7 +198,11 @@ const PublicCompanyPage = () => {
                       <p className="font-semibold text-blue-700">{job.title}</p>
                       <p className="text-sm text-slate-600">{job.location}</p>
                     </div>
-                    <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">詳細を見る</button>
+                    <Link href={`/jobs/${job.id}`} passHref>
+  <a className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 no-underline">
+    詳細を見る
+  </a>
+</Link>
                   </div>
                 ))
               ) : (
