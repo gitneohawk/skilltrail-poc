@@ -4,7 +4,6 @@ import type { SkillInterviewMessage } from '@prisma/client';
 import Layout from '@/components/Layout';
 import { useRouter } from 'next/router';
 import { UserCircleIcon, CpuChipIcon, PaperAirplaneIcon, ArrowUturnLeftIcon, ArrowPathIcon } from '@heroicons/react/24/solid';
-import { apiClient } from '@/lib/apiClient';
 
 export default function SkillChat() {
   const { status } = useSession();
@@ -26,7 +25,7 @@ export default function SkillChat() {
     if (status !== 'authenticated') return;
     const loadHistory = async () => {
       try {
-        const res = await apiClient('/api/talent/skill-interview');
+        const res = await fetch('/api/talent/skill-interview');
         if (!res.ok) throw new Error('Failed to fetch history');
         const history: SkillInterviewMessage[] = await res.json();
 
@@ -58,7 +57,7 @@ export default function SkillChat() {
       setExtractionStatus('PROCESSING'); // 即座にUIを「処理中」へ
       pollingIntervalRef.current = setInterval(async () => {
         try {
-          const res = await apiClient(`/api/talent/skill-interview/extract/status?interviewId=${currentInterviewId}`);
+          const res = await fetch(`/api/talent/skill-interview/extract/status?interviewId=${currentInterviewId}`);
           if (!res.ok) { // ネットワークエラー等
              throw new Error('Status check failed');
           }
@@ -102,7 +101,7 @@ export default function SkillChat() {
     setIsLoading(true);
 
     try {
-      const res = await apiClient('/api/talent/skill-interview', {
+      const res = await fetch('/api/talent/skill-interview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userInput }),
@@ -137,7 +136,7 @@ export default function SkillChat() {
     if (!isConfirmed) return;
 
     try {
-      await apiClient('/api/talent/skill-interview', { method: 'DELETE' });
+      await fetch('/api/talent/skill-interview', { method: 'DELETE' });
       const initialMessage = { id: 'initial-reset', role: 'assistant', content: 'インタビューがリセットされました。あなたの経験や得意な技術について教えてください。', createdAt: new Date(), interviewId: 'none' };
       // @ts-ignore
       setEntries([initialMessage]);
@@ -161,7 +160,7 @@ export default function SkillChat() {
 
     try {
       // Step A: 処理開始をリクエスト（これはすぐ終わる）
-      const startRes = await apiClient('/api/talent/skill-interview/extract/start', {
+      const startRes = await fetch('/api/talent/skill-interview/extract/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ interviewId: currentInterviewId }),
@@ -174,7 +173,7 @@ export default function SkillChat() {
       setExtractionStatus('STARTED');
 
       // Step B: 実際の重い処理を実行するAPIを呼び出す（応答は待たない）
-      apiClient('/api/talent/skill-interview/extract/execute', {
+      fetch('/api/talent/skill-interview/extract/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ interviewId: currentInterviewId }),

@@ -8,7 +8,6 @@ import Layout from '@/components/Layout';
 import type { CompanyProfile } from '@/types/CompanyProfile';
 import type { Job } from '@prisma/client'; // ★ 追加
 import Link from 'next/link';
-import { apiClient } from '@/lib/apiClient';
 
 import {
   BuildingOffice2Icon,
@@ -53,7 +52,8 @@ const formatHeadquarters = (hq: any): string => {
     }
     return '未設定';
 };
-const fetcher = (url: string) => apiClient(url);
+const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(res => res.json());
+
 
 const CompanyMypage = () => {
   const { data: session, status } = useSession();
@@ -70,26 +70,9 @@ const CompanyMypage = () => {
   useEffect(() => {
     if (status === 'authenticated') {
       setIsProfileLoading(true);
-      const fetchProfile = async () => {
-  setIsProfileLoading(true);
-  try {
-    const data = await apiClient('/api/companies/profile');
-    setProfile(data);
-  } catch (error) {
-    // 401エラーはapiClientが処理。ここでは他のエラー（404など）をハンドル
-    console.error(error);
-    setProfile(null); // プロフィールが見つからなかった場合
-  } finally {
-    setIsProfileLoading(false);
-  }
-};
-
-// 適切な場所から fetchProfile() を呼び出す
-useEffect(() => {
-  if (status === 'authenticated') {
-    fetchProfile();
-  }
-}, [status]);
+      fetch('/api/companies/profile', { credentials: 'include' }).then(res => res.ok ? res.json() : null)
+        .then(data => setProfile(data))
+        .finally(() => setIsProfileLoading(false));
     }
     if (status === 'unauthenticated') {
       // ★ 変更: パスを/companiesに

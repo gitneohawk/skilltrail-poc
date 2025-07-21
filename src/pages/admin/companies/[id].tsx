@@ -7,9 +7,8 @@ import type { Company, SponsorshipTier } from '@prisma/client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/solid';
-import { apiClient } from '@/lib/apiClient';
 
-const fetcher = (url: string) => apiClient(url);
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 const sponsorTiers = ['NONE', 'BRONZE', 'SILVER', 'GOLD'];
 
@@ -33,12 +32,12 @@ export default function EditCompanyPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await apiClient(`/api/admin/companies/${id}`, {
+      const response = await fetch(`/api/admin/companies/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(company),
+        body: JSON.stringify({ sponsorshipTier: tier }),
       });
-      if (!res.ok) throw new Error('更新に失敗しました。');
+      if (!response.ok) throw new Error('更新に失敗しました。');
 
       mutate(`/api/admin/companies`);
       alert('スポンサーレベルを更新しました。');

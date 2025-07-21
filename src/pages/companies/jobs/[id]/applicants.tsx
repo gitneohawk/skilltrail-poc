@@ -4,9 +4,8 @@ import Layout from '@/components/Layout';
 import type { Application, TalentProfile, Skill, TalentSkill } from '@prisma/client';
 import Link from 'next/link';
 import { ArrowLeftIcon, UserIcon } from '@heroicons/react/24/outline';
-import { apiClient } from '@/lib/apiClient';
 
-const fetcher = (url: string) => apiClient(url);
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 type Applicant = Application & {
   talent: {

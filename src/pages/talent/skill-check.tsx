@@ -6,9 +6,8 @@ import { useRouter } from 'next/router';
 import type { AiExtractedSkill } from '@prisma/client';
 import { CpuChipIcon, XCircleIcon, PlusCircleIcon } from '@heroicons/react/24/solid';
 import { useState, useEffect, FC } from 'react';
-import { apiClient } from '@/lib/apiClient';
 
-const fetcher = (url: string) => apiClient(url);
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 // ★ 追加: 編集可能なスキルカードコンポーネント
 const EditableSkillCard: FC<{
@@ -65,7 +64,7 @@ export default function SkillCheckPage() {
     try {
       const skillsToSave = skills.map(({ id, source, interviewId, ...rest }) => rest);
 
-      const res = await apiClient('/api/talent/ai-extracted-skills', {
+      const res = await fetch('/api/talent/ai-extracted-skills', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ skills: skillsToSave, interviewId }),

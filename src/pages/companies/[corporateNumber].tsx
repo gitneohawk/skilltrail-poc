@@ -11,7 +11,6 @@ import {
   ShieldCheckIcon,
   ChatBubbleBottomCenterTextIcon
 } from '@heroicons/react/24/outline';
-import { apiClient } from '@/lib/apiClient';
 
 // セクションコンポーネント
 const PageSection: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode }> = ({ title, icon: Icon, children }) => (
@@ -63,7 +62,7 @@ const PublicCompanyPage = () => {
         setIsLoading(true);
         setError(null);
         try {
-          const response = await apiClient(`/api/companies/${corporateNumber}`);
+          const response = await fetch(`/api/companies/${corporateNumber}`);
           if (!response.ok) throw new Error('企業の情報の取得に失敗しました。');
           const data = await response.json();
           setProfile(data);
@@ -82,7 +81,7 @@ const PublicCompanyPage = () => {
     e.preventDefault();
     setInquiryStatus('sending');
     try {
-      const response = await apiClient('/api/inquiry', {
+      const response = await fetch('/api/inquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
