@@ -7,11 +7,9 @@ import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import { ArrowLeftIcon } from '@heroicons/react/24/solid';
 import { Spinner } from '@/components/Spinner';
+import { apiClient } from '@/lib/apiClient';
 
-const fetcher = (url: string) => fetch(url).then(res => {
-  if (!res.ok) throw new Error('Not found');
-  return res.json();
-});
+const fetcher = (url: string) => apiClient(url);
 
 type JobDetails = Job & { company: Partial<Company> };
 
@@ -24,7 +22,7 @@ export default function JobDetailPage() {
   const handleApply = async (jobId: string) => {
     setIsApplying(true);
     try {
-      const response = await fetch('/api/talent/applications', {
+      const response = await apiClient('/api/talent/applications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobId }),

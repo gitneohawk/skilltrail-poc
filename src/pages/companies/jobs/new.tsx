@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { SKILL_CANDIDATES } from '@/types/Skills'; // Talentプロフィールで使ったスキルリストを再利用
 import { FormRow, MultiSelectButtons } from '@/components/forms';
+import { apiClient } from '@/lib/apiClient';
 
 type JobFormData = {
   title: string;
@@ -40,7 +41,7 @@ export default function NewJobPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch('/api/companies/jobs', {
+      const response = await apiClient('/api/companies/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

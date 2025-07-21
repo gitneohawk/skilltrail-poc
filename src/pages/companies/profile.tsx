@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import type { CompanyProfile } from '@/types/CompanyProfile';
+import { apiClient } from '@/lib/apiClient';
 
 // フォームで管理するデータの型
 type ContactFormData = {
@@ -69,7 +70,7 @@ const CompanyProfilePage = () => {
       const fetchExistingProfile = async () => {
         // ★★★ 修正点1: try...catchを追加 ★★★
         try {
-        const response = await fetch('/api/companies/profile', { credentials: 'include' });
+        const response = await apiClient('/api/companies/profile', { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
           setProfile({
@@ -106,7 +107,7 @@ const CompanyProfilePage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/companies/gbiz-search', {
+      const response = await apiClient('/api/companies/gbiz-search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ companyName: companyNameInput }),
@@ -127,7 +128,7 @@ const CompanyProfilePage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/companies/gbiz-fetch-details', {
+      const response = await apiClient('/api/companies/gbiz-fetch-details', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ corporateNumber: company.corporateNumber }),
@@ -234,11 +235,11 @@ const CompanyProfilePage = () => {
     const method = profile.updatedAt ? 'PUT' : 'POST';
 
     try {
-        const response = await fetch('/api/companies/profile', {
-            method: method, // POST or PUT
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(profile)
+        const response = await apiClient('/api/companies/profile', {
+          method: method, // POST or PUT
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(profile)
         });
         if (!response.ok) {
             const errData = await response.json();

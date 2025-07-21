@@ -5,6 +5,7 @@ import { BuildingOffice2Icon, MapPinIcon, CurrencyYenIcon, SparklesIcon, ArrowLe
 import Link from 'next/link';
 import { TalentProfileWithRelations } from '../api/talent/profile';
 import { FC, useState } from 'react';
+import { apiClient } from '@/lib/apiClient';
 
 // APIからの応答の型
 type JobWithCompany = Job & { company: { name: string; logoUrl: string | null } };
@@ -103,7 +104,7 @@ export default function JobsPage() {
   const handleApply = async (jobId: string) => {
     setApplyingJobId(jobId);
     try {
-      const response = await fetch('/api/talent/applications', {
+      const response = await apiClient('/api/talent/applications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobId }),
