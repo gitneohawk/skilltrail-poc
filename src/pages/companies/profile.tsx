@@ -70,34 +70,39 @@ const CompanyProfilePage = () => {
   const [dragStartY, setDragStartY] = useState(0);
 
   // 既存プロフィールの読み込み
-  useEffect(() => {
+ useEffect(() => {
     if (status === 'authenticated') {
       const fetchExistingProfile = async () => {
-        // ★★★ 修正点1: try...catchを追加 ★★★
+        setIsLoading(true);
+        setError(null); // エラー表示をリセット
         try {
-        const response = await fetch('/api/companies/profile', { credentials: 'include' });
-        if (response.ok) {
-          const data = await response.json();
-          setProfile({
-            ...data,
-            capitalStock: data.capitalStock?.toString(),
-            contact: data.contact || { name: '', email: '' }
-          });
-          setMode('edit');
-        } else if (response.status === 404) {
-          // 新規ユーザー: エラーはセットせず、検索モードへ
-          setMode('search');
-        } else {
-          // その他のエラー（サーバーエラー等）のみエラー表示
-          setError("プロファイルの読み込みに失敗しました。ネットワーク接続を確認してください。");
-          setMode('search');
+          const response = await fetch('/api/companies/profile');
+
+          if (response.ok) {
+            const data = await response.json();
+
+            // APIから返ってきたデータがnullでないか（＝プロフィールが存在するか）をチェック
+            if (data) {
+              setProfile({
+                ...data,
+                capitalStock: data.capitalStock?.toString(),
+                contact: data.contact || { name: '', email: '' }
+              });
+              setMode('edit'); // 既存プロフィールがあるので編集モードへ
+            } else {
+              setMode('search'); // プロフィールがないので新規作成（検索）モードへ
+            }
+          } else {
+            // 404 Not Found などの場合も検索モードへ
+            setMode('search');
+          }
+        } catch (err: any) {
+          console.error("Failed to fetch company profile:", err);
+          setError("プロファイルの読み込み中にエラーが発生しました。"); // より正確なエラーメッセージ
+          setMode('search'); // エラーでも検索モードへフォールバック
+        } finally {
+          setIsLoading(false);
         }
-      } catch (err) {
-        // ネットワークエラーなどでfetch自体が失敗した場合
-        console.error("Failed to fetch company profile:", err);
-        setError("プロファイルの読み込みに失敗しました。ネットワーク接続を確認してください。");
-        setMode('search');
-      }
       };
       fetchExistingProfile();
     }
