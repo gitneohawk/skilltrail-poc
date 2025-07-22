@@ -16,7 +16,7 @@ export default function CandidateHome() {
           SkillTrailはセキュリティ人材の<br />キャリア支援を目的としたプラットフォームです！
         </p>
          <p className="mb-8 text-left max-w-xl text-lg">
-          こんにちは。SkillTrail主催、Seucurity Foxです。<br />
+          こんにちは。SkillTrail主催、Security Foxです。<br />
           このページを見ているあなた、セキュリティ関連の業務を行なっているか、もしくは興味を持ってくれている方ですね。<br />
           私は、セキュリティ業界で30年仕事をしてきました。
           セキュリティ業界において常に人が足りず、人材の育成が難しいという課題をなんとかしたいと考えています。<br />
