@@ -1,7 +1,11 @@
+// pages/api/talent/diagnosis/start.ts
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
+// ★★★ 修正点: execute.tsから診断実行ロジックをインポート ★★★
+import { runDiagnosis } from './execute';
 
 export default async function handler(
   req: NextApiRequest,
@@ -35,14 +39,12 @@ export default async function handler(
     // すぐに新しい診断のIDを返す
     res.status(202).json({ analysisId: newAnalysis.id });
 
-    // fire-and-forgetで重い処理を実行するAPIを呼び出す
-    fetch(`${process.env.NEXTAUTH_URL}/api/talent/diagnosis/execute`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ analysisId: newAnalysis.id }),
-    });
+    // ★★★ 修正点: fetchの代わりに、インポートした関数を直接呼び出す ★★★
+    // awaitを付けないことで、レスポンスをブロックせずにバックグラウンドで実行する
+    runDiagnosis(newAnalysis.id);
 
   } catch (error) {
+    console.error('Failed to start diagnosis process:', error);
     res.status(500).json({ error: 'Failed to start diagnosis process' });
   }
 }

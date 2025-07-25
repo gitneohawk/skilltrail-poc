@@ -13,3 +13,6 @@ yarn-debug.log*
 yarn-error.log*
 
 /src/generated/prisma
+
+# Local SSL certificates
+*.pem

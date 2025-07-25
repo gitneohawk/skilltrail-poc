@@ -1,3 +1,5 @@
+// pages/api/talent/diagnosis/execute.ts
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import OpenAI from 'openai';
@@ -7,9 +9,8 @@ const azureApiKey = process.env.AZURE_OPENAI_KEY;
 const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT_NAME;
 const apiVersion = "2024-02-01";
 
-if (!endpoint || !azureApiKey || !deploymentName) {
-  throw new Error("Azure OpenAI Service is not configured. Please set environment variables.");
-}
+// ★★★ 修正点: if文を関数の外に出すのは危険なので、runDiagnosisの中に移動 ★★★
+// if (!endpoint || !azureApiKey || !deploymentName) { ... }
 
 const openai = new OpenAI({
   apiKey: azureApiKey,
@@ -18,8 +19,19 @@ const openai = new OpenAI({
   defaultHeaders: { "api-key": azureApiKey },
 });
 
-// 診断のメインロジックを実行する非同期関数
-async function runDiagnosis(analysisId: string) {
+// ★★★ 修正点: 診断のメインロジックをexportして、他のファイルから呼び出せるようにする ★★★
+export async function runDiagnosis(analysisId: string) {
+  // ★★★ 修正点: 環境変数のチェックをここで行う ★★★
+  if (!process.env.AZURE_OPENAI_ENDPOINT || !process.env.AZURE_OPENAI_KEY || !process.env.AZURE_OPENAI_DEPLOYMENT_NAME) {
+    console.error("Azure OpenAI Service is not configured. Please set environment variables.");
+    // 失敗ステータスをDBに記録
+    await prisma.analysisResult.update({
+      where: { id: analysisId },
+      data: { diagnosisStatus: 'FAILED' },
+    });
+    return; // 処理を中断
+  }
+
   try {
     const analysisResult = await prisma.analysisResult.findUnique({
       where: { id: analysisId },
@@ -132,6 +144,8 @@ export default async function handler(
     return res.status(400).json({ error: 'analysisId is required' });
   }
 
+  // リクエストを受け付けたことをすぐに返す
   res.status(202).end();
+  // その後、バックグラウンドで重い処理を実行
   await runDiagnosis(analysisId);
 }
