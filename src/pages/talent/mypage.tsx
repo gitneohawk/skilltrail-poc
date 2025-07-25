@@ -22,6 +22,7 @@ import {
   BriefcaseIcon,
   ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline';
+import { apiClient } from '@/lib/apiClient';
 
 // ... (他の型定義やコンポーネントはそのまま) ...
 type ApplicationWithJob = Application & {
@@ -44,11 +45,7 @@ type AnalysisResultWithSteps = AnalysisResult & {
   roadmapSteps: LearningRoadmapStep[];
 };
 
-const fetcher = (url: string) => fetch(url).then(res => {
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error('データの取得に失敗しました。');
-  return res.json();
-});
+const fetcher = (url: string) => apiClient(url);
 
 // スマートフォン専用の下部ナビゲーション
 const MobileNav: FC = () => (

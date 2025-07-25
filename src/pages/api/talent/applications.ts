@@ -1,3 +1,5 @@
+// pages/api/talent/applications.ts
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
@@ -7,7 +9,18 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  // ★★★ ここからデバッグ用のログを追加 ★★★
+  console.log(`--- API /api/talent/applications called with method: ${req.method} ---`);
   const session = await getServerSession(req, res, authOptions);
+
+  // 受け取ったセッション情報を、そのままログに出力する
+  if (session) {
+    console.log("Session found:", JSON.stringify(session, null, 2));
+  } else {
+    console.log("No session found. User is not logged in.");
+  }
+  // ★★★ ここまでデバッグ用のログ ★★★
+
   if (!session) {
     // ログインしていない場合は、401 Unauthorized エラーを返す
     return res.status(401).json({ message: 'You must be logged in.' });
@@ -103,6 +116,7 @@ export default async function handler(
     }
   }
 
-  res.setHeader('Allow', ['GET', 'POST']);
+  // ★★★ 修正点: DELETEメソッドを許可リストに追加 ★★★
+  res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
   return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
 }
