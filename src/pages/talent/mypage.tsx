@@ -1,12 +1,14 @@
+// pages/talent/mypage.tsx
+
 import { useEffect, useState, FC } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useRouter } from 'next/router';
 import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
-import Layout from '../../components/Layout';
+import Layout from '@/components/Layout';
 import type { Job, Company, Application, TalentProfile, AnalysisResult, LearningRoadmapStep } from '@prisma/client';
 import { format } from 'date-fns';
-import { Spinner } from '../../components/Spinner';
+import { Spinner } from '@/components/Spinner';
 import {
   UserCircleIcon,
   PencilSquareIcon,
@@ -21,6 +23,7 @@ import {
   ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline';
 
+// ... (他の型定義やコンポーネントはそのまま) ...
 type ApplicationWithJob = Application & {
   job: Job & {
     company: { name: string; logoUrl: string | null };
@@ -375,7 +378,7 @@ export default function TalentMyPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {(companies || []).map((company) => (
-                    <div key={company.corporateNumber} onClick={() => router.push(`/companies/${company.corporateNumber}`)}
+                    <Link key={company.corporateNumber} href={`/companies/${company.corporateNumber}`}
                       className="p-4 border rounded-lg flex items-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors">
                       <div className="h-10 w-10 rounded-full bg-white border p-1 flex items-center justify-center flex-shrink-0">
                         <img
@@ -388,7 +391,7 @@ export default function TalentMyPage() {
                         <p className="font-semibold text-sm text-slate-800">{company.name}</p>
                         <p className="text-xs text-slate-500">{company.industry}</p>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>

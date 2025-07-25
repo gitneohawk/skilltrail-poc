@@ -1,0 +1,6 @@
+{
+  "watch": ["server.js", "src/pages/api/"],
+  "ignore": [".next/", "node_modules/"],
+  "exec": "node server.js",
+  "ext": "js,ts,json"
+}

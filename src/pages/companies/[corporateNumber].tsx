@@ -2,9 +2,10 @@
 
 import { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/router';
-import Layout from '@/components/Layout';
 import Link from 'next/link';
+import Layout from '@/components/Layout';
 import type { CompanyProfile } from '@/types/CompanyProfile';
+import type { Job } from '@prisma/client';
 import {
   BuildingOffice2Icon,
   BriefcaseIcon,
@@ -47,11 +48,10 @@ const PublicCompanyPage = () => {
   const router = useRouter();
   const { corporateNumber } = router.query;
 
-  const [profile, setProfile] = useState<CompanyProfile | null>(null);
+  const [profile, setProfile] = useState<CompanyProfile & { jobs: Job[] } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 問い合わせフォーム用のState
   const [inquiryName, setInquiryName] = useState('');
   const [inquiryEmail, setInquiryEmail] = useState('');
   const [inquiryMessage, setInquiryMessage] = useState('');
@@ -77,7 +77,6 @@ const PublicCompanyPage = () => {
     }
   }, [corporateNumber]);
 
-  // 問い合わせフォームの送信処理
   const handleInquirySubmit = async (e: FormEvent) => {
     e.preventDefault();
     setInquiryStatus('sending');
@@ -94,7 +93,6 @@ const PublicCompanyPage = () => {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || '送信に失敗しました。');
-
       setInquiryStatus('success');
       setInquiryName('');
       setInquiryEmail('');
@@ -131,22 +129,18 @@ const PublicCompanyPage = () => {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
-             <div className="bg-white p-2 rounded-full shadow-lg">
-                {profile.logoUrl ? (
-<div className="absolute -bottom-16 left-1/2 -translate-x-1/2 h-32 w-32 rounded-2xl bg-white border-4 border-white shadow-lg p-2 flex items-center justify-center">
-                    <img
-                        src={profile.logoUrl || `https://placehold.co/128x128/e2e8f0/334155?text=Logo`}
-                        alt={`${profile.name}のロゴ`}
-                        className="max-h-full max-w-full object-contain"
-                        onError={(e) => { (e.target as HTMLImageElement).src = `https://placehold.co/128x128/e2e8f0/334155?text=Logo`; }}
-                    />
-                </div>
-                ) : (
-                    <div className="h-32 w-32 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 border-4 border-white">
-                        <span>Logo</span>
-                    </div>
-                )}
-             </div>
+            <div className="h-32 w-32 bg-white rounded-2xl border-4 border-white shadow-lg flex items-center justify-center overflow-hidden p-1">
+              {profile.logoUrl ? (
+                <img
+                  src={profile.logoUrl}
+                  alt={`${profile.name}のロゴ`}
+                  className="h-full w-full object-contain"
+                  onError={(e) => { (e.target as HTMLImageElement).src = `https://placehold.co/128x128/e2e8f0/334155?text=Logo`; }}
+                />
+              ) : (
+                <span className="text-slate-500 font-bold">Logo</span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -190,7 +184,6 @@ const PublicCompanyPage = () => {
 
           <PageSection title="募集中のポジション" icon={BriefcaseIcon}>
             <div className="space-y-4">
-              {/* ★★★ profile.jobs を参照するように修正 ★★★ */}
               {profile.jobs && profile.jobs.length > 0 ? (
                 profile.jobs.map(job => (
                   <div key={job.id} className="p-4 border rounded-lg flex justify-between items-center hover:bg-slate-50 transition-colors">
@@ -198,11 +191,10 @@ const PublicCompanyPage = () => {
                       <p className="font-semibold text-blue-700">{job.title}</p>
                       <p className="text-sm text-slate-600">{job.location}</p>
                     </div>
-                    <Link href={`/jobs/${job.id}`} passHref>
-  <a className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 no-underline">
-    詳細を見る
-  </a>
-</Link>
+                    {/* <a>タグを削除し、classNameを<Link>に直接渡す */}
+                    <Link href={`/jobs/${job.id}`} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 no-underline">
+                      詳細を見る
+                    </Link>
                   </div>
                 ))
               ) : (
