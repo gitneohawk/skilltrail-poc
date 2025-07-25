@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import type { CompanyProfile } from '@/types/CompanyProfile';
+import { apiClient } from '@/lib/apiClient';
 
 // フォームで管理するデータの型
 type ContactFormData = {
@@ -42,6 +43,7 @@ const FormRow: React.FC<{ label: string; children: React.ReactNode; description?
   </div>
 );
 
+const fetcher = (url: string) => apiClient(url);
 
 const CompanyProfilePage = () => {
   const router = useRouter();
@@ -70,7 +72,7 @@ const CompanyProfilePage = () => {
   const [dragStartY, setDragStartY] = useState(0);
 
   // 既存プロフィールの読み込み
- useEffect(() => {
+  useEffect(() => {
     if (status === 'authenticated') {
       const fetchExistingProfile = async () => {
         setIsLoading(true);

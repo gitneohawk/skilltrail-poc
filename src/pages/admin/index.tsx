@@ -1,3 +1,5 @@
+// pages/admin/index.tsx
+
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import useSWR, { useSWRConfig } from 'swr';
@@ -8,8 +10,10 @@ import {
 } from '@heroicons/react/24/solid';
 import { useState, FC } from 'react';
 import Link from 'next/link';
+import { apiClient } from '@/lib/apiClient';
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+// ★★★ 2. fetcherをapiClientを使うように修正 ★★★
+const fetcher = (url: string) => apiClient(url);
 
 // 統計表示用カードコンポーネント
 const StatCard: FC<{ title: string; value: number | undefined; icon: React.ElementType }> = ({ title, value, icon: Icon }) => (
@@ -35,15 +39,12 @@ const AddEmailForm: FC = () => {
     if (!email.trim()) return;
     setIsLoading(true);
     try {
-      const res = await fetch('/api/admin/approved-emails', {
+      // ★★★ 3. fetchをapiClientに置き換え ★★★
+      await apiClient('/api/admin/approved-emails', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || '追加に失敗しました。');
-      }
       setEmail('');
       mutate('/api/admin/approved-emails');
     } catch (error) {
@@ -72,9 +73,19 @@ const AddEmailForm: FC = () => {
 
 
 export default function AdminDashboard() {
-  const { data: session, status } = useSession();
-  const { mutate } = useSWRConfig();
+  // ★★★ 修正点: routerの宣言をuseSessionの前に移動し、重複を解消 ★★★
   const router = useRouter();
+
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      // 未認証の場合、サインインページにリダイレクトする
+      router.push('/api/auth/signin');
+    },
+  });
+  // ★★★ ここまで修正 ★★★
+
+  const { mutate } = useSWRConfig();
 
   // APIから各種データを取得
   const { data: companies, error: companiesError, isLoading: isCompaniesLoading } = useSWR<Company[]>('/api/admin/companies', fetcher);
@@ -82,22 +93,30 @@ export default function AdminDashboard() {
   const { data: stats, error: statsError, isLoading: isStatsLoading } = useSWR<{talentCount: number, companyCount: number, jobCount: number}>('/api/admin/stats', fetcher);
 
   const handleDeleteEmail = async (id: string) => {
+    // window.confirmはapiClientの処理をブロックしてしまう可能性があるため、
+    // 先に確認を行うのが安全です。
     if (!window.confirm('このメールアドレスを削除しますか？')) return;
     try {
-      await fetch('/api/admin/approved-emails', {
+      // ★★★ 4. fetchをapiClientに置き換え ★★★
+      await apiClient('/api/admin/approved-emails', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       });
       mutate('/api/admin/approved-emails');
     } catch (error) {
-      alert('削除に失敗しました。');
+      alert((error as Error).message);
     }
   };
 
-  if (status === 'loading') return <Layout><p className="text-center p-8">読み込み中...</p></Layout>;
-  if (status === 'unauthenticated' || session?.user?.role !== 'ADMIN') {
-    return <Layout><p className="text-center p-8 text-red-600">アクセス権がありません。</p></Layout>;
+  // required: true を使っているので、statusは 'loading' か 'authenticated' のどちらかになる
+  if (status === 'loading') {
+    return <Layout><p className="text-center p-8">読み込み中...</p></Layout>;
+  }
+
+  // ★★★ 修正点: 認証後のロールチェックのみを行う ★★★
+  if (session?.user?.role !== 'ADMIN') {
+    return <Layout><p className="text-center p-8 text-red-600">管理者権限がありません。</p></Layout>;
   }
 
   const isLoading = isCompaniesLoading || isEmailsLoading || isStatsLoading;

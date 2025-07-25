@@ -4,6 +4,7 @@ import { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
+import { apiClient } from '@/lib/apiClient';
 import type { CompanyProfile } from '@/types/CompanyProfile';
 import type { Job } from '@prisma/client';
 import {
