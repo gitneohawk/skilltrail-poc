@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import Layout from '@/components/Layout';
+import { apiClient } from '@/lib/apiClient'; // apiClientをインポート
 
 const ApplyPage = () => {
   const [email, setEmail] = useState('');
@@ -17,22 +18,19 @@ const ApplyPage = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/companies/apply', {
+      // ★★★ fetchをapiClientに置き換える ★★★
+      // response.okのチェックや、response.json()の呼び出しが不要になり、シンプルになる
+      await apiClient('/api/companies/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, companyName }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || '申請に失敗しました。');
-      }
-
       setMessage('利用申請を受け付けました。運営からの承認をお待ちください。');
       setEmail('');
       setCompanyName('');
     } catch (err: any) {
+      // apiClientがAPIからのエラーメッセージをerr.messageに入れてくれる
       setError(err.message);
     } finally {
       setIsLoading(false);

@@ -4,6 +4,9 @@ import type { SkillInterviewMessage } from '@prisma/client';
 import Layout from '@/components/Layout';
 import { useRouter } from 'next/router';
 import { UserCircleIcon, CpuChipIcon, PaperAirplaneIcon, ArrowUturnLeftIcon, ArrowPathIcon } from '@heroicons/react/24/solid';
+import { apiClient } from '@/lib/apiClient';
+
+const fetcher = (url: string) => apiClient(url);
 
 export default function SkillChat() {
   const { status } = useSession();

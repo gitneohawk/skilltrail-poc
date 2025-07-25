@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { SKILL_CANDIDATES } from '@/types/Skills'; // Talentプロフィールで使ったスキルリストを再利用
 import { FormRow, MultiSelectButtons } from '@/components/forms';
+import { apiClient } from '@/lib/apiClient';
 
 type JobFormData = {
   title: string;
@@ -13,6 +14,8 @@ type JobFormData = {
   salaryMax: string;
   requiredSkills: string[];
 };
+
+const fetcher = (url: string) => apiClient(url);
 
 export default function NewJobPage() {
   const router = useRouter();
