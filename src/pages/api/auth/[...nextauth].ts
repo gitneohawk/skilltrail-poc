@@ -3,6 +3,7 @@
 import NextAuth from 'next-auth';
 import type { NextAuthOptions } from 'next-auth';
 import AzureADProvider from "next-auth/providers/azure-ad";
+import EmailProvider from 'next-auth/providers/email'; // 1. EmailProviderをインポート
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 import { Adapter } from "next-auth/adapters";
@@ -17,28 +18,39 @@ export const authOptions: NextAuthOptions = {
       tenantId: "common",
       allowDangerousEmailAccountLinking: true,
     }),
+    EmailProvider({
+      server: {
+        host: process.env.EMAIL_SERVER_HOST,
+        port: Number(process.env.EMAIL_SERVER_PORT),
+        auth: {
+          user: process.env.EMAIL_SERVER_USER,
+          pass: process.env.EMAIL_SERVER_PASSWORD,
+        },
+      },
+      from: process.env.EMAIL_FROM,
+    }),
+
   ],
+  pages: {
+    signIn: '/auth/signin',
+  },
   secret: process.env.NEXTAUTH_SECRET,
 
   events: {
-    createUser: async ({ user }) => {
-      if (!user.email) return;
+    // 新しいユーザーが作成された直後に、この処理が自動で実行される
+    async createUser({ user }) {
+      // もし、ユーザー名が設定されておらず(例: メール認証)、メールアドレスが存在する場合
+      if (!user.name && user.email) {
+        // メールの@より前の部分を、デフォルトのユーザー名として設定する
+        const defaultName = user.email.split('@')[0];
 
-      const approvedEmail = await prisma.approvedEmail.findUnique({
-        where: { email: user.email },
-      });
-
-      if (approvedEmail) {
+        // データベースを更新して、デフォルト名を保存する
         await prisma.user.update({
           where: { id: user.id },
-          data: { role: 'ADMIN' },
-        });
-
-        await prisma.approvedEmail.delete({
-          where: { email: user.email },
+          data: { name: defaultName },
         });
       }
-    },
+    }
   },
 
   // session: {
