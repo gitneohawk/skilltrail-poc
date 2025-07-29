@@ -8,6 +8,7 @@ import Layout from '@/components/Layout';
 import type { CompanyProfile } from '@/types/CompanyProfile';
 import type { Job } from '@prisma/client'; // ★ 追加
 import Link from 'next/link';
+import { apiClient } from '@/lib/apiClient';
 
 import {
   BuildingOffice2Icon,
@@ -52,7 +53,7 @@ const formatHeadquarters = (hq: any): string => {
     }
     return '未設定';
 };
-const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(res => res.json());
+const fetcher = (url: string) => apiClient(url, { credentials: 'include' });
 
 
 const CompanyMypage = () => {

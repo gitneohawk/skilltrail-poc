@@ -5,8 +5,9 @@ import Layout from '@/components/Layout';
 import { SKILL_CANDIDATES } from '@/types/Skills';
 import type { Job } from '@prisma/client';
 import { FormRow, MultiSelectButtons } from '@/components/forms';
+import { apiClient } from '@/lib/apiClient';
 
-const fetcher = (url: string) => fetch(url).then(res => { if (!res.ok) throw new Error('Not found'); return res.json(); });
+const fetcher = (url: string) => apiClient(url);
 
 export default function EditJobPage() {
   const router = useRouter();

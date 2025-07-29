@@ -5,6 +5,7 @@ import { BuildingOffice2Icon, MapPinIcon, CurrencyYenIcon, SparklesIcon, ArrowLe
 import Link from 'next/link';
 import { TalentProfileWithRelations } from '../api/talent/profile';
 import { FC, useState } from 'react';
+import { apiClient } from '@/lib/apiClient';
 
 // APIからの応答の型
 type JobWithCompany = Job & { company: { name: string; logoUrl: string | null } };
@@ -13,7 +14,7 @@ type SearchApiResponse = {
   skillCounts: { [key: string]: number };
 };
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => apiClient(url);
 
 const SkillOpportunityCard: React.FC<{
   skillCounts: { [key: string]: number };
