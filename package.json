@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "nodemon",
+    "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 nodemon",
     "build:css": "postcss ./src/styles/globals.css -o ./public/styles.css",
     "build": "npm run build:css && next build",
     "start": "next start",

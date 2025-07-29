@@ -33,7 +33,7 @@ export default function CandidateHome() {
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
             <div className="flex flex-col items-center">
               <ArrowRightOnRectangleIcon className="w-16 h-16 text-blue-500 mb-2" />
-              <p className="text-center text-sm">Microsoft IDでログイン</p>
+              <p className="text-center text-sm">登録</p>
             </div>
             <div className="flex flex-col items-center">
               <UserCircleIcon className="w-16 h-16 text-blue-500 mb-2" />

@@ -55,10 +55,6 @@ const MobileNav: FC = () => (
         <PencilSquareIcon className="h-6 w-6" />
         <span className="text-xs mt-1">プロフィール</span>
       </Link>
-      <button onClick={() => signOut()} className="flex flex-col items-center justify-center text-red-600 hover:bg-red-50 p-2 rounded-md w-24">
-        <ArrowRightOnRectangleIcon className="h-6 w-6" />
-        <span className="text-xs mt-1">サインアウト</span>
-      </button>
     </nav>
   </div>
 );
@@ -181,7 +177,7 @@ export default function TalentMyPage() {
       <Layout><div className="p-8 text-center">
         <h1 className="text-2xl font-bold mb-4">マイページ</h1>
         <p className="mb-6 text-gray-600">全ての機能を利用するにはサインインが必要です。</p>
-        <button onClick={() => signIn("azure-ad")} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700">サインイン</button>
+        <button onClick={() => signIn()} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700">サインイン</button>
       </div></Layout>
     );
   }
